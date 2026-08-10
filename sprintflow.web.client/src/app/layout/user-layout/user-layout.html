@@ -1,0 +1,30 @@
+<mat-sidenav-container class="layout" [hasBackdrop]="compact()">
+  <mat-sidenav
+    class="layout-sidenav"
+    [mode]="compact() ? 'over' : 'side'"
+    [opened]="sidebarOpen()"
+    (openedChange)="sidebarOpen.set($event)">
+    <app-sidebar [items]="navigation" />
+  </mat-sidenav>
+
+  <mat-sidenav-content class="layout-content">
+    <header class="layout-header">
+      <button
+        class="layout-toggle"
+        mat-icon-button
+        type="button"
+        (click)="toggleSidebar()"
+        aria-label="Toggle navigation">
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <h1 class="layout-title">{{ pageTitle() }}</h1>
+
+      <app-user-menu (logout)="onLogout()" />
+    </header>
+
+    <main class="layout-main">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

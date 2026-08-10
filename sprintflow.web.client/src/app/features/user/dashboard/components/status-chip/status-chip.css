@@ -1,0 +1,23 @@
+/* Fill carries the colour, the label stays dark ink — never coloured text. */
+.status-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    color: var(--app-ink);
+}
+
+.status-chip--todo {
+    background-color: var(--app-status-todo);
+}
+
+.status-chip--inprogress {
+    background-color: var(--app-status-progress);
+}
+
+.status-chip--completed {
+    background-color: var(--app-status-done);
+}

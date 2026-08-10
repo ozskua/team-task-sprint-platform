@@ -1,0 +1,17 @@
+.user-menu-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.user-menu-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.user-menu-chevron {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+}

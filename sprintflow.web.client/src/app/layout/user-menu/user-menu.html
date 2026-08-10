@@ -1,0 +1,14 @@
+<button
+  class="user-menu-trigger"
+  mat-button
+  type="button"
+  [matMenuTriggerFor]="menu"
+  aria-label="Account menu">
+  <span class="user-menu-label">Account</span>
+  <!-- iconPositionEnd: MatButton projects icons before the label by default. -->
+  <mat-icon iconPositionEnd class="user-menu-chevron">expand_more</mat-icon>
+</button>
+
+<mat-menu #menu="matMenu">
+  <button mat-menu-item type="button" (click)="logout.emit()">Log out</button>
+</mat-menu>

@@ -1,0 +1,9 @@
+<article class="task-card">
+  <h3 class="task-title">{{ task().title }}</h3>
+  <p class="task-team">{{ task().teamName }}</p>
+
+  <div class="task-footer">
+    <span class="task-due" [class.task-due--overdue]="overdue()">{{ dueLabel() }}</span>
+    <app-status-chip [status]="task().status" />
+  </div>
+</article>

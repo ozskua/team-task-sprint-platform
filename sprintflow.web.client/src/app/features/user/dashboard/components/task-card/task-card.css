@@ -1,0 +1,49 @@
+.task-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 20px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-card);
+    box-shadow: var(--app-shadow-card);
+}
+
+.task-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--mat-sys-on-surface);
+}
+
+.task-team {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.task-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.task-due {
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/* Overdue dates get a tinted fill, not red text — the same rule as StatusChip. */
+.task-due--overdue {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background-color: var(--app-status-overdue);
+    font-weight: 500;
+    color: var(--app-ink);
+}

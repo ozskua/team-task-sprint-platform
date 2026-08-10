@@ -1,0 +1,42 @@
+.sidebar {
+    padding: 24px 12px;
+}
+
+.sidebar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* Text only — no icons. An icon beside a label is decoration, not an affordance. */
+.sidebar-link {
+    display: block;
+    padding: 12px 16px;
+    border-radius: var(--app-radius-control);
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
+}
+
+.sidebar-link:hover {
+    background-color: rgba(147, 51, 234, 0.06);
+    color: var(--mat-sys-on-surface);
+}
+
+.sidebar-link.is-active {
+    background-color: rgba(147, 51, 234, 0.1);
+    color: var(--app-primary-action);
+    font-weight: 600;
+}
+
+.sidebar-link:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 2px;
+}

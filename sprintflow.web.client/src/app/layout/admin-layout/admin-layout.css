@@ -1,0 +1,63 @@
+.layout {
+    height: 100dvh;
+    background: transparent;
+}
+
+.layout-sidenav {
+    width: 240px;
+    border-right: 1px solid var(--app-border);
+    background-color: var(--app-surface-card);
+}
+
+/* A faint purple backdrop so white cards read as raised surfaces.
+   Lives here rather than on the page, so every admin screen matches. */
+.layout-content {
+    background-color: var(--app-surface-tint);
+}
+
+.layout-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 72px;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--app-border);
+    background-color: var(--app-surface-card);
+}
+
+/* Page title — the single 28/600 role from the type scale. */
+.layout-title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--mat-sys-on-surface);
+}
+
+.layout-main {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 32px;
+}
+
+@media (max-width: 767.98px) {
+    .layout-header {
+        gap: 8px;
+        height: 64px;
+        padding: 0 16px;
+    }
+
+    .layout-title {
+        font-size: 1.25rem;
+    }
+
+    .layout-main {
+        padding: 32px 16px;
+    }
+}

@@ -1,0 +1,88 @@
+<div class="user-dashboard">
+
+  <!-- Welcome + compact summary. The numbers are context, not the subject. -->
+  <section class="welcome">
+    <h2 class="welcome-title">Welcome back</h2>
+    <p class="welcome-context">{{ contextLine() }}</p>
+
+    <div class="summary">
+      <div class="summary-counts">
+        <div class="summary-item">
+          <span class="summary-label">Todo</span>
+          <span class="summary-value">{{ counts().todo }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">In Progress</span>
+          <span class="summary-value">{{ counts().inProgress }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Completed</span>
+          <span class="summary-value">{{ counts().completed }}</span>
+        </div>
+      </div>
+
+      <div class="summary-progress">
+        <div class="summary-progress-head">
+          <span class="summary-label">Overall progress</span>
+          <span class="summary-percent">{{ progressPercent() }}%</span>
+        </div>
+        <div
+          class="summary-track"
+          role="progressbar"
+          [attr.aria-valuenow]="progressPercent()"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-label="Overall task progress">
+          <div class="summary-fill" [style.width.%]="progressPercent()"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rendered only when something is actually late. -->
+  @if (hasOverdue()) {
+    <section class="attention">
+      <h2 class="attention-title">Needs Attention ({{ overdueTasks().length }})</h2>
+      <div class="card-grid">
+        @for (task of overdueTasks(); track task.taskId) {
+          <app-task-card [task]="task" [overdue]="true" />
+        }
+      </div>
+    </section>
+  }
+
+  <section class="dashboard-section">
+    <h2 class="section-title">Upcoming Tasks</h2>
+
+    @if (upcomingTasks().length === 0) {
+      <p class="empty-state">No upcoming tasks.</p>
+    } @else {
+      <div class="card-grid">
+        @for (task of upcomingTasks(); track task.taskId) {
+          <app-task-card [task]="task" />
+        }
+      </div>
+    }
+  </section>
+
+  <section class="dashboard-section">
+    <h2 class="section-title">My Teams</h2>
+
+    @if (teams().length === 0) {
+      <p class="empty-state">You are not a member of any team yet.</p>
+    } @else {
+      <div class="card-grid card-grid--teams">
+        @for (team of teams(); track team.teamId) {
+          <article class="team-card">
+            <span class="team-monogram" aria-hidden="true">{{ initialOf(team) }}</span>
+            <span class="team-info">
+              <span class="team-name">{{ team.teamName }}</span>
+              <span class="team-members">{{ team.memberCount }} members</span>
+            </span>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+</div>

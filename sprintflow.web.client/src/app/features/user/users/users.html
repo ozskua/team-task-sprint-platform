@@ -1,0 +1,21 @@
+<div class="users-page">
+  <p class="users-intro">People you can reach out to for team coordination.</p>
+
+  <section class="panel">
+    @if (users().length === 0) {
+      <p class="empty-state">No users to show yet.</p>
+    } @else {
+      <ul class="user-list">
+        @for (user of users(); track user.userId) {
+          <li class="user-row">
+            <span class="user-monogram" aria-hidden="true">{{ initialsOf(user) }}</span>
+            <span class="user-details">
+              <span class="user-name">{{ user.fullName }}</span>
+              <a class="user-email" [href]="'mailto:' + user.email">{{ user.email }}</a>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>

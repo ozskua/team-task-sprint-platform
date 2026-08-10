@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="sprintflow.web.client/sprintflow.web.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="SprintFlow.Web.Server/SprintFlow.Web.Server.csproj" />
+</Solution>

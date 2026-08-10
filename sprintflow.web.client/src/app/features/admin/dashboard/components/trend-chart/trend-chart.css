@@ -1,0 +1,145 @@
+.chart-legend {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+}
+
+.chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.chart-swatch {
+    width: 12px;
+    height: 2px;
+    border-radius: 2px;
+}
+
+.chart-swatch--created {
+    background-color: var(--app-chart-1);
+}
+
+.chart-swatch--completed {
+    background-color: var(--app-chart-2);
+}
+
+.chart-plot {
+    position: relative;
+}
+
+/* viewBox scales uniformly, so stroke weights stay true at every width. */
+.chart-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+/* The grid supports the data; it must never compete with it. */
+.chart-grid {
+    stroke: var(--app-border);
+    stroke-width: 1;
+}
+
+.chart-axis-label {
+    font-size: 11px;
+    fill: var(--mat-sys-on-surface-variant);
+}
+
+.chart-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.chart-line--created {
+    stroke: var(--app-chart-1);
+}
+
+.chart-line--completed {
+    stroke: var(--app-chart-2);
+}
+
+.chart-hover-line {
+    stroke: var(--app-border);
+    stroke-width: 1;
+}
+
+.chart-dot--created {
+    fill: var(--app-chart-1);
+}
+
+.chart-dot--completed {
+    fill: var(--app-chart-2);
+}
+
+.chart-hover-zone {
+    fill: transparent;
+}
+
+.chart-tooltip {
+    position: absolute;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    box-shadow: var(--app-shadow-card);
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface);
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translateX(-50%);
+}
+
+.chart-tooltip-date {
+    font-weight: 600;
+}
+
+.chart-empty {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+    padding: 24px;
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-tint);
+    text-align: center;
+}
+
+.chart-empty-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.chart-empty-hint {
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.chart-skeleton {
+    height: 240px;
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-skeleton);
+}
+
+/* Available to assistive technology, invisible on screen. */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}

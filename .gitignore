@@ -1,0 +1,95 @@
+## ---------------------------------------------------------------------------
+## SprintFlow.Web — ASP.NET Core + Angular
+## ---------------------------------------------------------------------------
+
+## --- Visual Studio / IDE -----------------------------------------------------
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.csproj.user
+*.DotSettings.user
+
+## --- .NET build output -------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+*.dll
+*.pdb
+*.exe
+*.cache
+project.lock.json
+project.fragment.lock.json
+
+## --- .NET secrets & local config ---------------------------------------------
+## Holds the SQL connection string and JWT signing key — never commit.
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+*.pfx
+*.key
+*.pem
+
+## Local development login credentials for the seeded users — plaintext, never commit.
+## Created during the Authentication phase; keep it on the developer machine only.
+docs/DEV_CREDENTIALS.md
+
+## --- Angular / Node ----------------------------------------------------------
+node_modules/
+dist/
+tmp/
+out-tsc/
+bazel-out/
+.angular/
+.npm/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tsbuildinfo
+
+## --- Angular test & coverage output ------------------------------------------
+coverage/
+*.lcov
+.nyc_output/
+
+## --- Environment files -------------------------------------------------------
+.env
+.env.local
+.env.*.local
+
+## --- Publish / deployment ----------------------------------------------------
+publish/
+*.publishsettings
+PublishScripts/
+*.[Pp]ublish.xml
+wwwroot/dist/
+
+## --- EF Core -----------------------------------------------------------------
+## Migrations ARE committed — only scaffolded backups are ignored.
+*.mdf
+*.ldf
+*.ndf
+
+## --- OS artifacts ------------------------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+## --- Misc --------------------------------------------------------------------
+*.bak
+*.tmp
+*.swp
+*~

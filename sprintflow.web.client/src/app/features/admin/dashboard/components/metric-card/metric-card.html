@@ -1,0 +1,25 @@
+<!-- The same content is rendered inside either an anchor or a plain card. -->
+<ng-template #body>
+  <span class="metric-label">{{ label() }}</span>
+
+  @if (loading()) {
+    <span class="metric-value-skeleton" aria-hidden="true"></span>
+  } @else {
+    <span class="metric-value">{{ value() }}</span>
+  }
+</ng-template>
+
+@if (link(); as target) {
+  <a
+    class="metric-card"
+    [class]="tierClass()"
+    [routerLink]="target"
+    [queryParams]="linkParams()"
+    [attr.aria-label]="accessibleName()">
+    <ng-container [ngTemplateOutlet]="body" />
+  </a>
+} @else {
+  <div class="metric-card" [class]="tierClass()">
+    <ng-container [ngTemplateOutlet]="body" />
+  </div>
+}
