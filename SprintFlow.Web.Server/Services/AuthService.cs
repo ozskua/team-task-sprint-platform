@@ -28,42 +28,35 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
-    /// The one place that turns a submitted address into the form stored in the database. Seeding
-    /// and any future registration must use the same rule, or a stored address will stop matching
-    /// what a user types.
+    /// Seeding, registration and login must all use this, or stored addresses stop matching input.
+    /// ToLowerInvariant, never ToLower: ToLower follows the machine culture and turns 'I' into 'ı'
+    /// on a Turkish machine.
     /// </summary>
-    /// <remarks>
-    /// <c>ToLowerInvariant</c>, never <c>ToLower</c>: the latter follows the current culture, and on
-    /// a Turkish machine it would lower-case 'I' to 'ı' and break the match.
-    /// </remarks>
     public static string CanonicalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request, CancellationToken cancellationToken)
     {
-        var email = CanonicalizeEmail(request.Email);
+        var email = CanonicalizeEmail(request.Email); // Normalize email for consistent lookup.
 
         var user = await userRepository.GetByEmailAsync(email, cancellationToken);
 
         if (user is null)
         {
-            // Spend the same time a real verification would, then fail identically.
+            // Verify against a dummy hash to reduce timing differences; response time must not
+            // reveal whether the email exists.
             passwordHasher.VerifyAgainstDummy(request.Password);
             throw new AuthenticationFailedException();
         }
 
-        // The password is always verified before the account state is looked at, so a disabled
-        // account cannot be distinguished from a wrong password by how long the answer takes.
+        // Password is checked before IsActive so a disabled account is not distinguishable by timing.
         var passwordMatches = passwordHasher.Verify(request.Password, user.PasswordHash);
 
         if (!passwordMatches || !user.IsActive)
         {
-            throw new AuthenticationFailedException();
+            throw new AuthenticationFailedException(); // One error for all three causes.
         }
 
-        // The Admin decision: a comparison against configuration, not against the e-mail address and
-        // not against the role name. The role travels in the token for future server-side
-        // authorization; it plays no part here.
-        var isAdmin = user.UserId == authOptions.AdminUserId;
+        var isAdmin = user.UserId == authOptions.AdminUserId; // Admin access is tied to UserId, not email or role.
 
         return new LoginResponseDto(tokenService.CreateToken(user), user.FullName, isAdmin);
     }

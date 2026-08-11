@@ -23,12 +23,9 @@ builder.Services.AddAuthenticationServices(builder.Configuration);
 
 var app = builder.Build();
 
-// Refuses to start on invalid authentication configuration, so a misconfigured system can never
-// look like a working one.
-await app.ValidateAuthenticationConfigurationAsync();
+await app.ValidateAuthenticationConfigurationAsync(); // Fail fast rather than run misconfigured.
 
-// First in the pipeline: anything thrown further in becomes a ProblemDetails response.
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<ExceptionHandlingMiddleware>(); // First in the pipeline, so it catches everything after it.
 
 app.UseDefaultFiles();
 app.MapStaticAssets();
@@ -41,9 +38,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
+app.UseAuthentication(); // Builds HttpContext.User from the incoming token.
 
-app.UseAuthorization();
+app.UseAuthorization(); // Checks whether that user may access the endpoint. Order matters.
 
 app.MapControllers();
 

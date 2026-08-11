@@ -29,10 +29,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(100);
 
-        // Pinned away from the server's Turkish collation. Under Turkish rules 'i' and 'I' are
-        // different letters, so "AYSE.DEMIR@..." would not match "ayse.demir@..." on login and the
-        // unique index would let both exist as separate accounts. Latin1_General_100_CI_AS makes
-        // i/I a plain case difference while keeping 'İ' and 'ı' distinct characters.
+        // Pinned away from the server's Turkish collation, where 'i' and 'I' are different letters.
+        // Under Turkish rules "AYSE.DEMIR@..." would not match "ayse.demir@..." on login, and the
+        // unique index would allow both as separate accounts.
         builder.Property(u => u.Email)
             .IsRequired()
             .HasMaxLength(256)

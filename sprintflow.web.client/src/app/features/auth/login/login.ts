@@ -1,6 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+
+import { AuthService } from '../../../core/services/auth.service';
+
+// Fixed message: it must not reveal which field was wrong.
+const INVALID_CREDENTIALS_MESSAGE = 'Invalid e-mail or password.';
+
+const UNEXPECTED_ERROR_MESSAGE = 'Something went wrong. Please try again.';
 
 @Component({
   selector: 'app-login',
@@ -12,6 +21,8 @@ import { Router } from '@angular/router';
 export class Login {
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -22,17 +33,35 @@ export class Login {
   });
 
   protected onSubmit(): void {
+    // Client-side validation only saves a round trip; the API validates the same fields again.
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
     this.errorMessage.set(null);
+    this.loading.set(true);
 
-    // Temporary development entry point so the Admin area can be built before the
-    // backend exists. Credentials are not checked and nothing is stored. When the
-    // authentication backend lands, this line becomes the AuthService call — the
-    // template, styles and routing structure stay exactly as they are.
-    void this.router.navigate(['/admin']);
+    const { email, password } = this.form.getRawValue();
+
+    this.authService
+      .login({ email: email ?? '', password: password ?? '' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: session => {
+          this.loading.set(false);
+
+          // The backend decided which dashboard; this only applies the answer.
+          void this.router.navigate([session.isAdmin ? '/admin/dashboard' : '/dashboard']);
+        },
+        error: (error: unknown) => {
+          this.loading.set(false);
+
+          const rejected = error instanceof HttpErrorResponse && error.status === 401;
+
+          // The server's own message is not echoed back to the user.
+          this.errorMessage.set(rejected ? INVALID_CREDENTIALS_MESSAGE : UNEXPECTED_ERROR_MESSAGE);
+        }
+      });
   }
 }

@@ -16,8 +16,7 @@ public class UserRepository : IUserRepository
 
     public Task<User?> GetByEmailAsync(string canonicalEmail, CancellationToken cancellationToken)
         => context.Users
-            .AsNoTracking()
-            // The role name goes into the token, so it has to come back with the user.
-            .Include(u => u.Role)
+            .AsNoTracking() // Login only reads the user; no change tracking is needed.
+            .Include(u => u.Role) // The role name goes into the token, so it must be loaded here.
             .FirstOrDefaultAsync(u => u.Email == canonicalEmail, cancellationToken);
 }

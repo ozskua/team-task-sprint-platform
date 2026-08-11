@@ -9,16 +9,10 @@ namespace SprintFlow.Web.Server.Extensions;
 public static class StartupValidationExtensions
 {
     /// <summary>
-    /// Refuses to start the application when the authentication configuration is wrong.
+    /// Refuses to start when the authentication configuration is wrong. A bad Auth:AdminUserId
+    /// crashes nothing — it just makes the wrong person admin, or nobody — so it is turned into a
+    /// startup failure instead. Runs after the host is built because it queries the database.
     /// </summary>
-    /// <remarks>
-    /// A bad <c>Auth:AdminUserId</c> does not crash anything — it just means nobody is an admin, or
-    /// the wrong person is. That is the kind of fault that survives testing and shows up in a demo,
-    /// so it is turned into a startup failure instead. There is deliberately no fallback to "some
-    /// other admin": guessing would hide the misconfiguration.
-    ///
-    /// This runs after the host is built because it has to query the database.
-    /// </remarks>
     public static async Task ValidateAuthenticationConfigurationAsync(this WebApplication app)
     {
         using var scope = app.Services.CreateScope();

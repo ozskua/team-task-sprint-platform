@@ -4,9 +4,8 @@ using SprintFlow.Web.Server.Common.Exceptions;
 namespace SprintFlow.Web.Server.Middleware;
 
 /// <summary>
-/// Turns exceptions into RFC 7807 <see cref="ProblemDetails"/>. Nothing about the server's internals
-/// reaches the client: known failures get their intended status and message, and anything unexpected
-/// becomes a plain 500 while the real detail goes to the log.
+/// Turns exceptions into RFC 7807 ProblemDetails. Known failures keep their status and message;
+/// anything else becomes a plain 500 and the real detail goes to the log, never to the client.
 /// </summary>
 public class ExceptionHandlingMiddleware
 {
@@ -27,8 +26,7 @@ public class ExceptionHandlingMiddleware
         }
         catch (AuthenticationFailedException exception)
         {
-            // Expected outcome of a bad sign-in, not a fault — logged at a level that will not fill
-            // the log with noise, and without the submitted address.
+            // Expected outcome, not a fault. The submitted email is deliberately not logged.
             logger.LogInformation("Sign-in attempt rejected.");
 
             await WriteProblemAsync(

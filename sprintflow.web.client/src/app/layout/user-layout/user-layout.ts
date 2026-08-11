@@ -4,6 +4,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 
+import { AuthService } from '../../core/services/auth.service';
 import { USER_NAVIGATION } from '../navigation';
 
 /**
@@ -20,6 +21,7 @@ import { USER_NAVIGATION } from '../navigation';
 export class UserLayout {
   private readonly router = inject(Router);
   private readonly breakpoints = inject(BreakpointObserver);
+  private readonly authService = inject(AuthService);
 
   protected readonly navigation = USER_NAVIGATION;
 
@@ -50,6 +52,7 @@ export class UserLayout {
   }
 
   protected onLogout(): void {
+    this.authService.logout(); // Clear first, so a browser "back" is rejected by authGuard.
     void this.router.navigate(['/login']);
   }
 

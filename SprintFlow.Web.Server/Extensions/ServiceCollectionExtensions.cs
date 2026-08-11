@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
 
         var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 
+        // Validates incoming tokens. Issuing them is JwtTokenService's job.
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(bearer =>
@@ -49,10 +50,9 @@ public static class ServiceCollectionExtensions
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
 
-                    // Default is five minutes of tolerance, which silently extends every token past
-                    // its stated expiry. Exact expiry was a requirement.
-                    ClockSkew = TimeSpan.Zero,
+                    ClockSkew = TimeSpan.Zero, // Default 5-minute tolerance would extend every expired token.
 
+                    // Which claims [Authorize(Roles = ...)] and User.Identity.Name read.
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                     NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
                 };
