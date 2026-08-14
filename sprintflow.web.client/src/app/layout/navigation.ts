@@ -4,14 +4,14 @@ export interface NavItem {
 }
 
 /**
- * Admin sidebar entries. Four only — Settings and Profile are Version 2,
- * and Projects/Reports have no counterpart in the data model.
+ * Admin sidebar entries. Three only — Settings and Profile are Version 2,
+ * Projects/Reports have no counterpart in the data model, and tasks are reached
+ * inside a board rather than from a global destination.
  */
 export const ADMIN_NAVIGATION: readonly NavItem[] = [
   { label: 'Dashboard', path: '/admin/dashboard' },
   { label: 'Users', path: '/admin/users' },
-  { label: 'Teams', path: '/admin/teams' },
-  { label: 'Tasks', path: '/admin/tasks' }
+  { label: 'Teams', path: '/admin/teams' }
 ];
 
 /**
@@ -22,6 +22,5 @@ export const ADMIN_NAVIGATION: readonly NavItem[] = [
 export const USER_NAVIGATION: readonly NavItem[] = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Users', path: '/users' },
-  { label: 'Teams', path: '/teams' },
-  { label: 'Tasks', path: '/tasks' }
+  { label: 'Teams', path: '/teams' }
 ];
