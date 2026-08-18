@@ -19,4 +19,14 @@ public class UserRepository : IUserRepository
             .AsNoTracking() // Login only reads the user; no change tracking is needed.
             .Include(u => u.Role) // The role name goes into the token, so it must be loaded here.
             .FirstOrDefaultAsync(u => u.Email == canonicalEmail, cancellationToken);
+
+    public async Task<IReadOnlyList<User>> GetAllAsync(CancellationToken cancellationToken)
+        => await context.Users
+            .AsNoTracking() // A list is read and discarded; change tracking would only cost memory.
+            .Include(u => u.Role) // The role name is shown in the list, so it must be loaded here.
+            // Sorted in SQL under the database's Turkish collation, which orders Ç, Ğ, İ, Ö, Ş, Ü
+            // where a Turkish reader expects them. Only Email is pinned to a different collation.
+            .OrderBy(u => u.FirstName)
+            .ThenBy(u => u.LastName)
+            .ToListAsync(cancellationToken);
 }

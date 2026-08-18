@@ -62,4 +62,15 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
+
+    /// <summary>
+    /// Feature services that are not part of signing in. <c>IUserRepository</c> is not registered
+    /// again here — it is already registered above and serves both callers.
+    /// </summary>
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    {
+        services.AddScoped<IUserService, UserService>();
+
+        return services;
+    }
 }

@@ -10,4 +10,10 @@ public interface IUserRepository
     /// one of the ordinary outcomes of a sign-in attempt.
     /// </summary>
     Task<User?> GetByEmailAsync(string canonicalEmail, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every user with the role loaded, ordered by name. Active and inactive alike — deciding what
+    /// to show is not the repository's call.
+    /// </summary>
+    Task<IReadOnlyList<User>> GetAllAsync(CancellationToken cancellationToken);
 }

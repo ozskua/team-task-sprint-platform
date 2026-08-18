@@ -1,0 +1,87 @@
+<div class="users-page">
+  <p class="users-intro">Everyone with an account in the company.</p>
+
+  <div class="users-search">
+    <label class="visually-hidden" for="user-search">Search users by name or e-mail</label>
+    <input
+      id="user-search"
+      class="users-search-input"
+      type="search"
+      autocomplete="off"
+      placeholder="Search by name or e-mail"
+      [value]="searchTerm()"
+      (input)="onSearch($any($event.target).value)" />
+  </div>
+
+  <section class="panel">
+    <table class="users-table">
+      <caption class="visually-hidden">Users with their role, status and creation date</caption>
+
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col" class="users-col-email">Email</th>
+          <th scope="col" class="users-col-role">Role</th>
+          <th scope="col" class="users-col-status">Status</th>
+          <th scope="col" class="users-col-created">Created</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @if (loading()) {
+          @for (row of skeletonRows; track row) {
+            <tr>
+              <td colspan="5"><span class="users-skeleton" aria-hidden="true"></span></td>
+            </tr>
+          }
+        } @else if (failed()) {
+          <tr>
+            <td colspan="5" class="users-message">
+              <span class="users-message-title">Users could not be loaded</span>
+              <span class="users-message-hint">Please refresh the page to try again.</span>
+            </td>
+          </tr>
+        } @else if (noMatches()) {
+          <tr>
+            <td colspan="5" class="users-message">
+              <span class="users-message-title">No users match your search</span>
+              <span class="users-message-hint">Try a different name or e-mail address.</span>
+            </td>
+          </tr>
+        } @else if (visibleUsers().length === 0) {
+          <tr>
+            <td colspan="5" class="users-message">
+              <span class="users-message-title">No users yet</span>
+              <span class="users-message-hint">Accounts appear here once they have been created.</span>
+            </td>
+          </tr>
+        } @else {
+          @for (user of visibleUsers(); track user.userId) {
+            <tr>
+              <th scope="row" class="users-name-cell">
+                <span class="user-monogram" aria-hidden="true">{{ initialsOf(user) }}</span>
+                <span class="user-name">{{ user.fullName }}</span>
+              </th>
+              <td class="users-col-email">
+                <a class="user-email" [href]="'mailto:' + user.email">{{ user.email }}</a>
+              </td>
+              <td class="users-col-role">
+                <span
+                  class="user-chip"
+                  [class.user-chip--admin]="user.roleName === 'Admin'"
+                  [class.user-chip--member]="user.roleName !== 'Admin'">{{ user.roleName }}</span>
+              </td>
+              <td class="users-col-status">
+                <span
+                  class="user-chip"
+                  [class.user-chip--active]="user.isActive"
+                  [class.user-chip--inactive]="!user.isActive">{{ user.isActive ? 'Active' : 'Inactive' }}</span>
+              </td>
+              <td class="users-col-created">{{ user.createdDate | date:'dd MMM yyyy' }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </section>
+</div>
