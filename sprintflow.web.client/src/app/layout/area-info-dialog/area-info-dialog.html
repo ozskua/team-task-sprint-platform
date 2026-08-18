@@ -1,0 +1,19 @@
+<h2 class="area-info-title" mat-dialog-title>Area Information</h2>
+
+<mat-dialog-content>
+  <dl class="area-info-list">
+    <dt>Area</dt>
+    <dd>{{ area.name }}</dd>
+
+    <dt>Created by</dt>
+    <dd>{{ area.createdByFullName }}</dd>
+
+    <dt>Created</dt>
+    <!-- No timezone argument: the value carries no offset, so any conversion would shift the day. -->
+    <dd>{{ area.createdDate | date:'dd MMM yyyy' }}</dd>
+  </dl>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" mat-dialog-close>Close</button>
+</mat-dialog-actions>

@@ -1,0 +1,29 @@
+.area-info-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+/* Label above value, matching how the rest of the app stacks a caption over its figure. */
+.area-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 0;
+    min-width: 260px;
+}
+
+.area-info-list dt {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.area-info-list dd {
+    margin: 4px 0 0;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--mat-sys-on-surface);
+    overflow-wrap: anywhere;
+}

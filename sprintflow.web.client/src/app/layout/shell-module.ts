@@ -1,9 +1,13 @@
+import { DatePipe } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
+import { AreaInfoDialog } from './area-info-dialog/area-info-dialog';
+import { AreaNav } from './area-nav/area-nav';
 import { Sidebar } from './sidebar/sidebar';
 import { UserMenu } from './user-menu/user-menu';
 
@@ -19,10 +23,16 @@ import { UserMenu } from './user-menu/user-menu';
 @NgModule({
   declarations: [
     Sidebar,
-    UserMenu
+    UserMenu,
+    AreaNav,
+    // Opened programmatically by AreaNav, so it only needs declaring, not exporting.
+    AreaInfoDialog
   ],
   imports: [
+    DatePipe,
     MatButtonModule,
+    // The only Material module this shell gained for Areas; the other three were already here.
+    MatDialogModule,
     MatIconModule,
     MatMenuModule,
     RouterLink,
@@ -30,7 +40,8 @@ import { UserMenu } from './user-menu/user-menu';
   ],
   exports: [
     Sidebar,
-    UserMenu
+    UserMenu,
+    AreaNav
   ]
 })
 export class ShellModule { }

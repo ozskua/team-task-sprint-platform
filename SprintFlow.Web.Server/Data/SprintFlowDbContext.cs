@@ -18,6 +18,12 @@ public class SprintFlowDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
 
+    public DbSet<Area> Areas => Set<Area>();
+
+    public DbSet<Board> Boards => Set<Board>();
+
+    public DbSet<Team> Teams => Set<Team>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

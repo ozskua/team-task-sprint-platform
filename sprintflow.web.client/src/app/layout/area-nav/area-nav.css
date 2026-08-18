@@ -1,0 +1,220 @@
+/* Sits below the navigation list inside the same sidebar padding. */
+.area-nav {
+    margin-top: 24px;
+    padding: 16px 12px 0;
+    border-top: 1px solid var(--app-border);
+}
+
+.area-nav-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-left: 16px;
+}
+
+.area-nav-heading {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.area-nav-add {
+    flex: 0 0 auto;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.area-nav-message {
+    margin: 8px 0 0;
+    padding: 8px 16px;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.area-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.area-item + .area-item {
+    margin-top: 4px;
+}
+
+/* A row, not a link: there is no Area page to navigate to yet. */
+.area-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 4px 4px 16px;
+    border-radius: var(--app-radius-control);
+}
+
+.area-row:hover {
+    background-color: rgba(147, 51, 234, 0.06);
+}
+
+.area-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--mat-sys-on-surface-variant);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The add-board "+" and the "..." menu. Both are affordances, not decoration. */
+.area-row-action {
+    flex: 0 0 auto;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/* Indented to sit with the boards it creates. */
+.board-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 4px 0 0 20px;
+    padding: 10px 12px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+}
+
+/* Indented under its Area, with a rule standing in for the tree line. */
+.board-list {
+    margin: 2px 0 0;
+    padding: 0 0 0 16px;
+    margin-left: 20px;
+    border-left: 1px solid var(--app-border);
+    list-style: none;
+}
+
+.board-row {
+    font-size: 0.875rem;
+}
+
+.board-link {
+    display: block;
+    padding: 6px 8px;
+    border-radius: var(--app-radius-control);
+    color: var(--mat-sys-on-surface-variant);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.board-link:hover {
+    background-color: var(--app-surface-hover);
+    color: var(--mat-sys-on-surface);
+}
+
+.board-link:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: -2px;
+}
+
+/* Weight rather than colour alone, so the current board is still obvious without relying on hue. */
+.board-link--active {
+    background-color: var(--app-surface-muted);
+    color: var(--mat-sys-on-surface);
+    font-weight: 600;
+}
+
+.area-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 12px 16px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+}
+
+.area-form-input {
+    width: 100%;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface);
+}
+
+.area-form-input:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 1px;
+}
+
+.area-form-input:disabled {
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.area-form-error {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--app-attention-ink);
+}
+
+.area-form-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.area-form-submit,
+.area-form-cancel {
+    flex: 1;
+    height: 32px;
+    border: 1px solid transparent;
+    border-radius: var(--app-radius-control);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.area-form-submit {
+    background-color: var(--app-primary-action);
+    color: #FFFFFF;
+}
+
+.area-form-cancel {
+    border-color: var(--app-border-card);
+    background-color: transparent;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.area-form-submit:disabled,
+.area-form-cancel:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.area-form-submit:focus-visible,
+.area-form-cancel:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 2px;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}

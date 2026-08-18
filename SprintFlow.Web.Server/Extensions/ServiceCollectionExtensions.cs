@@ -71,6 +71,12 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IUserService, UserService>();
 
+        services.AddScoped<IAreaRepository, AreaRepository>();
+        services.AddScoped<IAreaService, AreaService>();
+
+        services.AddScoped<IBoardRepository, BoardRepository>();
+        services.AddScoped<IBoardService, BoardService>();
+
         return services;
     }
 }

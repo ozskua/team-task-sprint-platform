@@ -1,0 +1,139 @@
+<section class="area-nav" aria-labelledby="area-nav-heading">
+  <div class="area-nav-header">
+    <h2 class="area-nav-heading" id="area-nav-heading">Areas</h2>
+
+    <button
+      class="area-nav-add"
+      mat-icon-button
+      type="button"
+      aria-label="Create area"
+      (click)="openForm()">
+      <mat-icon>add</mat-icon>
+    </button>
+  </div>
+
+  @if (formOpen()) {
+    <form class="area-form" (submit)="$event.preventDefault(); submit()">
+      <label class="visually-hidden" for="area-name">Area name</label>
+      <input
+        id="area-name"
+        class="area-form-input"
+        type="text"
+        maxlength="200"
+        autocomplete="off"
+        placeholder="Area name"
+        [value]="draftName()"
+        [disabled]="creating()"
+        (input)="onDraftInput($any($event.target).value)" />
+
+      @if (createFailed()) {
+        <p class="area-form-error">Could not create the area. Please try again.</p>
+      }
+
+      <div class="area-form-actions">
+        <button
+          class="area-form-submit"
+          type="submit"
+          [disabled]="creating() || draftName().trim().length === 0">
+          {{ creating() ? 'Creating…' : 'Create' }}
+        </button>
+        <button class="area-form-cancel" type="button" [disabled]="creating()" (click)="closeForm()">
+          Cancel
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (loading()) {
+    <p class="area-nav-message">Loading areas…</p>
+  } @else if (loadFailed()) {
+    <p class="area-nav-message">Areas could not be loaded.</p>
+  } @else if (areas().length === 0) {
+    <p class="area-nav-message">No areas yet.</p>
+  } @else {
+    <ul class="area-list">
+      @for (area of areas(); track area.areaId) {
+        <li class="area-item">
+          <div class="area-row">
+            <span class="area-name">{{ area.name }}</span>
+
+            <button
+              class="area-row-action"
+              mat-icon-button
+              type="button"
+              [attr.aria-label]="'Add board to ' + area.name"
+              (click)="openBoardForm(area.areaId)">
+              <mat-icon>add</mat-icon>
+            </button>
+
+            <button
+              class="area-row-action"
+              mat-icon-button
+              type="button"
+              [attr.aria-label]="'Actions for ' + area.name"
+              [matMenuTriggerFor]="areaMenu">
+              <mat-icon>more_horiz</mat-icon>
+            </button>
+
+            <mat-menu #areaMenu="matMenu">
+              <button mat-menu-item type="button" (click)="openInformation(area)">
+                Area Information
+              </button>
+            </mat-menu>
+          </div>
+
+          @if (boardFormAreaId() === area.areaId) {
+            <form class="board-form" (submit)="$event.preventDefault(); submitBoard()">
+              <label class="visually-hidden" [attr.for]="'board-name-' + area.areaId">Board name</label>
+              <input
+                [id]="'board-name-' + area.areaId"
+                class="area-form-input"
+                type="text"
+                maxlength="200"
+                autocomplete="off"
+                placeholder="Board name"
+                [value]="boardDraftName()"
+                [disabled]="creatingBoard()"
+                (input)="onBoardDraftInput($any($event.target).value)" />
+
+              @if (boardCreateFailed()) {
+                <p class="area-form-error">Could not create the board. Please try again.</p>
+              }
+
+              <div class="area-form-actions">
+                <button
+                  class="area-form-submit"
+                  type="submit"
+                  [disabled]="creatingBoard() || boardDraftName().trim().length === 0">
+                  {{ creatingBoard() ? 'Creating…' : 'Create' }}
+                </button>
+                <button
+                  class="area-form-cancel"
+                  type="button"
+                  [disabled]="creatingBoard()"
+                  (click)="closeBoardForm()">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          }
+
+          <!-- The prefix comes from the shell, so the same component links to /boards/1 for a
+               member and /admin/boards/1 for an admin. -->
+          @if (area.boards.length > 0) {
+            <ul class="board-list">
+              @for (board of area.boards; track board.boardId) {
+                <li class="board-row">
+                  <a
+                    class="board-link"
+                    [routerLink]="[boardRoutePrefix(), board.boardId]"
+                    routerLinkActive="board-link--active">{{ board.name }}</a>
+                </li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

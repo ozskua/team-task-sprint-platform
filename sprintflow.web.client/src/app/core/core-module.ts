@@ -2,6 +2,7 @@ import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 
 import { AuthInterceptor } from './interceptors/auth-interceptor';
+import { AreaService } from './services/area.service';
 import { AuthService } from './services/auth.service';
 import { TokenStorage } from './services/token-storage';
 import { UserService } from './services/user.service';
@@ -15,6 +16,7 @@ import { UserService } from './services/user.service';
     TokenStorage,
     AuthService,
     UserService,
+    AreaService,
     // Class-based rather than functional: AppModule imports HttpClientModule, which has no
     // withInterceptors equivalent. `multi` appends to the chain instead of replacing it.
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
