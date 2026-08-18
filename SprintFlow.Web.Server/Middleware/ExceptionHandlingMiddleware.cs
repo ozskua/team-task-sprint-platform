@@ -26,8 +26,10 @@ public class ExceptionHandlingMiddleware
         }
         catch (AuthenticationFailedException exception)
         {
-            // Expected outcome, not a fault. The submitted email is deliberately not logged.
-            logger.LogInformation("Sign-in attempt rejected.");
+            // Warning, not Error: an expected outcome worth noticing in the log. Deliberately
+            // records nothing about the attempt — no e-mail, and not which field was wrong —
+            // because that would assist account enumeration.
+            logger.LogWarning("Sign-in attempt rejected.");
 
             await WriteProblemAsync(
                 context,
