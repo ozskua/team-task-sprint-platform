@@ -1,0 +1,91 @@
+.board-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.board-identity {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.board-name {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+    overflow-wrap: anywhere;
+}
+
+.board-ownership {
+    margin: 2px 0 0;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.board-creator {
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.board-separator {
+    margin: 0 6px;
+}
+
+/*
+  Avatars only, set apart by a rule and their own label so nobody reads the creator line above as
+  the first team member.
+*/
+.board-team {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 1 auto;
+    min-width: 0;
+    padding-left: 20px;
+    border-left: 1px solid var(--app-border);
+}
+
+.board-team-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.board-team-empty {
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.board-team-avatars {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.board-team-avatar {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--app-surface-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+    cursor: default;
+}
+
+.board-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}

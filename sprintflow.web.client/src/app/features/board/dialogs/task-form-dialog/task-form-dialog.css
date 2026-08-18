@@ -1,0 +1,81 @@
+.task-form-title {
+    font-size: 1.125rem;
+}
+
+.task-form-field + .task-form-field {
+    margin-top: 16px;
+}
+
+.task-form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.task-form-optional {
+    color: var(--mat-sys-on-surface-variant);
+    font-weight: 400;
+}
+
+.task-form-input {
+    width: 100%;
+    min-width: 320px;
+    padding: 10px 14px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface);
+}
+
+.task-form-input:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 1px;
+}
+
+.task-form-textarea {
+    resize: vertical;
+    min-height: 88px;
+}
+
+.task-form-hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.assignee-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.assignee-select {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 40px;
+    padding: 0 10px;
+}
+
+/* The same circle the card shows, so the choice made here is recognisable there. */
+.assignee-preview {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--app-primary);
+    border-radius: 50%;
+    background-color: var(--app-surface-card);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--mat-sys-on-surface);
+}
+
+.assignee-preview--none {
+    border-style: dashed;
+    border-color: var(--app-border-card);
+    color: var(--mat-sys-on-surface-variant);
+}

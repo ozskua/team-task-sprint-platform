@@ -1,0 +1,74 @@
+<section class="column">
+  <header class="column-header">
+    @if (!isSystem()) {
+      <!-- The only draggable part of a custom column, so dragging a card never moves the column. -->
+      <span class="column-grip" cdkDragHandle aria-hidden="true">
+        <mat-icon>drag_indicator</mat-icon>
+      </span>
+    }
+
+    <h2 class="column-name">{{ column().name }}</h2>
+    <span class="column-count" [attr.aria-label]="column().tasks.length + ' tasks'">
+      {{ column().tasks.length }}
+    </span>
+
+    <button
+      class="column-action"
+      mat-icon-button
+      type="button"
+      [attr.aria-label]="'Add a task to ' + column().name"
+      (click)="addTask.emit(column().workflowColumnId)">
+      <mat-icon>add</mat-icon>
+    </button>
+
+    <!-- System columns keep their name and their place on every board, so they get no menu. -->
+    @if (!isSystem()) {
+      <button
+        class="column-action"
+        mat-icon-button
+        type="button"
+        [attr.aria-label]="'Actions for ' + column().name"
+        [matMenuTriggerFor]="columnMenu">
+        <mat-icon>more_horiz</mat-icon>
+      </button>
+
+      <mat-menu #columnMenu="matMenu">
+        <button mat-menu-item type="button" (click)="renameColumn.emit(column())">Rename</button>
+
+        <!-- Reordering without dragging. -->
+        <button mat-menu-item type="button" [disabled]="!canMoveLeft()" (click)="shiftColumn.emit(-1)">
+          Move left
+        </button>
+        <button mat-menu-item type="button" [disabled]="!canMoveRight()" (click)="shiftColumn.emit(1)">
+          Move right
+        </button>
+
+        <!-- Offered whatever the column holds. Whether it can actually go is explained when it is
+             tried, rather than by a warning that sits there all the time. -->
+        <button mat-menu-item type="button" (click)="deleteColumn.emit(column())">Delete</button>
+      </mat-menu>
+    }
+  </header>
+
+  <div
+    class="column-tasks"
+    cdkDropList
+    [id]="dropListId()"
+    [cdkDropListData]="column()"
+    [cdkDropListConnectedTo]="connectedTo()"
+    (cdkDropListDropped)="taskDropped.emit($event)">
+    @for (task of column().tasks; track task.taskId) {
+      <app-task-card
+        cdkDrag
+        [cdkDragData]="task"
+        [cdkDragDisabled]="isMoving(task.taskId)"
+        [task]="task"
+        [moving]="isMoving(task.taskId)"
+        (open)="openTask.emit($event)"
+        (edit)="editTask.emit($event)"
+        (remove)="deleteTask.emit($event)" />
+    } @empty {
+      <p class="column-empty">No tasks here.</p>
+    }
+  </div>
+</section>

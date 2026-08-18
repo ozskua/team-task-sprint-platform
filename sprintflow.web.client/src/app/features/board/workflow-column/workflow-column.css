@@ -1,0 +1,101 @@
+/*
+  The width is the parent's decision — a lane on the board row, or half the shared outcome lane.
+  `min-width: 0` is what lets this actually shrink: without it a flex item refuses to go below its
+  content's intrinsic width and the lanes start overlapping.
+*/
+:host {
+    display: block;
+    min-width: 0;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-tint);
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.column-grip {
+    display: grid;
+    place-items: center;
+    color: var(--mat-sys-on-surface-variant);
+    cursor: grab;
+}
+
+.column-grip:active {
+    cursor: grabbing;
+}
+
+.column-name {
+    flex: 1;
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.column-count {
+    min-width: 22px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background-color: var(--app-status-todo);
+    font-size: 0.75rem;
+    text-align: center;
+    color: var(--app-ink);
+}
+
+.column-action {
+    flex: 0 0 auto;
+}
+
+/*
+  Cards stack and the lane scrolls. `min-height: 0` lets this shrink inside a flex column so the
+  overflow actually engages instead of the list growing past the lane and over its neighbour.
+  A floor of 60px keeps an empty lane a visible drop target.
+*/
+.column-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-height: 60px;
+    margin-top: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.column-empty {
+    margin: 0;
+    padding: 12px 0;
+    font-size: 0.8125rem;
+    text-align: center;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/* CDK drag feedback. */
+.cdk-drag-preview {
+    border-radius: var(--app-radius-control);
+    box-shadow: 0 8px 24px rgba(32, 18, 45, 0.18);
+}
+
+.cdk-drag-placeholder {
+    opacity: 0.35;
+}
+
+.cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+    transition: transform 180ms cubic-bezier(0, 0, 0.2, 1);
+}

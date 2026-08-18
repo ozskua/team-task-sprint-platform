@@ -30,6 +30,13 @@ export class AdminLayout {
   protected readonly sidebarOpen = signal(true);
   protected readonly pageTitle = signal('');
 
+  /**
+   * Whether the current page wants the whole content area rather than the centred reading column.
+   * Declared by the route itself, the same way the header title is, so the shell never has to
+   * recognise particular URLs.
+   */
+  protected readonly fullBleed = signal(false);
+
   constructor() {
     // Open beside the content on desktop, closed over it on narrower screens.
     effect(() => this.sidebarOpen.set(!this.compact()));
@@ -38,10 +45,13 @@ export class AdminLayout {
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         startWith(null),
-        map(() => this.resolveTitle()),
+        map(() => this.resolveRouteData()),
         takeUntilDestroyed()
       )
-      .subscribe(title => this.pageTitle.set(title));
+      .subscribe(data => {
+        this.pageTitle.set((data['title'] as string | undefined) ?? '');
+        this.fullBleed.set(data['fullBleed'] === true);
+      });
   }
 
   protected toggleSidebar(): void {
@@ -53,14 +63,14 @@ export class AdminLayout {
     void this.router.navigate(['/login']);
   }
 
-  /** The header title is the deepest activated route's `title` data. */
-  private resolveTitle(): string {
+  /** The deepest activated route's data — where both the header title and the layout mode live. */
+  private resolveRouteData(): Record<string, unknown> {
     let route = this.router.routerState.snapshot.root;
 
     while (route.firstChild) {
       route = route.firstChild;
     }
 
-    return route.data['title'] ?? '';
+    return route.data;
   }
 }

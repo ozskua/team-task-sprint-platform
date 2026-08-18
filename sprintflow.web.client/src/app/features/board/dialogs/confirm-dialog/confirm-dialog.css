@@ -1,0 +1,28 @@
+.confirm-title {
+    font-size: 1.125rem;
+}
+
+.confirm-message {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--mat-sys-on-surface);
+}
+
+/*
+  The irreversible part, said on its own line. Tinted surface plus the darker red ink rather than
+  red text on white — the raw red measures 3.76:1, this reads at 6.54:1.
+*/
+.confirm-consequence {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border: 1px solid var(--app-attention-border);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-attention-surface);
+    font-size: 0.875rem;
+    color: var(--app-attention-ink);
+}
+
+.confirm-destructive {
+    color: var(--app-attention-ink);
+    font-weight: 600;
+}

@@ -1,0 +1,131 @@
+@if (loading()) {
+  <div class="board-page">
+    <section class="panel board-panel">
+      <span class="board-skeleton board-skeleton--title" aria-hidden="true"></span>
+      <span class="board-skeleton board-skeleton--line" aria-hidden="true"></span>
+    </section>
+
+    <div class="board-columns" aria-hidden="true">
+      @for (placeholder of [0, 1, 2]; track placeholder) {
+        <span class="board-skeleton board-skeleton--column"></span>
+      }
+    </div>
+
+    <p class="visually-hidden">Loading the board.</p>
+  </div>
+} @else if (failed()) {
+  <div class="board-page">
+    <section class="panel board-message">
+      <span class="board-message-title">This board could not be loaded</span>
+      <span class="board-message-hint">Please refresh the page to try again.</span>
+    </section>
+  </div>
+} @else if (board(); as board) {
+  <div class="board-page">
+    <section class="panel board-panel">
+      <app-board-header
+        [board]="board"
+        (newTask)="createTaskInToDo()"
+        (newColumn)="createColumn()"
+        (renameBoard)="renameBoard()"
+        (deleteBoard)="confirmDeleteBoard()" />
+    </section>
+
+    @if (actionError(); as message) {
+      <div class="board-error" role="alert">
+        <span>{{ message }}</span>
+        <button mat-button type="button" (click)="dismissError()">Dismiss</button>
+      </div>
+    }
+
+    <!--
+      Three groups, not one list. To Do is fixed on the left and the outcome lane is fixed on the
+      right, so only the middle band is a drop list — a custom column physically cannot be dragged
+      outside the area it is allowed to occupy.
+    -->
+    <div class="board-columns">
+      @if (toDoColumn(); as toDo) {
+        <app-workflow-column
+          class="board-lane"
+          [column]="toDo"
+          [connectedTo]="taskListIds()"
+          [movingTaskIds]="movingTaskIds()"
+          (addTask)="createTaskInColumn($event)"
+          (openTask)="openTask($event)"
+          (editTask)="editTaskDirectly($event)"
+          (deleteTask)="deleteTaskDirectly($event)"
+          (taskDropped)="onTaskDropped($event)" />
+      }
+
+      <!-- One lane's worth of width per custom column, so every lane on the row ends up the same
+           size however many there are. -->
+      <div
+        class="board-custom-band"
+        cdkDropList
+        cdkDropListOrientation="horizontal"
+        [cdkDropListData]="customColumns()"
+        [style.flex-grow]="customBandFlexGrow()"
+        [style.min-width.px]="customBandMinWidth()"
+        (cdkDropListDropped)="onColumnDropped($event)">
+        @for (column of customColumns(); track column.workflowColumnId) {
+          <app-workflow-column
+            cdkDrag
+            class="board-lane"
+            [column]="column"
+            [connectedTo]="taskListIds()"
+            [movingTaskIds]="movingTaskIds()"
+            [canMoveLeft]="canMoveLeft(column)"
+            [canMoveRight]="canMoveRight(column)"
+            (addTask)="createTaskInColumn($event)"
+            (openTask)="openTask($event)"
+            (editTask)="editTaskDirectly($event)"
+            (deleteTask)="deleteTaskDirectly($event)"
+            (taskDropped)="onTaskDropped($event)"
+            (renameColumn)="renameColumn($event)"
+            (deleteColumn)="confirmDeleteColumn($event)"
+            (shiftColumn)="shiftColumn(column, $event)" />
+        }
+      </div>
+
+      <!--
+        Completed and Cancelled share one lane, stacked. They remain two entirely separate
+        columns — their own ids, their own tasks and their own drop lists — so a card still moves
+        into and out of each independently. Only the width they are drawn in is shared.
+      -->
+      <section class="board-outcome" aria-labelledby="outcome-heading">
+        <!-- The frame is an inner element so its padding sits inside the lane's share of the row.
+             On the lane itself it would be added to the width flex hands out, making this lane
+             wider than every other one. -->
+        <div class="board-outcome-frame">
+        <h2 class="board-outcome-heading" id="outcome-heading">Outcome</h2>
+
+        @if (completedColumn(); as completed) {
+          <app-workflow-column
+            class="board-outcome-column"
+            [column]="completed"
+            [connectedTo]="taskListIds()"
+            [movingTaskIds]="movingTaskIds()"
+            (addTask)="createTaskInColumn($event)"
+            (openTask)="openTask($event)"
+            (editTask)="editTaskDirectly($event)"
+            (deleteTask)="deleteTaskDirectly($event)"
+            (taskDropped)="onTaskDropped($event)" />
+        }
+
+        @if (cancelledColumn(); as cancelled) {
+          <app-workflow-column
+            class="board-outcome-column"
+            [column]="cancelled"
+            [connectedTo]="taskListIds()"
+            [movingTaskIds]="movingTaskIds()"
+            (addTask)="createTaskInColumn($event)"
+            (openTask)="openTask($event)"
+            (editTask)="editTaskDirectly($event)"
+            (deleteTask)="deleteTaskDirectly($event)"
+            (taskDropped)="onTaskDropped($event)" />
+        }
+        </div>
+      </section>
+    </div>
+  </div>
+}

@@ -1,0 +1,45 @@
+<article class="task-card" [class.task-card--moving]="moving()">
+  <button class="task-card-open" type="button" (click)="open.emit(task())">
+    <span class="task-card-title">{{ task().title }}</span>
+  </button>
+
+  <!-- Who wrote the task down. Kept in words, and kept away from the avatar below, because the
+       avatar answers a different question: who has to do it. -->
+  <p class="task-card-creator">Created by {{ task().createdByFullName }}</p>
+
+  <div class="task-card-footer">
+    <!-- Dragging is how a card moves between columns; the menu is for everything else. -->
+    <button
+      class="task-card-menu"
+      mat-icon-button
+      type="button"
+      [disabled]="moving()"
+      [attr.aria-label]="'Actions for ' + task().title"
+      [matMenuTriggerFor]="cardMenu">
+      <mat-icon>more_horiz</mat-icon>
+    </button>
+
+    <mat-menu #cardMenu="matMenu">
+      <button mat-menu-item type="button" (click)="open.emit(task())">Details</button>
+      <button mat-menu-item type="button" (click)="edit.emit(task())">Edit</button>
+      <button mat-menu-item type="button" (click)="remove.emit(task())">Delete</button>
+    </mat-menu>
+
+    <!--
+      The assignee, at the lower right. Initials rather than a photo: the server stores no profile
+      image, and inventing one would mean a schema change this refinement is not allowed to make.
+    -->
+    @if (task().assignee; as assignee) {
+      <span
+        class="assignee-avatar"
+        role="img"
+        [attr.title]="assigneeLabel()"
+        [attr.aria-label]="assigneeLabel()">
+        <span aria-hidden="true">{{ initials(assignee.fullName) }}</span>
+      </span>
+    } @else {
+      <!-- Said in words, not left as an empty space that could read as "still loading". -->
+      <span class="assignee-none" [attr.title]="assigneeLabel()">Unassigned</span>
+    }
+  </div>
+</article>

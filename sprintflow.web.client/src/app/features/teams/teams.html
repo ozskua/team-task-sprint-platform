@@ -1,0 +1,60 @@
+<div class="teams-page">
+  <p class="teams-intro">
+    Every board has one team. People join a team by being assigned a task on its board — there is
+    nothing to add or remove here.
+  </p>
+
+  @if (loading()) {
+    <div class="teams-grid" aria-hidden="true">
+      @for (row of skeletonRows; track row) {
+        <span class="teams-skeleton"></span>
+      }
+    </div>
+    <p class="visually-hidden">Loading teams.</p>
+  } @else if (failed()) {
+    <section class="panel teams-message">
+      <span class="teams-message-title">Teams could not be loaded</span>
+      <span class="teams-message-hint">Please refresh the page to try again.</span>
+    </section>
+  } @else if (teams().length === 0) {
+    <section class="panel teams-message">
+      <span class="teams-message-title">No teams yet</span>
+      <span class="teams-message-hint">A team appears here as soon as a board is created.</span>
+    </section>
+  } @else {
+    <div class="teams-grid">
+      @for (team of teams(); track team.teamId) {
+        <article class="panel team-card">
+          <header class="team-card-header">
+            <h2 class="team-board">{{ team.boardName }}</h2>
+            <p class="team-area">{{ team.areaName }}</p>
+          </header>
+
+          <!-- Ownership, kept apart from the member list: creating a board does not put anyone on
+               its team, so the two routinely name different people. -->
+          <p class="team-owner">Board created by {{ team.ownerFullName }}</p>
+
+          <section class="team-members" [attr.aria-label]="'Members of the ' + team.boardName + ' team'">
+            @if (team.members.length === 0) {
+              <p class="team-empty">No team members yet</p>
+            } @else {
+              <ul class="member-avatars">
+                @for (member of team.members; track member.userId) {
+                  <!-- Avatar only. The name is the tooltip and the accessible label, so nothing
+                       depends on being able to see the initials. -->
+                  <li
+                    class="member-avatar"
+                    role="img"
+                    [attr.title]="member.fullName"
+                    [attr.aria-label]="member.fullName">
+                    <span aria-hidden="true">{{ initials(member.fullName) }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        </article>
+      }
+    </div>
+  }
+</div>

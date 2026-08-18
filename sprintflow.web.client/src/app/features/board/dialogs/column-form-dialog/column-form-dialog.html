@@ -1,0 +1,23 @@
+<h2 class="column-form-title" mat-dialog-title>{{ data.heading }}</h2>
+
+<form (submit)="$event.preventDefault(); submit()">
+  <mat-dialog-content>
+    <label class="column-form-label" for="column-name">Column name</label>
+    <input
+      id="column-name"
+      class="column-form-input"
+      type="text"
+      autocomplete="off"
+      cdkFocusInitial
+      [attr.maxlength]="maxLength"
+      [value]="name()"
+      (input)="onNameInput($any($event.target).value)" />
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancel</button>
+    <button mat-button type="submit" [disabled]="name().trim().length === 0">
+      {{ data.confirmLabel }}
+    </button>
+  </mat-dialog-actions>
+</form>

@@ -5,6 +5,7 @@
     [opened]="sidebarOpen()"
     (openedChange)="sidebarOpen.set($event)">
     <app-sidebar [items]="navigation" />
+    <app-area-nav boardRoutePrefix="/boards" />
   </mat-sidenav>
 
   <mat-sidenav-content class="layout-content">
@@ -23,7 +24,7 @@
       <app-user-menu (logout)="onLogout()" />
     </header>
 
-    <main class="layout-main">
+    <main class="layout-main" [class.layout-main--full]="fullBleed()">
       <router-outlet />
     </main>
   </mat-sidenav-content>

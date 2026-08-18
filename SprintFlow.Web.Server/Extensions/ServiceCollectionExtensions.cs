@@ -76,6 +76,18 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IBoardRepository, BoardRepository>();
         services.AddScoped<IBoardService, BoardService>();
+        services.AddScoped<IBoardDetailService, BoardDetailService>();
+
+        services.AddScoped<IWorkflowColumnRepository, WorkflowColumnRepository>();
+        services.AddScoped<IWorkflowColumnService, WorkflowColumnService>();
+
+        services.AddScoped<ITaskRepository, TaskRepository>();
+        services.AddScoped<ITaskService, TaskService>();
+
+        services.AddScoped<ITaskParticipantRepository, TaskParticipantRepository>();
+
+        services.AddScoped<ITeamRepository, TeamRepository>();
+        services.AddScoped<ITeamService, TeamService>();
 
         return services;
     }

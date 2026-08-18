@@ -1,0 +1,191 @@
+/*
+  The host sits between the shell's <main> and the page below, so it has to pass the height through.
+  Without this it is an ordinary inline box: <main> stays the right size, the page inside grows to
+  fit its tallest column, and the lanes run off the bottom of the screen instead of scrolling.
+*/
+:host {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+}
+
+/*
+  Fills the workspace the shell hands over: the header keeps its natural height and the workflow
+  area takes everything left, so the lanes reach the bottom of the page rather than stopping at the
+  height of their tallest card.
+*/
+.board-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.panel {
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-card);
+    box-shadow: var(--app-shadow-card);
+}
+
+.board-panel {
+    flex: 0 0 auto;
+    padding: 14px 16px;
+}
+
+.board-message {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 32px 20px;
+    text-align: center;
+}
+
+.board-message-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.board-message-hint {
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/* One local message for any failed action. The server's own words are never rendered. */
+.board-error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px 10px 16px;
+    border: 1px solid var(--app-attention-border);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-attention-surface);
+    font-size: 0.875rem;
+    color: var(--app-attention-ink);
+}
+
+/*
+  Lanes share the row equally and shrink together. Each one refuses to go under 260px, so once the
+  viewport cannot hold them all this scrolls sideways instead of letting lanes overlap or collapse
+  into something unreadable. No absolute positioning anywhere in the normal layout.
+*/
+.board-columns {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    /* Takes the height left under the header; each lane then scrolls its own cards. */
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-bottom: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/*
+  One lane. `min-width: 0` is what stops a long word inside a card widening the whole column, and
+  `border-box` keeps the outcome lane's own padding inside its share instead of adding to it — with
+  the default sizing it measured 21px wider than every other lane.
+*/
+.board-lane,
+.board-outcome {
+    flex: 1 1 0;
+    min-width: 260px;
+    box-sizing: border-box;
+}
+
+/* The band custom columns live in — between To Do and the outcome lane, and nowhere else. */
+.board-custom-band {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    flex-shrink: 1;
+    flex-basis: 0;
+    border-radius: var(--app-radius-card);
+}
+
+/* Nothing to hold when a board has no custom columns; the lane simply is not there. */
+.board-custom-band:empty {
+    display: none;
+}
+
+.board-custom-band.cdk-drop-list-dragging {
+    background-color: var(--app-surface-hover);
+}
+
+/*
+  The shared outcome lane. Completed sits above Cancelled inside it; both keep their own drop list,
+  so this changes where they are drawn and nothing else. The lane itself carries no padding or
+  border — see the frame below.
+*/
+.board-outcome {
+    display: flex;
+}
+
+.board-outcome-frame {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-muted);
+}
+
+.board-outcome-heading {
+    margin: 0 0 2px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/* Each half takes an equal share of the lane, so neither can push the other off the bottom. */
+.board-outcome-column {
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+}
+
+.board-skeleton {
+    display: block;
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-skeleton);
+}
+
+.board-skeleton--title {
+    width: 220px;
+    height: 26px;
+}
+
+.board-skeleton--line {
+    width: 320px;
+    height: 14px;
+    margin-top: 10px;
+}
+
+.board-skeleton--column {
+    flex: 1 1 0;
+    min-width: 260px;
+    height: 220px;
+    border-radius: var(--app-radius-card);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}

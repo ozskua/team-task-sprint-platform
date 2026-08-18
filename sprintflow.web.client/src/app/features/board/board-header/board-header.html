@@ -1,0 +1,54 @@
+<header class="board-header">
+  <div class="board-identity">
+    <h1 class="board-name">{{ board().name }}</h1>
+
+    <!-- Ownership. Kept apart from the team, because the two answer different questions and
+         routinely name different people. -->
+    <p class="board-ownership">
+      Created by <span class="board-creator">{{ board().createdByFullName }}</span>
+      <span class="board-separator" aria-hidden="true">·</span>
+      <!-- No timezone argument: the value carries no offset, so any conversion would shift the day. -->
+      Created {{ board().createdDate | date:'dd MMM yyyy' }}
+    </p>
+  </div>
+
+  <!-- Team members, as avatars only. The name is the tooltip and the accessible label. -->
+  <div class="board-team" [attr.aria-label]="'Team members of ' + board().name">
+    <span class="board-team-label">Team</span>
+
+    @if (board().teamMembers.length === 0) {
+      <span class="board-team-empty">No team members yet</span>
+    } @else {
+      <ul class="board-team-avatars">
+        @for (member of board().teamMembers; track member.userId) {
+          <li
+            class="board-team-avatar"
+            role="img"
+            [attr.title]="member.fullName"
+            [attr.aria-label]="member.fullName">
+            <span aria-hidden="true">{{ initials(member.fullName) }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="board-actions">
+    <button mat-button type="button" (click)="newColumn.emit()">Add column</button>
+    <!-- Sends no column: the server starts a task in To Do unless one is named. -->
+    <button mat-flat-button type="button" (click)="newTask.emit()">New task</button>
+
+    <button
+      mat-icon-button
+      type="button"
+      [attr.aria-label]="'Actions for ' + board().name"
+      [matMenuTriggerFor]="boardMenu">
+      <mat-icon>more_horiz</mat-icon>
+    </button>
+
+    <mat-menu #boardMenu="matMenu">
+      <button mat-menu-item type="button" (click)="renameBoard.emit()">Rename board</button>
+      <button mat-menu-item type="button" (click)="deleteBoard.emit()">Delete board</button>
+    </mat-menu>
+  </div>
+</header>

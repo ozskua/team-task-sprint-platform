@@ -16,4 +16,16 @@ public interface IUserRepository
     /// to show is not the repository's call.
     /// </summary>
     Task<IReadOnlyList<User>> GetAllAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Whether a user with this id exists. Used before writing a foreign key to them, so the caller
+    /// gets a clear rejection instead of a constraint violation surfacing as a 500.
+    /// </summary>
+    Task<bool> ExistsAsync(int userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Whether a user with this id exists <em>and</em> can still sign in. A task assigned to a
+    /// disabled account would name someone who can never open it.
+    /// </summary>
+    Task<bool> IsActiveAsync(int userId, CancellationToken cancellationToken);
 }

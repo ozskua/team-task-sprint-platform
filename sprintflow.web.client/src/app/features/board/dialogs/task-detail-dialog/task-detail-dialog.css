@@ -1,0 +1,74 @@
+.task-detail-title {
+    font-size: 1.125rem;
+}
+
+.task-detail-facts {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 20px;
+    margin: 0;
+    min-width: 320px;
+}
+
+.task-detail-facts dt {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant);
+    align-self: center;
+}
+
+.task-detail-facts dd {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface);
+    overflow-wrap: anywhere;
+}
+
+.assignee-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* The same circle the card shows, so the person is recognisable in both places. */
+.assignee-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border: 2px solid var(--app-primary);
+    border-radius: 50%;
+    background-color: var(--app-surface-card);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--mat-sys-on-surface);
+}
+
+.task-detail-description {
+    margin: 20px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--app-border);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--mat-sys-on-surface);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.task-detail-muted {
+    margin: 20px 0 0;
+    font-size: 0.875rem;
+    font-style: italic;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.task-detail-facts .task-detail-muted {
+    margin: 0;
+}
+
+.task-detail-destructive {
+    margin-right: auto;
+    color: var(--app-attention-ink);
+}

@@ -1,0 +1,104 @@
+:host {
+    display: block;
+    min-width: 0;
+}
+
+.task-card {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    box-shadow: var(--app-shadow-card);
+}
+
+/* A move in flight. Reduced opacity plus a disabled menu, never colour alone. */
+.task-card--moving {
+    opacity: 0.55;
+}
+
+.task-card-open {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.task-card-open:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/*
+  Wraps rather than widens. `overflow-wrap: anywhere` handles a single unbroken word — a URL, say —
+  which would otherwise set the card's minimum width and push the lane over its neighbour.
+*/
+.task-card-title {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+    overflow-wrap: anywhere;
+}
+
+.task-card-creator {
+    margin: 6px 0 0;
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface-variant);
+    overflow-wrap: anywhere;
+}
+
+/* Menu on the left, assignee pushed to the right — the two never compete for the same space. */
+.task-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    margin-top: 10px;
+}
+
+/*
+  The assignee, one avatar at the lower right — who has to do the task. The creator is named in
+  words above instead, so the two are never mistaken for each other: different place, different
+  form, and the tooltip on this one says "Assigned to" in full.
+*/
+.assignee-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border: 2px solid var(--app-primary);
+    border-radius: 50%;
+    background-color: var(--app-surface-card);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--mat-sys-on-surface);
+    cursor: default;
+}
+
+/* No avatar to show. Said plainly rather than left blank. */
+.assignee-none {
+    flex: 0 0 auto;
+    font-size: 0.75rem;
+    font-style: italic;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}

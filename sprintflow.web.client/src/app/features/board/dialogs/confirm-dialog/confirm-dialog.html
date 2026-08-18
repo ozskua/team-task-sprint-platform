@@ -1,0 +1,22 @@
+<h2 class="confirm-title" mat-dialog-title>{{ data.title }}</h2>
+
+<mat-dialog-content>
+  <p class="confirm-message">{{ data.message }}</p>
+
+  @if (data.consequence) {
+    <p class="confirm-consequence">{{ data.consequence }}</p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (data.acknowledgeOnly) {
+    <button mat-button type="button" cdkFocusInitial [mat-dialog-close]="false">
+      {{ data.confirmLabel }}
+    </button>
+  } @else {
+    <button mat-button type="button" [mat-dialog-close]="false">Cancel</button>
+    <button class="confirm-destructive" mat-button type="button" [mat-dialog-close]="true">
+      {{ data.confirmLabel }}
+    </button>
+  }
+</mat-dialog-actions>

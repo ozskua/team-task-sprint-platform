@@ -22,6 +22,67 @@ namespace SprintFlow.Web.Server.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Area", b =>
+                {
+                    b.Property<int>("AreaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AreaId"));
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("AreaId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.ToTable("Areas", (string)null);
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Board", b =>
+                {
+                    b.Property<int>("BoardId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BoardId"));
+
+                    b.Property<int>("AreaId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("BoardId");
+
+                    b.HasIndex("AreaId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.ToTable("Boards", (string)null);
+                });
+
             modelBuilder.Entity("SprintFlow.Web.Server.Models.Role", b =>
                 {
                     b.Property<int>("RoleId")
@@ -54,6 +115,108 @@ namespace SprintFlow.Web.Server.Migrations
                             RoleId = 2,
                             RoleName = "Member"
                         });
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskItem", b =>
+                {
+                    b.Property<int>("TaskId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskId"));
+
+                    b.Property<int>("BoardId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaskColumnId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("TaskId");
+
+                    b.HasIndex("BoardId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("TaskColumnId", "BoardId");
+
+                    b.HasIndex("TaskColumnId", "Position");
+
+                    b.ToTable("Tasks", (string)null);
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskParticipant", b =>
+                {
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("AddedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.HasKey("TaskId", "UserId");
+
+                    b.HasIndex("TaskId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TaskParticipants", (string)null);
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Team", b =>
+                {
+                    b.Property<int>("TeamId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeamId"));
+
+                    b.Property<int>("BoardId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.HasKey("TeamId");
+
+                    b.HasIndex("BoardId")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("BoardId", "CreatedByUserId")
+                        .IsUnique();
+
+                    b.ToTable("Teams", (string)null);
                 });
 
             modelBuilder.Entity("SprintFlow.Web.Server.Models.User", b =>
@@ -170,6 +333,141 @@ namespace SprintFlow.Web.Server.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.WorkflowColumn", b =>
+                {
+                    b.Property<int>("WorkflowColumnId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WorkflowColumnId"));
+
+                    b.Property<int>("BoardId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SystemKind")
+                        .HasColumnType("int");
+
+                    b.HasKey("WorkflowColumnId");
+
+                    b.HasIndex("BoardId", "Position");
+
+                    b.HasIndex("BoardId", "SystemKind")
+                        .IsUnique()
+                        .HasFilter("[SystemKind] IS NOT NULL");
+
+                    b.ToTable("WorkflowColumns", (string)null);
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Area", b =>
+                {
+                    b.HasOne("SprintFlow.Web.Server.Models.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Board", b =>
+                {
+                    b.HasOne("SprintFlow.Web.Server.Models.Area", "Area")
+                        .WithMany("Boards")
+                        .HasForeignKey("AreaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SprintFlow.Web.Server.Models.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Area");
+
+                    b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskItem", b =>
+                {
+                    b.HasOne("SprintFlow.Web.Server.Models.Board", "Board")
+                        .WithMany("Tasks")
+                        .HasForeignKey("BoardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SprintFlow.Web.Server.Models.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SprintFlow.Web.Server.Models.WorkflowColumn", "Column")
+                        .WithMany("Tasks")
+                        .HasForeignKey("TaskColumnId", "BoardId")
+                        .HasPrincipalKey("WorkflowColumnId", "BoardId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Board");
+
+                    b.Navigation("Column");
+
+                    b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskParticipant", b =>
+                {
+                    b.HasOne("SprintFlow.Web.Server.Models.TaskItem", "Task")
+                        .WithMany("Participants")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SprintFlow.Web.Server.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Team", b =>
+                {
+                    b.HasOne("SprintFlow.Web.Server.Models.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SprintFlow.Web.Server.Models.Board", "Board")
+                        .WithOne("Team")
+                        .HasForeignKey("SprintFlow.Web.Server.Models.Team", "BoardId", "CreatedByUserId")
+                        .HasPrincipalKey("SprintFlow.Web.Server.Models.Board", "BoardId", "CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Board");
+
+                    b.Navigation("CreatedByUser");
+                });
+
             modelBuilder.Entity("SprintFlow.Web.Server.Models.User", b =>
                 {
                     b.HasOne("SprintFlow.Web.Server.Models.Role", "Role")
@@ -181,9 +479,45 @@ namespace SprintFlow.Web.Server.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.WorkflowColumn", b =>
+                {
+                    b.HasOne("SprintFlow.Web.Server.Models.Board", "Board")
+                        .WithMany("WorkflowColumns")
+                        .HasForeignKey("BoardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Board");
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Area", b =>
+                {
+                    b.Navigation("Boards");
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Board", b =>
+                {
+                    b.Navigation("Tasks");
+
+                    b.Navigation("Team")
+                        .IsRequired();
+
+                    b.Navigation("WorkflowColumns");
+                });
+
             modelBuilder.Entity("SprintFlow.Web.Server.Models.Role", b =>
                 {
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskItem", b =>
+                {
+                    b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.WorkflowColumn", b =>
+                {
+                    b.Navigation("Tasks");
                 });
 #pragma warning restore 612, 618
         }

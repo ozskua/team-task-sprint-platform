@@ -1,15 +1,15 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { Users } from './users';
+import { Teams } from './teams';
 
-// UserLayout reads `title` from the deepest activated route to fill the header.
+// Both shells read `title` from the deepest activated route to fill the header.
 const routes: Routes = [
-  { path: '', component: Users, data: { title: 'Users' } }
+  { path: '', component: Teams, data: { title: 'Teams' } }
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
-export class UsersRoutingModule { }
+export class TeamsRoutingModule { }

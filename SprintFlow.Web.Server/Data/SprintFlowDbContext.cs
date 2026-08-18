@@ -24,6 +24,12 @@ public class SprintFlowDbContext : DbContext
 
     public DbSet<Team> Teams => Set<Team>();
 
+    public DbSet<WorkflowColumn> WorkflowColumns => Set<WorkflowColumn>();
+
+    public DbSet<TaskItem> TaskItems => Set<TaskItem>();
+
+    public DbSet<TaskParticipant> TaskParticipants => Set<TaskParticipant>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -4,6 +4,8 @@ import { NgModule } from '@angular/core';
 import { AuthInterceptor } from './interceptors/auth-interceptor';
 import { AreaService } from './services/area.service';
 import { AuthService } from './services/auth.service';
+import { BoardDetailService } from './services/board-detail.service';
+import { TeamService } from './services/team.service';
 import { TokenStorage } from './services/token-storage';
 import { UserService } from './services/user.service';
 
@@ -17,6 +19,10 @@ import { UserService } from './services/user.service';
     AuthService,
     UserService,
     AreaService,
+    // One board is on screen at a time, so its state is a singleton like the Area list rather than
+    // something each visit to the page recreates.
+    BoardDetailService,
+    TeamService,
     // Class-based rather than functional: AppModule imports HttpClientModule, which has no
     // withInterceptors equivalent. `multi` appends to the chain instead of replacing it.
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }

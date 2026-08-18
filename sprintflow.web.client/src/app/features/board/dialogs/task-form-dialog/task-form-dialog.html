@@ -1,0 +1,78 @@
+<h2 class="task-form-title" mat-dialog-title>{{ data.heading }}</h2>
+
+<form (submit)="$event.preventDefault(); submit()">
+  <mat-dialog-content>
+    <div class="task-form-field">
+      <label class="task-form-label" for="task-title">Title</label>
+      <input
+        id="task-title"
+        class="task-form-input"
+        type="text"
+        autocomplete="off"
+        required
+        cdkFocusInitial
+        [attr.maxlength]="titleMaxLength"
+        [value]="title()"
+        (input)="onTitleInput($any($event.target).value)" />
+    </div>
+
+    <div class="task-form-field">
+      <label class="task-form-label" for="task-description">
+        Description <span class="task-form-optional">(optional)</span>
+      </label>
+      <textarea
+        id="task-description"
+        class="task-form-input task-form-textarea"
+        rows="4"
+        [attr.maxlength]="descriptionMaxLength"
+        [value]="description()"
+        (input)="onDescriptionInput($any($event.target).value)"></textarea>
+    </div>
+
+    <!-- One person, or nobody. A task never has two. -->
+    <div class="task-form-field">
+      <label class="task-form-label" for="task-assignee">Assignee</label>
+
+      @if (usersLoading()) {
+        <p class="task-form-hint">Loading people…</p>
+      } @else if (usersFailed()) {
+        <p class="task-form-hint">
+          The list of people could not be loaded, so this task will be created unassigned.
+        </p>
+      } @else {
+        <div class="assignee-row">
+          <!-- Mirrors the card: the chosen person is shown as the same initials avatar there. -->
+          @if (selectedUser(); as user) {
+            <span class="assignee-preview" role="img" [attr.aria-label]="'Assigned to ' + user.fullName">
+              <span aria-hidden="true">{{ initials(user.fullName) }}</span>
+            </span>
+          } @else {
+            <span class="assignee-preview assignee-preview--none" aria-hidden="true">—</span>
+          }
+
+          <!-- Marked on the options rather than bound on the select: the options are rendered in
+               the same pass, so a value set on the select has nothing to match yet and the field
+               would open showing "Unassigned" for a task that already has someone. -->
+          <select
+            id="task-assignee"
+            class="task-form-input assignee-select"
+            (change)="onAssigneeChange($any($event.target).value)">
+            <option value="" [selected]="assigneeUserId() === null">Unassigned</option>
+            @for (user of assignableUsers(); track user.userId) {
+              <option [value]="user.userId" [selected]="user.userId === assigneeUserId()">
+                {{ user.fullName }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancel</button>
+    <button mat-button type="submit" [disabled]="title().trim().length === 0">
+      {{ data.confirmLabel }}
+    </button>
+  </mat-dialog-actions>
+</form>

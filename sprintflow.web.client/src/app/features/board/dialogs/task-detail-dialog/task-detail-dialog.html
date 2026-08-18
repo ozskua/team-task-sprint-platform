@@ -1,0 +1,53 @@
+@if (task(); as task) {
+  <h2 class="task-detail-title" mat-dialog-title>{{ task.title }}</h2>
+
+  <mat-dialog-content>
+    <!-- Three separate facts, deliberately not run together: who wrote it, when, and who owes it.
+         The first two describe the past, the third describes who is answerable now. -->
+    <dl class="task-detail-facts">
+      <dt>Created by</dt>
+      <dd>{{ task.createdByFullName }}</dd>
+
+      <dt>Created</dt>
+      <!-- No timezone argument: the value carries no offset, so any conversion would shift the day. -->
+      <dd>{{ task.createdDate | date:'dd MMM yyyy' }}</dd>
+
+      <dt>Assigned to</dt>
+      <dd>
+        @if (task.assignee; as assignee) {
+          <span class="assignee-line">
+            <span class="assignee-avatar" role="img" [attr.aria-label]="'Assigned to ' + assignee.fullName">
+              <span aria-hidden="true">{{ initials(assignee.fullName) }}</span>
+            </span>
+            <span>{{ assignee.fullName }}</span>
+          </span>
+        } @else {
+          <span class="task-detail-muted">Unassigned</span>
+        }
+      </dd>
+    </dl>
+
+    @if (task.description) {
+      <p class="task-detail-description">{{ task.description }}</p>
+    } @else {
+      <p class="task-detail-muted">No description.</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button class="task-detail-destructive" mat-button type="button" (click)="requestDelete()">
+      Delete
+    </button>
+    <button mat-button type="button" (click)="requestEdit()">Edit</button>
+    <button mat-button type="button" mat-dialog-close>Close</button>
+  </mat-dialog-actions>
+} @else {
+  <!-- The task went away while the dialog was open — deleted in another tab, most likely. -->
+  <mat-dialog-content>
+    <p class="task-detail-muted">This task is no longer on the board.</p>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Close</button>
+  </mat-dialog-actions>
+}
