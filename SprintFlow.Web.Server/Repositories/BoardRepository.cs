@@ -38,6 +38,9 @@ public class BoardRepository : IBoardRepository
     public Task<bool> ExistsAsync(int boardId, CancellationToken cancellationToken)
         => context.Boards.AnyAsync(b => b.BoardId == boardId, cancellationToken);
 
+    public Task<int> CountAsync(CancellationToken cancellationToken)
+        => context.Boards.CountAsync(cancellationToken);
+
     public Task<Board?> GetForUpdateAsync(int boardId, CancellationToken cancellationToken)
         => context.Boards.FirstOrDefaultAsync(b => b.BoardId == boardId, cancellationToken);
 

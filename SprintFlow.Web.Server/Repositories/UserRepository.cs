@@ -30,6 +30,9 @@ public class UserRepository : IUserRepository
             .ThenBy(u => u.LastName)
             .ToListAsync(cancellationToken);
 
+    public Task<int> CountAsync(CancellationToken cancellationToken)
+        => context.Users.CountAsync(cancellationToken);
+
     public Task<bool> ExistsAsync(int userId, CancellationToken cancellationToken)
         => context.Users.AnyAsync(u => u.UserId == userId, cancellationToken);
 

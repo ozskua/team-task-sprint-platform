@@ -89,6 +89,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<ITeamService, TeamService>();
 
+        // The system-wide view, over the task, user and board repositories. Separate from the one
+        // above because the two answer different questions: "everything" versus "mine".
+        services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+
         return services;
     }
 }

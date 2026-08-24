@@ -1,81 +1,51 @@
 <div class="dashboard">
 
   <section class="dashboard-section">
-    <h2 class="section-title">Summary</h2>
+    <h2 class="section-title">System Summary</h2>
 
-    <!-- Row 1 — what needs attention, then current state. -->
+    <!--
+      The four workflow buckets. Together they account for every task in the system, so nothing is
+      hidden by the table below. No card carries a link: the tasks are on this same page.
+    -->
     <div class="metric-grid metric-grid--four">
-      <app-metric-card
-        label="Overdue Tasks"
-        tier="primary"
-        [value]="metrics().overdueTasks"
-        [loading]="loading()"
-        link="/admin/tasks"
-        [linkParams]="{ overdue: 'true' }" />
-
-      <app-metric-card
-        label="Todo"
-        [value]="metrics().todoTasks"
-        [loading]="loading()"
-        link="/admin/tasks"
-        [linkParams]="{ status: 'Todo' }" />
-
-      <app-metric-card
-        label="In Progress"
-        [value]="metrics().inProgressTasks"
-        [loading]="loading()"
-        link="/admin/tasks"
-        [linkParams]="{ status: 'InProgress' }" />
-
-      <app-metric-card
-        label="Completed"
-        [value]="metrics().completedTasks"
-        [loading]="loading()"
-        link="/admin/tasks"
-        [linkParams]="{ status: 'Completed' }" />
+      <app-metric-card label="To Do" [value]="counts().toDo" [loading]="loading()" />
+      <app-metric-card label="Open" [value]="counts().open" [loading]="loading()" />
+      <app-metric-card label="Completed" [value]="counts().completed" [loading]="loading()" />
+      <app-metric-card label="Cancelled" [value]="counts().cancelled" [loading]="loading()" />
     </div>
 
-    <!-- Row 2 — how large the system is. Context, not action. -->
-    <div class="metric-grid metric-grid--three">
-      <app-metric-card
-        label="Total Users"
-        tier="tertiary"
-        [value]="metrics().totalUsers"
-        [loading]="loading()" />
-
-      <app-metric-card
-        label="Total Teams"
-        tier="tertiary"
-        [value]="metrics().totalTeams"
-        [loading]="loading()" />
-
-      <app-metric-card
-        label="Total Tasks"
-        tier="tertiary"
-        [value]="metrics().totalTasks"
-        [loading]="loading()"
-        link="/admin/tasks" />
+    <!-- How large the system is. Context, not action — so the smallest treatment. -->
+    <div class="metric-grid metric-grid--two">
+      <app-metric-card label="Users" tier="tertiary" [value]="counts().totalUsers" [loading]="loading()" />
+      <app-metric-card label="Boards" tier="tertiary" [value]="counts().totalBoards" [loading]="loading()" />
     </div>
-  </section>
 
-  <section class="dashboard-section">
-    <h2 class="section-title">Analytics</h2>
-
-    <div class="panel">
-      <h3 class="panel-title">Task flow — created vs completed, last 30 days</h3>
-      <app-trend-chart [points]="trend()" [loading]="loading()" />
-    </div>
-  </section>
-
-  <section class="dashboard-section">
-    <h2 class="section-title">Teams</h2>
-
-    <div class="panel panel--flush">
-      <app-team-table [rows]="teams()" [loading]="loading()" />
-      <div class="panel-footer">
-        <a class="panel-link" routerLink="/admin/teams">View all teams</a>
+    <div class="panel summary-progress">
+      <div class="summary-progress-head">
+        <!-- Cancelled is not in the denominator: abandoned work is neither done nor outstanding. -->
+        <span class="summary-progress-label">Overall progress</span>
+        <span class="summary-progress-percent">{{ progressPercent() }}%</span>
+      </div>
+      <div
+        class="summary-track"
+        role="progressbar"
+        [attr.aria-valuenow]="progressPercent()"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-label="Overall task progress across the system"><div
+          class="summary-fill" [style.width.%]="progressPercent()"></div>
       </div>
     </div>
+  </section>
+
+  <!--
+    Every task in every board — the page's main content. Completed and Cancelled are included: this
+    answers "what exists", not "what is left to do".
+  -->
+  <section class="dashboard-section">
+    <h2 class="section-title">All Tasks</h2>
+
+    <app-all-tasks-table [tasks]="tasks()" [loading]="loading()" [failed]="failed()" />
   </section>
 
 </div>

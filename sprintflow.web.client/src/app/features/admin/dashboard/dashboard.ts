@@ -1,7 +1,27 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { DashboardMetrics, EMPTY_METRICS, TeamRow, TrendPoint } from './dashboard-models';
+import {
+  AdminDashboardCounts,
+  AdminDashboardTask
+} from '../../../core/models/admin-dashboard-models';
+import { AdminDashboardService } from '../../../core/services/admin-dashboard.service';
 
+const EMPTY_COUNTS: AdminDashboardCounts = {
+  toDo: 0,
+  open: 0,
+  completed: 0,
+  cancelled: 0,
+  totalUsers: 0,
+  totalBoards: 0
+};
+
+/**
+ * The admin overview: the state of the system, and every task in it.
+ *
+ * System-wide, and the same for every admin — unlike the member dashboard, which answers "what is
+ * mine". The task table owns its own search and filter; this component only fetches and reports.
+ */
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
@@ -10,13 +30,40 @@ import { DashboardMetrics, EMPTY_METRICS, TeamRow, TrendPoint } from './dashboar
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class Dashboard {
+  private readonly adminDashboardService = inject(AdminDashboardService);
+
+  protected readonly loading = signal(true);
+  protected readonly failed = signal(false);
+
+  protected readonly counts = signal<AdminDashboardCounts>(EMPTY_COUNTS);
+  protected readonly tasks = signal<readonly AdminDashboardTask[]>([]);
+
+  constructor() {
+    this.adminDashboardService.get()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: dashboard => {
+          this.counts.set(dashboard.counts);
+          this.tasks.set(dashboard.tasks);
+          this.loading.set(false);
+        },
+        error: () => {
+          // The message is a local constant; the server's text is never shown.
+          this.failed.set(true);
+          this.loading.set(false);
+        }
+      });
+  }
+
   /**
-   * There is no API yet, so the page renders its zero/empty state — which is also
-   * the truthful state of a database with no users, teams or tasks. When the
-   * dashboard endpoint exists it sets these same signals; nothing else changes.
+   * Completed over everything that was ever going to be done. Cancelled is left out of the
+   * denominator deliberately: abandoning work is not progress, and counting it would let the figure
+   * be raised by cancelling tasks.
    */
-  protected readonly loading = signal(false);
-  protected readonly metrics = signal<DashboardMetrics>(EMPTY_METRICS);
-  protected readonly trend = signal<readonly TrendPoint[]>([]);
-  protected readonly teams = signal<readonly TeamRow[]>([]);
+  protected readonly progressPercent = computed(() => {
+    const { toDo, open, completed } = this.counts();
+    const total = toDo + open + completed;
+
+    return total === 0 ? 0 : Math.round((completed / total) * 100);
+  });
 }

@@ -16,6 +16,9 @@ public interface IBoardRepository
     /// <summary>Whether a Board with this id exists.</summary>
     Task<bool> ExistsAsync(int boardId, CancellationToken cancellationToken);
 
+    /// <summary>How many Boards exist, across every Area. An aggregate — no Board is loaded.</summary>
+    Task<int> CountAsync(CancellationToken cancellationToken);
+
     /// <summary>One Board, tracked, or <c>null</c>. For renaming and deleting.</summary>
     Task<Board?> GetForUpdateAsync(int boardId, CancellationToken cancellationToken);
 

@@ -18,6 +18,12 @@ public interface IUserRepository
     Task<IReadOnlyList<User>> GetAllAsync(CancellationToken cancellationToken);
 
     /// <summary>
+    /// How many accounts exist, active and inactive alike. An aggregate: no user is loaded, so a
+    /// caller that only needs the number never pulls the directory to count it.
+    /// </summary>
+    Task<int> CountAsync(CancellationToken cancellationToken);
+
+    /// <summary>
     /// Whether a user with this id exists. Used before writing a foreign key to them, so the caller
     /// gets a clear rejection instead of a constraint violation surfacing as a 500.
     /// </summary>

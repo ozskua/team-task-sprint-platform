@@ -1,0 +1,125 @@
+<div class="tasks-controls">
+  <div class="tasks-search">
+    <label class="visually-hidden" for="task-search">
+      Search tasks by title, area, board, assignee or creator
+    </label>
+    <input
+      id="task-search"
+      class="tasks-search-input"
+      type="search"
+      autocomplete="off"
+      placeholder="Search by task, area, board or person"
+      [value]="searchTerm()"
+      (input)="onSearch($any($event.target).value)" />
+  </div>
+
+  <div class="tasks-filter">
+    <label class="visually-hidden" for="task-status-filter">Filter by status</label>
+    <!-- Marked on the options rather than bound on the select: the options render in the same pass,
+         so a value set on the select has nothing to match yet. -->
+    <select
+      id="task-status-filter"
+      class="tasks-filter-select"
+      (change)="onStatusChange($any($event.target).value)">
+      @for (status of statusOptions; track status) {
+        <option [value]="status" [selected]="status === statusFilter()">
+          {{ statusLabel(status) }}
+        </option>
+      }
+    </select>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="tasks-scroll">
+    <table class="tasks-table">
+      <caption class="visually-hidden">
+        Every task in the system with its board, status, assignee, creator and creation date
+      </caption>
+
+      <thead>
+        <tr>
+          <th scope="col">Task</th>
+          <th scope="col" class="tasks-col-where">Area · Board</th>
+          <th scope="col" class="tasks-col-status">Status</th>
+          <th scope="col" class="tasks-col-assignee">Assignee</th>
+          <th scope="col" class="tasks-col-creator">Created by</th>
+          <th scope="col" class="tasks-col-created">Created</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @if (loading()) {
+          @for (row of skeletonRows; track row) {
+            <tr>
+              <td colspan="6"><span class="tasks-skeleton" aria-hidden="true"></span></td>
+            </tr>
+          }
+        } @else if (failed()) {
+          <tr>
+            <td colspan="6" class="tasks-message">
+              <span class="tasks-message-title">Tasks could not be loaded</span>
+              <span class="tasks-message-hint">Please refresh the page to try again.</span>
+            </td>
+          </tr>
+        } @else if (noMatches()) {
+          <tr>
+            <td colspan="6" class="tasks-message">
+              <span class="tasks-message-title">No tasks match your search</span>
+              <span class="tasks-message-hint">Try a different search or status.</span>
+            </td>
+          </tr>
+        } @else if (tasks().length === 0) {
+          <tr>
+            <td colspan="6" class="tasks-message">
+              <span class="tasks-message-title">No tasks yet</span>
+              <span class="tasks-message-hint">Tasks appear here once they are created on a board.</span>
+            </td>
+          </tr>
+        } @else {
+          @for (task of visibleTasks(); track task.taskId) {
+            <tr>
+              <th scope="row" class="tasks-title-cell">
+                <!-- A task has no URL of its own — it opens in a dialog inside its board — so the
+                     board is the honest destination. -->
+                <a class="tasks-title-link" [routerLink]="['/admin/boards', task.boardId]">
+                  {{ task.title }}
+                </a>
+              </th>
+
+              <td class="tasks-col-where">{{ task.areaName }} · {{ task.boardName }}</td>
+
+              <td class="tasks-col-status">
+                <!-- The column's own name, tinted by what kind of column it is. -->
+                <span class="column-chip" [class]="chipClass(task)">{{ task.columnName }}</span>
+              </td>
+
+              <td class="tasks-col-assignee">
+                @if (task.assignee; as assignee) {
+                  <span class="tasks-person">
+                    <span
+                      class="person-avatar"
+                      role="img"
+                      [attr.title]="assignee.fullName"
+                      [attr.aria-label]="'Assigned to ' + assignee.fullName">
+                      <span aria-hidden="true">{{ initials(assignee.fullName) }}</span>
+                    </span>
+                    <span class="tasks-person-name">{{ assignee.fullName }}</span>
+                  </span>
+                } @else {
+                  <span class="tasks-muted">Unassigned</span>
+                }
+              </td>
+
+              <td class="tasks-col-creator">{{ task.createdByFullName }}</td>
+
+              <!-- No timezone argument: the value carries no offset, so a conversion would shift
+                   the day. -->
+              <td class="tasks-col-created">{{ task.createdDate | date:'dd MMM yyyy' }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

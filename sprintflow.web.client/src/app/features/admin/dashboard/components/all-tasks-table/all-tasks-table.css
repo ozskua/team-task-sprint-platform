@@ -1,0 +1,206 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.panel {
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-card);
+    box-shadow: var(--app-shadow-card);
+    overflow: hidden;
+}
+
+/* ---- Controls -------------------------------------------------------------- */
+
+.tasks-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.tasks-search { flex: 1 1 280px; min-width: 0; }
+
+.tasks-search-input,
+.tasks-filter-select {
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface);
+}
+
+.tasks-search-input { width: 100%; }
+.tasks-filter-select { min-width: 150px; }
+
+.tasks-search-input:focus-visible,
+.tasks-filter-select:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 1px;
+}
+
+/* ---- Table ----------------------------------------------------------------- */
+
+/*
+  One scroll surface with the header stuck to its top. The table keeps its normal display so the
+  header cells and the body cells go on sharing column widths — a block tbody would break that.
+*/
+.tasks-scroll {
+    max-height: 620px;
+    overflow: auto;
+}
+
+.tasks-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+/* Sticky on the cells, not the row: `position: sticky` does not apply to <tr> in every engine, and
+   an opaque background is required or the rows scroll visibly through the header. */
+.tasks-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--app-border-card);
+    background-color: var(--app-surface-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.tasks-table td,
+.tasks-table tbody th {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--app-border-card);
+    vertical-align: middle;
+    text-align: left;
+    font-weight: 400;
+    color: var(--mat-sys-on-surface);
+}
+
+.tasks-table tbody tr:last-child td,
+.tasks-table tbody tr:last-child th { border-bottom: 0; }
+
+.tasks-table tbody tr:hover td,
+.tasks-table tbody tr:hover th { background-color: var(--app-surface-hover); }
+
+.tasks-title-cell { min-width: 200px; }
+
+.tasks-title-link {
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--mat-sys-on-surface);
+    overflow-wrap: anywhere;
+}
+
+.tasks-title-link:hover { color: var(--app-primary-action); }
+
+.tasks-title-link:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.tasks-col-where { color: var(--mat-sys-on-surface-variant); overflow-wrap: anywhere; }
+.tasks-col-created { white-space: nowrap; }
+
+/* ---- Status chip ----------------------------------------------------------- */
+
+/* Fill carries the meaning and the label stays dark ink — these tints cannot be read as text. */
+.column-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--app-ink);
+}
+
+.column-chip--todo { background-color: var(--app-status-todo); }
+.column-chip--open { background-color: var(--app-status-progress); }
+.column-chip--completed { background-color: var(--app-status-done); }
+.column-chip--cancelled { background-color: var(--app-status-overdue); }
+
+/* ---- People ---------------------------------------------------------------- */
+
+.tasks-person {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.tasks-person-name { overflow-wrap: anywhere; }
+
+/* The same circle the board shows, so a person is recognisable in both places. */
+.person-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--app-surface-muted);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+    cursor: default;
+}
+
+.tasks-muted { font-style: italic; color: var(--mat-sys-on-surface-variant); }
+
+/* ---- States ---------------------------------------------------------------- */
+
+.tasks-skeleton {
+    display: block;
+    height: 16px;
+    border-radius: 6px;
+    background-color: var(--app-skeleton);
+}
+
+.tasks-message {
+    padding: 56px 16px;
+    text-align: center;
+}
+
+.tasks-message-title {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.tasks-message-hint {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 767.98px) {
+    .tasks-col-creator,
+    .tasks-col-where { display: none; }
+}

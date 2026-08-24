@@ -37,6 +37,17 @@ public interface ITaskRepository
     /// <summary>How many tasks the column holds — the index a newly created task takes.</summary>
     Task<int> CountInColumnAsync(int columnId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Every task in the system, newest first, with its board, that board's area, its column, its
+    /// creator and its assignee loaded. Read-only.
+    /// </summary>
+    /// <remarks>
+    /// Unscoped on purpose: this is the admin overview, and nothing in the domain restricts who may
+    /// read which board. One query for the whole page — the counts are worked out from these same
+    /// rows rather than by asking the database a second time.
+    /// </remarks>
+    Task<IReadOnlyList<TaskItem>> GetAllWithDetailsAsync(CancellationToken cancellationToken);
+
     void Add(TaskItem task);
 
     void Remove(TaskItem task);
