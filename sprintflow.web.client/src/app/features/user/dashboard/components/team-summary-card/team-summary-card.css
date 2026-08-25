@@ -1,0 +1,73 @@
+:host {
+    display: block;
+}
+
+.team-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-sizing: border-box;
+    height: 100%;
+    padding: 18px 20px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-card);
+    box-shadow: var(--app-shadow-card);
+    text-decoration: none;
+}
+
+.team-card:hover {
+    background-color: var(--app-surface-hover);
+}
+
+.team-card:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 2px;
+}
+
+.team-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+/* The board's name is the team's name — a team has none of its own. */
+.team-name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+    overflow-wrap: anywhere;
+}
+
+.team-area,
+.team-count {
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+    overflow-wrap: anywhere;
+}
+
+.team-count { margin-top: 4px; }
+
+/* The same circles the Teams page shows, so a person is recognisable in both places. */
+.member-avatars {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.member-avatar {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--app-surface-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+    cursor: default;
+}

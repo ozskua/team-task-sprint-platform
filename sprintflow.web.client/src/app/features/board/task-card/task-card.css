@@ -3,6 +3,7 @@
     min-width: 0;
 }
 
+/* The whole card opens the task, so it says so. */
 .task-card {
     min-width: 0;
     padding: 12px;
@@ -10,6 +11,7 @@
     border-radius: var(--app-radius-control);
     background-color: var(--app-surface-card);
     box-shadow: var(--app-shadow-card);
+    cursor: pointer;
 }
 
 /* A move in flight. Reduced opacity plus a disabled menu, never colour alone. */
@@ -46,21 +48,53 @@
     overflow-wrap: anywhere;
 }
 
-.task-card-creator {
-    margin: 6px 0 0;
-    font-size: 0.75rem;
-    color: var(--mat-sys-on-surface-variant);
-    overflow-wrap: anywhere;
-}
-
-/* Menu on the left, assignee pushed to the right — the two never compete for the same space. */
+/*
+  Menu on the left, outcome and assignee pushed to the right — none of the three ever competes for
+  the same space. The creator is not here: it is one more line on every card for a question the
+  board is rarely asking, and the detail dialog answers it properly.
+*/
 .task-card-footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 8px;
     min-width: 0;
     margin-top: 10px;
+}
+
+.task-card-menu {
+    margin-right: auto;
+}
+
+/*
+  How the task ended. A tinted pill using the status tokens the theme already defines for exactly
+  this — they are documented as fills rather than text colours, because the raw green and red fail
+  contrast on white. The icon carries the meaning as a shape, so the colour is never doing the work
+  alone, and the whole card stays its normal colour.
+*/
+.task-card-outcome {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    color: var(--app-ink);
+    cursor: default;
+}
+
+.task-card-outcome mat-icon {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+    line-height: 14px;
+}
+
+.task-card-outcome--completed {
+    background-color: var(--app-status-done);
+}
+
+.task-card-outcome--cancelled {
+    background-color: var(--app-status-overdue);
 }
 
 /*

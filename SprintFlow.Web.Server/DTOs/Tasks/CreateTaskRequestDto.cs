@@ -36,4 +36,11 @@ public class CreateTaskRequestDto
     /// otherwise. A named user must exist and be active.
     /// </summary>
     public int? AssigneeUserId { get; set; }
+
+    /// <summary>
+    /// Optional. The sprint to create the task in — normally the one the board is scoped to, so a
+    /// task added while looking at a sprint belongs to it rather than appearing to vanish. Left
+    /// out, the task belongs to no sprint. A named sprint must belong to the board in the route.
+    /// </summary>
+    public int? SprintId { get; set; }
 }

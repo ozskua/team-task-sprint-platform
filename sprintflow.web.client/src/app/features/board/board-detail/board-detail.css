@@ -70,29 +70,43 @@
 }
 
 /*
-  Lanes share the row equally and shrink together. Each one refuses to go under 260px, so once the
-  viewport cannot hold them all this scrolls sideways instead of letting lanes overlap or collapse
-  into something unreadable. No absolute positioning anywhere in the normal layout.
+  The board's one scroll surface, in both directions. It takes the height left under the header and
+  the tab strip; everything inside it is laid out by the row below.
 */
 .board-columns {
-    display: flex;
-    align-items: stretch;
-    gap: 12px;
-    /* Takes the height left under the header; each lane then scrolls its own cards. */
     flex: 1 1 auto;
     min-height: 0;
     padding-bottom: 8px;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: auto;
+}
+
+/*
+  The row of lanes, and the reason the scrolling behaves.
+
+  `min-height: 100%` resolves against the scroll surface, which has a definite height — so the row
+  is at least a screen tall, and `align-items: stretch` gives every lane the height of the tallest
+  one. When a column has more cards than fit, the row grows past the surface and the surface
+  scrolls; no lane ever scrolls on its own.
+
+  `width: fit-content` with `min-width: 100%` does the same for the other axis: the row spans the
+  surface so the lanes can share it equally, and is pushed wider by their 260px floors once there
+  are too many, which is what turns on horizontal scrolling instead of letting lanes overlap.
+*/
+.board-columns-row {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    min-height: 100%;
+    width: fit-content;
+    min-width: 100%;
 }
 
 /*
   One lane. `min-width: 0` is what stops a long word inside a card widening the whole column, and
-  `border-box` keeps the outcome lane's own padding inside its share instead of adding to it — with
-  the default sizing it measured 21px wider than every other lane.
+  `border-box` keeps a lane's own padding inside its share instead of adding to it — with the
+  default sizing the outcome lane measured 21px wider than every other one.
 */
-.board-lane,
-.board-outcome {
+.board-lane {
     flex: 1 1 0;
     min-width: 260px;
     box-sizing: border-box;
@@ -115,43 +129,6 @@
 
 .board-custom-band.cdk-drop-list-dragging {
     background-color: var(--app-surface-hover);
-}
-
-/*
-  The shared outcome lane. Completed sits above Cancelled inside it; both keep their own drop list,
-  so this changes where they are drawn and nothing else. The lane itself carries no padding or
-  border — see the frame below.
-*/
-.board-outcome {
-    display: flex;
-}
-
-.board-outcome-frame {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 10px;
-    border: 1px solid var(--app-border-card);
-    border-radius: var(--app-radius-card);
-    background-color: var(--app-surface-muted);
-}
-
-.board-outcome-heading {
-    margin: 0 0 2px;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--mat-sys-on-surface-variant);
-}
-
-/* Each half takes an equal share of the lane, so neither can push the other off the bottom. */
-.board-outcome-column {
-    flex: 1 1 0;
-    min-height: 0;
-    min-width: 0;
 }
 
 .board-skeleton {
@@ -188,4 +165,54 @@
     clip: rect(0 0 0 0);
     white-space: nowrap;
     border: 0;
+}
+
+/* ---- Sprint scope bar -------------------------------------------------- */
+/* Only rendered when a sprint is selected; the unscoped board is unchanged. */
+
+.board-sprint-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    font-size: 0.8125rem;
+}
+
+.board-sprint-label {
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 0.6875rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.board-sprint-name {
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.board-sprint-status,
+.board-sprint-count {
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/* No sprint running: the bar explains the empty board rather than leaving it looking broken. */
+.board-sprint-bar--none {
+    flex-wrap: wrap;
+}
+
+.board-sprint-empty {
+    margin-left: auto;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.board-sprint-empty a {
+    color: var(--app-primary);
+    text-decoration: none;
+}
+
+.board-sprint-empty a:hover {
+    text-decoration: underline;
 }

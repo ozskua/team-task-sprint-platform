@@ -30,6 +30,19 @@ public interface ITaskService
     /// Deletes the task outright, taking its participation rows with it. <c>false</c> when no such
     /// task exists.
     /// </summary>
+    /// <summary>
+    /// Puts the task into a sprint, or takes it out of one when the request names none. The sprint
+    /// must belong to the same board as the task.
+    /// </summary>
+    /// <remarks>
+    /// The task's column and position are untouched: being scheduled and being in progress are
+    /// separate facts about a task.
+    /// </remarks>
+    Task<(AssignSprintOutcome Outcome, TaskResponseDto? Task)> AssignSprintAsync(
+        int taskId,
+        AssignTaskSprintRequestDto request,
+        CancellationToken cancellationToken);
+
     Task<bool> DeleteAsync(int taskId, CancellationToken cancellationToken);
 
     /// <summary>

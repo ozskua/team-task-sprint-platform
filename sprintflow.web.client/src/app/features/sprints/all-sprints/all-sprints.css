@@ -1,0 +1,181 @@
+.sprints-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sprints-intro {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.sprints-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sprints-skeleton {
+    height: 132px;
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-skeleton);
+}
+
+.sprint-group {
+    padding: 20px 24px;
+}
+
+.sprint-group-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.sprint-group-board {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.sprint-group-area {
+    margin: 2px 0 0;
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.sprint-group-manage {
+    flex: none;
+    font-size: 0.8125rem;
+    color: var(--app-primary);
+    text-decoration: none;
+}
+
+.sprint-group-manage:hover {
+    text-decoration: underline;
+}
+
+.sprint-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* The disclosure sits beside the link, so opening a row and opening its board stay separate. */
+.sprint-row-line {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sprint-row-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--mat-sys-on-surface-variant);
+    cursor: pointer;
+}
+
+.sprint-row-toggle mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+/* Indented past the disclosure, so the tasks read as belonging to the row above them. */
+.sprint-row-tasks {
+    margin: 4px 0 8px 28px;
+}
+
+.sprint-row-message {
+    margin: 0;
+    padding: 8px 0;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/* The rest of the row is the link, so the target is the row and not just its name. */
+.sprint-row-link {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 12px;
+    border-radius: var(--app-radius-control);
+    color: var(--mat-sys-on-surface);
+    text-decoration: none;
+}
+
+.sprint-row-link:hover {
+    background-color: rgba(148, 163, 184, 0.10);
+}
+
+.sprint-row-name {
+    overflow: hidden;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sprint-row-dates,
+.sprint-row-count {
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.sprint-row-status {
+    padding: 2px 10px;
+    border-radius: 999px;
+    background-color: rgba(148, 163, 184, 0.16);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/* Only the running one is tinted: it is the row a reader is looking for. */
+.sprint-row-status--Active {
+    background-color: rgba(37, 99, 235, 0.16);
+    color: #93b4fd;
+}
+
+.sprints-message {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 32px 16px;
+    text-align: center;
+}
+
+.sprints-message-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.sprints-message-hint {
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+@media (max-width: 767.98px) {
+    .sprint-row-link {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+}

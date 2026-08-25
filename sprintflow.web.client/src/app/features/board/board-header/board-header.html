@@ -34,21 +34,33 @@
   </div>
 
   <div class="board-actions">
-    <button mat-button type="button" (click)="newColumn.emit()">Add column</button>
-    <!-- Sends no column: the server starts a task in To Do unless one is named. -->
-    <button mat-flat-button type="button" (click)="newTask.emit()">New task</button>
+    @if (showAddColumn()) {
+      <button mat-button type="button" (click)="newColumn.emit()">Add column</button>
+    }
 
-    <button
-      mat-icon-button
-      type="button"
-      [attr.aria-label]="'Actions for ' + board().name"
-      [matMenuTriggerFor]="boardMenu">
-      <mat-icon>more_horiz</mat-icon>
-    </button>
+    @if (showNewTask()) {
+      <!-- Sends no column: the server starts a task in To Do unless one is named. -->
+      <button
+        mat-flat-button
+        type="button"
+        [disabled]="!canCreateTask()"
+        [attr.title]="canCreateTask() ? null : 'No sprint is running on this board. Create tasks from the Backlog.'"
+        (click)="newTask.emit()">New task</button>
+    }
 
-    <mat-menu #boardMenu="matMenu">
-      <button mat-menu-item type="button" (click)="renameBoard.emit()">Rename board</button>
-      <button mat-menu-item type="button" (click)="deleteBoard.emit()">Delete board</button>
-    </mat-menu>
+    @if (showBoardMenu()) {
+      <button
+        mat-icon-button
+        type="button"
+        [attr.aria-label]="'Actions for ' + board().name"
+        [matMenuTriggerFor]="boardMenu">
+        <mat-icon>more_horiz</mat-icon>
+      </button>
+
+      <mat-menu #boardMenu="matMenu">
+        <button mat-menu-item type="button" (click)="renameBoard.emit()">Rename board</button>
+        <button mat-menu-item type="button" (click)="deleteBoard.emit()">Delete board</button>
+      </mat-menu>
+    }
   </div>
 </header>

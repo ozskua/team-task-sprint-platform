@@ -1,8 +1,8 @@
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { NgModule } from '@angular/core';
 
+import { MetricCardModule } from '../../../shared/metric-card/metric-card-module';
 import { AllTasksTable } from './components/all-tasks-table/all-tasks-table';
-import { MetricCard } from './components/metric-card/metric-card';
 import { DashboardRoutingModule } from './dashboard-routing-module';
 import { Dashboard } from './dashboard';
 
@@ -16,12 +16,11 @@ import { Dashboard } from './dashboard';
 @NgModule({
   declarations: [
     Dashboard,
-    MetricCard,
     AllTasksTable
   ],
   imports: [
-    // MetricCard renders its body through an ng-template so the card can be a link or a plain div.
-    NgTemplateOutlet,
+    // The summary tiles. Declared in their own module now that the board summary draws them too.
+    MetricCardModule,
     // The task table's Created column.
     DatePipe,
     // DashboardRoutingModule re-exports RouterModule, which supplies routerLink.

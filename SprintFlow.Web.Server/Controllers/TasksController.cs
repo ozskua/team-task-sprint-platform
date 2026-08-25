@@ -103,6 +103,45 @@ public class TasksController : ControllerBase
         };
     }
 
+    /// <summary>
+    /// Puts the task into one of its board's sprints, or takes it out of whichever one it is in.
+    /// </summary>
+    /// <remarks>
+    /// Separate from editing the task, and from moving it: scheduling a task is neither a change to
+    /// what it says nor a change to where it sits on the board.
+    /// </remarks>
+    [HttpPut("{taskId:int}/sprint")]
+    [ProducesResponseType(typeof(TaskResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TaskResponseDto>> AssignSprint(
+        int taskId,
+        [FromBody] AssignTaskSprintRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var (outcome, task) = await taskService.AssignSprintAsync(taskId, request, cancellationToken);
+
+        return outcome switch
+        {
+            AssignSprintOutcome.Assigned => Ok(task),
+
+            AssignSprintOutcome.TaskNotFound => TaskNotFound(),
+
+            AssignSprintOutcome.SprintNotFound => Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Sprint not found",
+                detail: "No sprint exists with the requested id. Send no sprint id to take the task out of its sprint."),
+
+            AssignSprintOutcome.SprintOnDifferentBoard => Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Sprint belongs to a different board",
+                detail: "A task can only be put into a sprint of its own board. Nothing was changed."),
+
+            _ => throw new InvalidOperationException($"Unhandled assign-sprint outcome {outcome}.")
+        };
+    }
+
     private ObjectResult AssigneeUnavailable()
         => Problem(
             statusCode: StatusCodes.Status400BadRequest,

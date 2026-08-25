@@ -47,6 +47,12 @@ export interface BoardTask {
 
   /** `null` when nobody is responsible for it yet. */
   readonly assignee: TaskAssignee | null;
+
+  /** The sprint this task is in, or `null`. Always a sprint of this task's board. */
+  readonly sprintId: number | null;
+
+  /** That sprint's name, or `null` — carried so a card can label itself without a lookup. */
+  readonly sprintName: string | null;
 }
 
 export interface BoardColumn {
@@ -72,11 +78,35 @@ export interface BoardDetail {
 
   readonly createdDate: string;
 
-  /** Computed by the server from participation. An empty list is a normal, correct state. */
+  /**
+   * Computed by the server from participation. An empty list is a normal, correct state.
+   *
+   * Always the whole board's members, even when the page is scoped to a sprint — who is on the
+   * team is not a question about one stretch of days.
+   */
   readonly teamMembers: readonly TeamMember[];
 
-  /** Already in board order: To Do, custom columns, Completed, Cancelled. */
+  /**
+   * The sprint the tasks below were filtered to, or `null` when the whole board is showing.
+   *
+   * Note this is the server's shape, with an exclusive `endDate`. Only the board page reads it, and
+   * only to name the sprint; anything rendering dates should go through `SprintService`.
+   */
+  readonly selectedSprint: BoardSelectedSprint | null;
+
+  /**
+   * Already in board order: To Do, custom columns, Completed, Cancelled. The set of columns never
+   * depends on the selected sprint — only which tasks sit in them does.
+   */
   readonly columns: readonly BoardColumn[];
+}
+
+/** Just enough of the selected sprint for the board header to say what it is showing. */
+export interface BoardSelectedSprint {
+  readonly sprintId: number;
+  readonly name: string;
+  readonly status: 'Upcoming' | 'Active' | 'Archived';
+  readonly taskCount: number;
 }
 
 /**
@@ -92,6 +122,13 @@ export interface CreateTaskRequest {
 
   /** `null` or omitted creates the task unassigned. */
   readonly assigneeUserId?: number | null;
+
+  /**
+   * The sprint to create the task in — normally the one the board is scoped to, so a task added
+   * while looking at a sprint belongs to it instead of seeming to vanish. Omitted on an unscoped
+   * board.
+   */
+  readonly sprintId?: number | null;
 }
 
 export interface UpdateTaskRequest {
@@ -106,6 +143,20 @@ export interface UpdateTaskRequest {
 export interface MoveTaskRequest {
   readonly targetColumnId: number;
   readonly targetIndex: number;
+
+  /**
+   * The sprint the board was scoped to, or omitted for the whole board.
+   *
+   * Not where the task is going — a move never changes a task's sprint. It tells the server what
+   * `targetIndex` was counted against: on a scoped board the user only sees some of a column's
+   * cards, so "third" means the third visible one. The server translates.
+   */
+  readonly sprintId?: number | null;
+}
+
+/** Which sprint a task belongs to. `null` takes it out of whichever one it is in. */
+export interface AssignTaskSprintRequest {
+  readonly sprintId: number | null;
 }
 
 export interface ColumnNameRequest {

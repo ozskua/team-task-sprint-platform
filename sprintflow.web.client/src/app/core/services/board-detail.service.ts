@@ -1,9 +1,10 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, switchMap, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
+  AssignTaskSprintRequest,
   BoardColumn,
   BoardDetail,
   BoardTask,
@@ -30,19 +31,88 @@ export class BoardDetailService {
 
   readonly board = this.boardState.asReadonly();
 
+  /**
+   * The sprint the loaded state is actually showing, or `null` when it is showing none.
+   *
+   * Taken from the **response**, not from what was asked for: the kanban usually names no sprint
+   * and lets the server pick the one running today, so the request says nothing about which sprint
+   * is on screen. Creating a task and dragging a card both read this, and both would be wrong if it
+   * echoed the request instead of the answer.
+   */
+  private readonly scopeState = signal<number | null>(null);
+
+  readonly scope = this.scopeState.asReadonly();
+
+  /**
+   * Whether the loaded state is the board's complete inventory rather than one sprint's tasks.
+   *
+   * Remembered because a re-read after a write has to happen in the same mode: reloading the
+   * backlog as a kanban would empty it down to the active sprint.
+   */
+  private readonly allTasksState = signal(false);
+
   private get baseUrl(): string {
     return `${environment.apiBaseUrl}/boards`;
   }
 
-  load(boardId: number): Observable<BoardDetail> {
+  /**
+   * Loads the board for the kanban: one sprint's tasks.
+   *
+   * Naming a sprint shows that one. Naming none lets the server use whichever sprint is running
+   * today — and if none is, the board comes back with its columns and no cards, which is the
+   * honest state of a board with nothing in progress.
+   *
+   * Either way the columns are the same. The sprint is a filter over one kanban, never a second one.
+   */
+  load(boardId: number, sprintId?: number | null): Observable<BoardDetail> {
+    const options = sprintId == null
+      ? {}
+      : { params: new HttpParams().set('sprintId', sprintId) };
+
     return this.http
-      .get<BoardDetail>(`${this.baseUrl}/${boardId}`)
-      .pipe(tap(board => this.boardState.set(board)));
+      .get<BoardDetail>(`${this.baseUrl}/${boardId}`, options)
+      .pipe(tap(board => this.store(board, false)));
+  }
+
+  /**
+   * Loads the board for the backlog: every task, whatever sprint it is in or is not.
+   *
+   * Asked for explicitly rather than by leaving the sprint out, because leaving it out now means
+   * "whatever is running today" — the backlog has to say it wants the whole inventory.
+   */
+  loadAllTasks(boardId: number): Observable<BoardDetail> {
+    return this.http
+      .get<BoardDetail>(`${this.baseUrl}/${boardId}`, {
+        params: new HttpParams().set('allTasks', true)
+      })
+      .pipe(tap(board => this.store(board, true)));
+  }
+
+  /**
+   * Re-reads the board the same way it was read before.
+   *
+   * What every write does after it succeeds. The mode has to be carried over: reloading the backlog
+   * as a kanban would cut it down to one sprint, and reloading a kanban as the backlog would fill
+   * it with tasks the user had filtered out.
+   */
+  reload(boardId: number): Observable<BoardDetail> {
+    return this.allTasksState()
+      ? this.loadAllTasks(boardId)
+      : this.load(boardId, this.scopeState());
   }
 
   /** Dropped when leaving the page, so the next board never flashes the previous one's cards. */
   clear(): void {
     this.boardState.set(null);
+    this.scopeState.set(null);
+    this.allTasksState.set(false);
+  }
+
+  /** The sprint on screen comes from the server's answer, never from what was requested. */
+  private store(board: BoardDetail, allTasks: boolean): void {
+    this.boardState.set(board);
+    this.scopeState.set(board.selectedSprint?.sprintId ?? null);
+    this.allTasksState.set(allTasks);
   }
 
   /** The current state, for a caller that wants to be able to undo what it is about to do. */
@@ -87,6 +157,33 @@ export class BoardDetailService {
     return this.http
       .put<readonly BoardColumn[]>(`${environment.apiBaseUrl}/tasks/${taskId}/move`, request)
       .pipe(tap(columns => this.replaceColumns(columns)));
+  }
+
+  /**
+   * The same move, followed by a re-read of the whole board.
+   *
+   * For the callers that pick a status from a list rather than dragging a card: there is nothing on
+   * screen to roll back, and reloading is the only way to be sure the positions in every other
+   * column match what the server decided.
+   */
+  moveTaskAndReload(
+    boardId: number,
+    taskId: number,
+    request: MoveTaskRequest): Observable<BoardDetail> {
+    // Reloaded the same way the page was read, so it comes back showing what it was showing before.
+    // The backlog is the main caller here, and it must not come back as a kanban.
+    return this.moveTask(taskId, request)
+      .pipe(switchMap(() => this.reload(boardId)));
+  }
+
+  /**
+   * Puts a task into a sprint, or takes it out. The response is the task as the server now has it,
+   * which is what replaces the local copy.
+   */
+  assignTaskSprint(taskId: number, request: AssignTaskSprintRequest): Observable<BoardTask> {
+    return this.http
+      .put<BoardTask>(`${environment.apiBaseUrl}/tasks/${taskId}/sprint`, request)
+      .pipe(tap(task => this.replaceTask(task)));
   }
 
   // --- Boards -------------------------------------------------------------

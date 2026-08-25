@@ -1,11 +1,9 @@
-<article class="task-card" [class.task-card--moving]="moving()">
+<article class="task-card" [class.task-card--moving]="moving()" (click)="onCardClick($event)">
+  <!-- The title stays a button so the card is reachable and openable from the keyboard; the click
+       handler above only adds the rest of the card as a target for the mouse. -->
   <button class="task-card-open" type="button" (click)="open.emit(task())">
     <span class="task-card-title">{{ task().title }}</span>
   </button>
-
-  <!-- Who wrote the task down. Kept in words, and kept away from the avatar below, because the
-       avatar answers a different question: who has to do it. -->
-  <p class="task-card-creator">Created by {{ task().createdByFullName }}</p>
 
   <div class="task-card-footer">
     <!-- Dragging is how a card moves between columns; the menu is for everything else. -->
@@ -24,6 +22,24 @@
       <button mat-menu-item type="button" (click)="edit.emit(task())">Edit</button>
       <button mat-menu-item type="button" (click)="remove.emit(task())">Delete</button>
     </mat-menu>
+
+    <!--
+      Which outcome the card reached, for the two columns that have one. A tick or a cross as well
+      as a colour, because a green dot and a red dot are the same dot to anyone who cannot tell them
+      apart. Sits beside the assignee, never on top of it: one says how this ended, the other says
+      whose it is.
+    -->
+    @if (outcome(); as outcome) {
+      <span
+        class="task-card-outcome"
+        [class.task-card-outcome--completed]="outcome === 'Completed'"
+        [class.task-card-outcome--cancelled]="outcome === 'Cancelled'"
+        role="img"
+        [attr.title]="outcome"
+        [attr.aria-label]="outcome">
+        <mat-icon aria-hidden="true">{{ outcomeIcon() }}</mat-icon>
+      </span>
+    }
 
     <!--
       The assignee, at the lower right. Initials rather than a photo: the server stores no profile

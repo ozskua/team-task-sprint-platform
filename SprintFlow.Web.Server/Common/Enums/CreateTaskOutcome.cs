@@ -21,5 +21,11 @@ public enum CreateTaskOutcome
     /// The named assignee does not exist or is no longer active — 400, and nothing is created. A
     /// disabled account cannot sign in, so making it answerable for a task would be a dead end.
     /// </summary>
-    AssigneeUnavailable
+    AssigneeUnavailable,
+
+    /// <summary>A sprint id was supplied but no such sprint exists — 400.</summary>
+    SprintNotFound,
+
+    /// <summary>The supplied sprint belongs to a different board — 400, and nothing is created.</summary>
+    SprintOnDifferentBoard
 }

@@ -25,6 +25,18 @@ public interface ITaskParticipantRepository
     Task<IReadOnlyDictionary<int, IReadOnlyList<User>>> GetMembersByBoardAsync(CancellationToken cancellationToken);
 
     /// <summary>
+    /// The same derivation as <see cref="GetMembersByBoardAsync"/>, narrowed to the boards asked for.
+    /// Each member appears once per board, however many tasks they hold there.
+    /// </summary>
+    /// <remarks>
+    /// Boards with no assignment at all are simply absent from the dictionary rather than present
+    /// with an empty list, so the caller decides what "no members" should look like.
+    /// </remarks>
+    Task<IReadOnlyDictionary<int, IReadOnlyList<User>>> GetMembersByBoardsAsync(
+        IReadOnlyCollection<int> boardIds,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// The task's assignment rows, tracked. Zero or one in practice — the unique index on
     /// <c>TaskId</c> guarantees it — but returned as a list so replacing works the same either way.
     /// </summary>

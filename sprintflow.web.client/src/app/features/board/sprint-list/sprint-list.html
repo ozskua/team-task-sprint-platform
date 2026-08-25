@@ -1,0 +1,61 @@
+<div class="sprint-page">
+
+  <app-board-view-nav [boardId]="boardId()" />
+
+  <div class="sprint-head">
+    <h2 class="sprint-heading">Sprints</h2>
+
+    <button class="sprint-create" type="button" (click)="create()">New sprint</button>
+  </div>
+
+  @if (actionError(); as message) {
+    <div class="sprint-alert" role="alert">
+      <span>{{ message }}</span>
+      <button class="sprint-alert-dismiss" type="button" (click)="dismissError()">Dismiss</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="visually-hidden">Loading the sprints.</p>
+    <ul class="sprint-list" aria-hidden="true">
+      @for (row of skeletonRows; track row) {
+        <li class="sprint-row sprint-row--skeleton"></li>
+      }
+    </ul>
+  } @else if (failed()) {
+    <div class="sprint-state">
+      <p class="sprint-state-title">The sprints could not be loaded</p>
+      <p class="sprint-state-detail">Please refresh the page to try again.</p>
+    </div>
+  } @else if (sprints().length === 0) {
+    <div class="sprint-state">
+      <p class="sprint-state-title">No sprints yet</p>
+      <p class="sprint-state-detail">Create one to start planning this board's work in time boxes.</p>
+    </div>
+  } @else {
+    <ul class="sprint-list">
+      @for (sprint of sprints(); track sprint.sprintId) {
+        <li class="sprint-row">
+          <div class="sprint-row-main">
+            <!-- Opening a sprint means working in it, so the name goes to the scoped kanban. -->
+            <a class="sprint-name" [routerLink]="boardPath()" [queryParams]="{ sprint: sprint.sprintId }">
+              {{ sprint.name }}
+            </a>
+
+            <!-- The arrow reads "up to, not including": the end day is not part of the sprint. -->
+            <span class="sprint-dates">{{ sprint.startDate }} → {{ sprint.endDate }}</span>
+          </div>
+
+          <div class="sprint-row-meta">
+            <span class="sprint-status" [class]="'sprint-status--' + sprint.status">{{ sprint.status }}</span>
+
+            <span class="sprint-count">{{ sprint.taskCount }} task{{ sprint.taskCount === 1 ? '' : 's' }}</span>
+
+            <a class="sprint-detail-link" [routerLink]="['./', sprint.sprintId]">Details</a>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+</div>

@@ -6,9 +6,11 @@
     </section>
 
     <div class="board-columns" aria-hidden="true">
-      @for (placeholder of [0, 1, 2]; track placeholder) {
-        <span class="board-skeleton board-skeleton--column"></span>
-      }
+      <div class="board-columns-row">
+        @for (placeholder of [0, 1, 2]; track placeholder) {
+          <span class="board-skeleton board-skeleton--column"></span>
+        }
+      </div>
     </div>
 
     <p class="visually-hidden">Loading the board.</p>
@@ -25,11 +27,43 @@
     <section class="panel board-panel">
       <app-board-header
         [board]="board"
+        [canCreateTask]="hasSprintContext()"
         (newTask)="createTaskInToDo()"
         (newColumn)="createColumn()"
         (renameBoard)="renameBoard()"
         (deleteBoard)="confirmDeleteBoard()" />
     </section>
+
+    <app-board-view-nav [boardId]="board.boardId" />
+
+    <!--
+      Which sprint's tasks are in the columns below. Always present in one form or the other: the
+      kanban only ever shows one sprint, so saying which is not optional.
+    -->
+    @if (selectedSprint(); as sprint) {
+      <div class="board-sprint-bar">
+        <span class="board-sprint-label">Sprint</span>
+        <span class="board-sprint-name">{{ sprint.name }}</span>
+        <span class="board-sprint-status">{{ sprint.status }}</span>
+        <span class="board-sprint-count">
+          {{ sprint.taskCount }} task{{ sprint.taskCount === 1 ? '' : 's' }}
+        </span>
+      </div>
+    } @else {
+      <!--
+        No sprint is running, so the board is empty on purpose. The columns are still all there —
+        it is the same kanban either way — and every task is still on the Backlog.
+      -->
+      <div class="board-sprint-bar board-sprint-bar--none">
+        <span class="board-sprint-label">Sprint</span>
+        <span class="board-sprint-name">None running</span>
+        <span class="board-sprint-empty">
+          This board has no sprint covering today, so its board is empty. Every task is still on the
+          <a [routerLink]="['backlog']">Backlog</a>; start one on the
+          <a [routerLink]="['sprints']">Sprint</a> tab.
+        </span>
+      </div>
+    }
 
     @if (actionError(); as message) {
       <div class="board-error" role="alert">
@@ -39,93 +73,77 @@
     }
 
     <!--
-      Three groups, not one list. To Do is fixed on the left and the outcome lane is fixed on the
-      right, so only the middle band is a drop list — a custom column physically cannot be dragged
-      outside the area it is allowed to occupy.
+      The scroll surface and the row of lanes are two elements, not one. The outer element is the
+      only thing on this page that scrolls; the inner row is at least as tall and as wide as it, and
+      grows past it when the cards or the columns need more room. That is what lets every lane
+      stretch to the tallest one and the whole workflow scroll together, instead of each lane
+      scrolling its own little list.
     -->
     <div class="board-columns">
-      @if (toDoColumn(); as toDo) {
-        <app-workflow-column
-          class="board-lane"
-          [column]="toDo"
-          [connectedTo]="taskListIds()"
-          [movingTaskIds]="movingTaskIds()"
-          (addTask)="createTaskInColumn($event)"
-          (openTask)="openTask($event)"
-          (editTask)="editTaskDirectly($event)"
-          (deleteTask)="deleteTaskDirectly($event)"
-          (taskDropped)="onTaskDropped($event)" />
-      }
-
-      <!-- One lane's worth of width per custom column, so every lane on the row ends up the same
-           size however many there are. -->
-      <div
-        class="board-custom-band"
-        cdkDropList
-        cdkDropListOrientation="horizontal"
-        [cdkDropListData]="customColumns()"
-        [style.flex-grow]="customBandFlexGrow()"
-        [style.min-width.px]="customBandMinWidth()"
-        (cdkDropListDropped)="onColumnDropped($event)">
-        @for (column of customColumns(); track column.workflowColumnId) {
+      <!--
+        Three groups, not one list. To Do is fixed on the left and the outcome lane is fixed on the
+        right, so only the middle band is a drop list — a custom column physically cannot be dragged
+        outside the area it is allowed to occupy.
+      -->
+      <div class="board-columns-row">
+        @if (toDoColumn(); as toDo) {
           <app-workflow-column
-            cdkDrag
             class="board-lane"
-            [column]="column"
+            [column]="toDo"
             [connectedTo]="taskListIds()"
             [movingTaskIds]="movingTaskIds()"
-            [canMoveLeft]="canMoveLeft(column)"
-            [canMoveRight]="canMoveRight(column)"
+            [canAddTask]="hasSprintContext()"
             (addTask)="createTaskInColumn($event)"
             (openTask)="openTask($event)"
             (editTask)="editTaskDirectly($event)"
             (deleteTask)="deleteTaskDirectly($event)"
-            (taskDropped)="onTaskDropped($event)"
-            (renameColumn)="renameColumn($event)"
-            (deleteColumn)="confirmDeleteColumn($event)"
-            (shiftColumn)="shiftColumn(column, $event)" />
+            (taskDropped)="onTaskDropped($event)" />
+        }
+
+        <!-- One lane's worth of width per custom column, so every lane on the row ends up the same
+             size however many there are. -->
+        <div
+          class="board-custom-band"
+          cdkDropList
+          cdkDropListOrientation="horizontal"
+          [cdkDropListData]="customColumns()"
+          [style.flex-grow]="customBandFlexGrow()"
+          [style.min-width.px]="customBandMinWidth()"
+          (cdkDropListDropped)="onColumnDropped($event)">
+          @for (column of customColumns(); track column.workflowColumnId) {
+            <app-workflow-column
+              cdkDrag
+              class="board-lane"
+              [column]="column"
+              [connectedTo]="taskListIds()"
+              [movingTaskIds]="movingTaskIds()"
+              [canAddTask]="hasSprintContext()"
+              (addTask)="createTaskInColumn($event)"
+              (openTask)="openTask($event)"
+              (editTask)="editTaskDirectly($event)"
+              (deleteTask)="deleteTaskDirectly($event)"
+              (taskDropped)="onTaskDropped($event)"
+              (renameColumn)="renameColumn($event)"
+              (deleteColumn)="confirmDeleteColumn($event)" />
+          }
+        </div>
+
+        <!-- Completed and Cancelled, drawn as one lane but still two columns and two drop lists. -->
+        @if (completedColumn(); as completed) {
+          @if (cancelledColumn(); as cancelled) {
+            <app-outcome-lane
+              class="board-lane"
+              [completed]="completed"
+              [cancelled]="cancelled"
+              [connectedTo]="taskListIds()"
+              [movingTaskIds]="movingTaskIds()"
+              (openTask)="openTask($event)"
+              (editTask)="editTaskDirectly($event)"
+              (deleteTask)="deleteTaskDirectly($event)"
+              (taskDropped)="onTaskDropped($event)" />
+          }
         }
       </div>
-
-      <!--
-        Completed and Cancelled share one lane, stacked. They remain two entirely separate
-        columns — their own ids, their own tasks and their own drop lists — so a card still moves
-        into and out of each independently. Only the width they are drawn in is shared.
-      -->
-      <section class="board-outcome" aria-labelledby="outcome-heading">
-        <!-- The frame is an inner element so its padding sits inside the lane's share of the row.
-             On the lane itself it would be added to the width flex hands out, making this lane
-             wider than every other one. -->
-        <div class="board-outcome-frame">
-        <h2 class="board-outcome-heading" id="outcome-heading">Outcome</h2>
-
-        @if (completedColumn(); as completed) {
-          <app-workflow-column
-            class="board-outcome-column"
-            [column]="completed"
-            [connectedTo]="taskListIds()"
-            [movingTaskIds]="movingTaskIds()"
-            (addTask)="createTaskInColumn($event)"
-            (openTask)="openTask($event)"
-            (editTask)="editTaskDirectly($event)"
-            (deleteTask)="deleteTaskDirectly($event)"
-            (taskDropped)="onTaskDropped($event)" />
-        }
-
-        @if (cancelledColumn(); as cancelled) {
-          <app-workflow-column
-            class="board-outcome-column"
-            [column]="cancelled"
-            [connectedTo]="taskListIds()"
-            [movingTaskIds]="movingTaskIds()"
-            (addTask)="createTaskInColumn($event)"
-            (openTask)="openTask($event)"
-            (editTask)="editTaskDirectly($event)"
-            (deleteTask)="deleteTaskDirectly($event)"
-            (taskDropped)="onTaskDropped($event)" />
-        }
-        </div>
-      </section>
     </div>
   </div>
 }

@@ -1,0 +1,79 @@
+<!--
+  One scrolling wrapper around a normal table. The header is stuck to the top of that wrapper rather
+  than the body being made a scrolling block of its own — a block tbody stops sharing the table's
+  column widths, and the header would drift out of line with the rows under it.
+-->
+<div class="task-scroll">
+  <table class="task-table">
+    <caption class="visually-hidden">{{ caption() }}</caption>
+
+    <thead>
+      <tr>
+        <th scope="col">Task</th>
+        <th scope="col">Status</th>
+        <th scope="col">Assignee</th>
+        <th scope="col">Created by</th>
+        <th scope="col">Created</th>
+
+        @if (extraHeaders(); as headers) {
+          <ng-container [ngTemplateOutlet]="headers" />
+        }
+      </tr>
+    </thead>
+
+    <tbody>
+      @for (row of rows(); track row.taskId) {
+        <tr class="task-row" [class.task-row--busy]="isBusy(row.taskId)">
+          <td>
+            @if (titleOpensTask()) {
+              <button class="task-title" type="button" (click)="openTask.emit(row.taskId)">
+                {{ row.title }}
+              </button>
+            } @else {
+              <span class="task-title task-title--plain">{{ row.title }}</span>
+            }
+          </td>
+
+          <td>
+            <span class="task-status">
+              @if (outcomeOf(row); as outcome) {
+                <span
+                  class="task-dot"
+                  [class.task-dot--completed]="outcome === 'Completed'"
+                  [class.task-dot--cancelled]="outcome === 'Cancelled'"
+                  aria-hidden="true"></span>
+              }
+              {{ row.columnName }}
+            </span>
+          </td>
+
+          <td>
+            @if (row.assigneeFullName; as assignee) {
+              <span class="task-assignee">
+                <span
+                  class="assignee-avatar"
+                  role="img"
+                  [attr.title]="assignee"
+                  [attr.aria-label]="'Assigned to ' + assignee">
+                  <span aria-hidden="true">{{ initials(assignee) }}</span>
+                </span>
+                <span class="task-assignee-name">{{ assignee }}</span>
+              </span>
+            } @else {
+              <span class="task-muted">Unassigned</span>
+            }
+          </td>
+
+          <td>{{ row.createdByFullName }}</td>
+
+          <!-- No timezone argument: the value carries no offset, so a conversion would shift the day. -->
+          <td class="task-date">{{ row.createdDate | date:'dd MMM yyyy' }}</td>
+
+          @if (extraCells(); as cells) {
+            <ng-container [ngTemplateOutlet]="cells" [ngTemplateOutletContext]="{ $implicit: row }" />
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

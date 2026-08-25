@@ -1,0 +1,24 @@
+<nav class="board-views" aria-label="Board views">
+  <a
+    class="board-view"
+    routerLinkActive="board-view--active"
+    [routerLink]="links().summary">Özet</a>
+
+  <!-- Exact matching, or the kanban tab would stay lit on the backlog URL, which is a prefix of it. -->
+  <a
+    class="board-view"
+    routerLinkActive="board-view--active"
+    [routerLink]="links().kanban"
+    [routerLinkActiveOptions]="{ exact: true }">Kanban</a>
+
+  <a
+    class="board-view"
+    routerLinkActive="board-view--active"
+    [routerLink]="links().backlog">Backlog</a>
+
+  <!-- Not exact: the tab stays lit on a sprint's own page, which sits under this URL. -->
+  <a
+    class="board-view"
+    routerLinkActive="board-view--active"
+    [routerLink]="links().sprints">Sprint</a>
+</nav>

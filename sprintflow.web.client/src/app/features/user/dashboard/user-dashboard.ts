@@ -1,5 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import {
+  DashboardTask,
+  DashboardTaskCounts,
+  DashboardTeam
+} from '../../../core/models/dashboard-models';
+import { DashboardService } from '../../../core/services/dashboard.service';
 import {
   EMPTY_TASK_COUNTS,
   TaskCounts,
@@ -10,6 +17,8 @@ import {
 /** Both lists show at most this many cards. */
 const MAX_CARDS = 5;
 
+const EMPTY_COUNTS: DashboardTaskCounts = { toDo: 0, open: 0, completed: 0, cancelled: 0 };
+
 @Component({
   selector: 'app-user-dashboard',
   templateUrl: './user-dashboard.html',
@@ -18,33 +27,84 @@ const MAX_CARDS = 5;
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserDashboard {
+  private readonly dashboardService = inject(DashboardService);
+
+  protected readonly loading = signal(true);
+  protected readonly failed = signal(false);
+
+  protected readonly myCounts = signal<DashboardTaskCounts>(EMPTY_COUNTS);
+  protected readonly myTasks = signal<readonly DashboardTask[]>([]);
+  protected readonly myTeams = signal<readonly DashboardTeam[]>([]);
+
+  protected readonly skeletonRows = [0, 1, 2];
+
+  constructor() {
+    this.dashboardService.get()
+      .pipe(takeUntilDestroyed())
+      .subscribe({
+        next: dashboard => {
+          this.myCounts.set(dashboard.counts);
+          this.myTasks.set(dashboard.myTasks);
+          this.myTeams.set(dashboard.myTeams);
+          this.loading.set(false);
+        },
+        error: () => {
+          // The message is a local constant; the server's text is never shown.
+          this.failed.set(true);
+          this.loading.set(false);
+        }
+      });
+  }
+
+  // --- The summary strip ---------------------------------------------------
+
   /**
-   * There is no API yet, so the page renders its empty state — which is also the
-   * truthful state of a user with no teams. When the endpoint exists it sets
-   * these same signals and nothing else changes.
+   * Work still to do: To Do plus every custom column. Completed is finished and Cancelled was
+   * abandoned, so neither is outstanding.
    */
-  protected readonly loading = signal(false);
+  protected readonly openTaskCount = computed(() => {
+    const { toDo, open } = this.myCounts();
+
+    return toDo + open;
+  });
+
+  /**
+   * Completed over everything that was ever going to be done. Cancelled is left out of the
+   * denominator deliberately: abandoning work is not progress, and counting it would let someone
+   * raise their percentage by cancelling tasks.
+   */
+  protected readonly progressPercent = computed(() => {
+    const { toDo, open, completed } = this.myCounts();
+    const total = toDo + open + completed;
+
+    return total === 0 ? 0 : Math.round((completed / total) * 100);
+  });
+
+  /** Truthful in every case, including the two kinds of nothing. */
+  protected readonly contextLine = computed(() => {
+    const teams = this.myTeams().length;
+
+    if (teams === 0) {
+      return 'Nothing is assigned to you yet.';
+    }
+
+    const teamLabel = `${teams} ${teams === 1 ? 'team' : 'teams'}`;
+    const open = this.openTaskCount();
+
+    if (open === 0) {
+      return `You have nothing assigned right now, across ${teamLabel}.`;
+    }
+
+    return `You have ${open} open ${open === 1 ? 'task' : 'tasks'} across ${teamLabel}.`;
+  });
+
+  // --- Upcoming Tasks and Needs Attention ----------------------------------
+  // Unchanged, and still without a source: both rest on a due date the domain does not have. They
+  // keep their placeholder signals until a deadline model exists.
+
   protected readonly counts = signal<TaskCounts>(EMPTY_TASK_COUNTS);
   protected readonly teams = signal<readonly UserTeam[]>([]);
-
-  /** Every task the user is allowed to see, i.e. from their own teams only. */
   protected readonly tasks = signal<readonly UserTask[]>([]);
-
-  protected readonly totalTasks = computed(() => {
-    const { todo, inProgress, completed } = this.counts();
-    return todo + inProgress + completed;
-  });
-
-  protected readonly openTaskCount = computed(() => {
-    const { todo, inProgress } = this.counts();
-    return todo + inProgress;
-  });
-
-  /** Completed / (Todo + In Progress + Completed). Zero tasks reads as 0%. */
-  protected readonly progressPercent = computed(() => {
-    const total = this.totalTasks();
-    return total === 0 ? 0 : Math.round((this.counts().completed / total) * 100);
-  });
 
   /** Open means not Completed. Completed tasks never appear in either list. */
   private readonly openTasks = computed(() =>
@@ -73,27 +133,10 @@ export class UserDashboard {
 
   protected readonly hasOverdue = computed(() => this.overdueTasks().length > 0);
 
-  protected readonly contextLine = computed(() => {
-    const teamCount = this.teams().length;
-
-    if (teamCount === 0) {
-      return 'You are not a member of any team yet.';
-    }
-
-    const tasks = this.openTaskCount();
-
-    return `You have ${tasks} open ${tasks === 1 ? 'task' : 'tasks'} `
-      + `across ${teamCount} ${teamCount === 1 ? 'team' : 'teams'}.`;
-  });
-
-  /** First letter of the team name, used as a simple monogram on team cards. */
-  protected initialOf(team: UserTeam): string {
-    return team.teamName.charAt(0).toUpperCase();
-  }
-
   /** Midnight today, so a task due today does not count as late. */
   private startOfToday(): Date {
     const now = new Date();
+
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
@@ -105,6 +148,7 @@ export class UserDashboard {
     if (b.dueDate === null) {
       return -1;
     }
+
     return a.dueDate.localeCompare(b.dueDate);
   };
 }

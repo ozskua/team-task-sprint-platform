@@ -72,3 +72,68 @@
     margin-right: auto;
     color: var(--app-attention-ink);
 }
+
+.task-detail-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/*
+  The same green and red as the card badge. The column's name is written out beside it, so the dot
+  repeats something already said in words rather than carrying the meaning by itself.
+*/
+.task-detail-dot {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.task-detail-dot--completed {
+    background-color: var(--app-status-done);
+}
+
+.task-detail-dot--cancelled {
+    background-color: var(--app-status-overdue);
+}
+
+.task-detail-move {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--app-border);
+}
+
+.task-detail-move-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.task-detail-select {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface);
+}
+
+.task-detail-select:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 1px;
+}
+
+.task-detail-error {
+    margin: 10px 0 0;
+    font-size: 0.8125rem;
+    color: var(--app-attention-ink);
+}

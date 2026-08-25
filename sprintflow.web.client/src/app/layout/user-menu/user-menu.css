@@ -1,17 +1,150 @@
+/*
+  The menu's contents are declared in this template, so they carry this component's scoping
+  attribute and these rules still reach them after the CDK moves them into the overlay. The overlay
+  panel itself is Material's own element and is not reachable from here — which is why the width
+  below is set on the card rather than on the panel.
+*/
+
 .user-menu-trigger {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     color: var(--mat-sys-on-surface-variant);
 }
 
-.user-menu-label {
-    font-size: 0.875rem;
-    font-weight: 500;
+/* Quiet in the header: a filled circle, no ring. The ringed treatment is saved for the card. */
+.user-menu-trigger-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--app-surface-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--app-primary-action);
 }
 
 .user-menu-chevron {
     width: 20px;
     height: 20px;
     font-size: 20px;
+}
+
+/*
+  The identity block. `min-width` is what gives the whole panel a sensible width, since the panel
+  element cannot be styled from here.
+*/
+.user-menu-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 216px;
+    padding: 14px 16px;
+    cursor: default;
+}
+
+/*
+  Larger, and ringed rather than filled — the same "this is a specific person" circle the board
+  cards use, at the one place in the app where that person is the subject rather than a marker.
+*/
+.user-menu-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    /* border-box, so the ring comes out of the 44px rather than making the circle 48px. */
+    box-sizing: border-box;
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--app-primary);
+    border-radius: 50%;
+    background-color: var(--app-surface-card);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--mat-sys-on-surface);
+}
+
+.user-menu-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+}
+
+.user-menu-name {
+    max-width: 200px;
+    overflow: hidden;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--mat-sys-on-surface);
+}
+
+/*
+  Fill carries the meaning and the label stays dark ink — the same rule the user directory's chips
+  follow. Its tokens are scoped to that page, so the two values are stated here rather than borrowed.
+*/
+.user-menu-role {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background-color: rgba(32, 18, 45, 0.08);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--app-ink);
+}
+
+.user-menu-role--admin {
+    background-color: rgba(147, 51, 234, 0.18);
+}
+
+.user-menu-divider {
+    height: 1px;
+    margin: 4px 0;
+    background-color: var(--app-border);
+}
+
+.user-menu-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-menu-action-label {
+    font-size: 0.875rem;
+}
+
+/* Pushed to the far end so the row reads "Settings ......... Coming soon". */
+.user-menu-action-note {
+    margin-left: auto;
+    padding-left: 16px;
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/*
+  Muted, and without the pointer — it is reachable and announced, but there is nothing behind it
+  yet. Still focusable on purpose: see the comment on onSettingsActivate.
+*/
+.user-menu-action--muted,
+.user-menu-action--muted .mat-icon {
+    color: var(--mat-sys-on-surface-variant);
+    cursor: default;
+}
+
+.user-menu-action--muted:hover {
+    background-color: transparent;
+}
+
+/*
+  The way out. The accessible red at 6.54:1 on white, on the label and the icon only — distinct as
+  the exit action without turning the row into a warning.
+*/
+.user-menu-action--exit,
+.user-menu-action--exit .mat-icon {
+    color: var(--app-attention-ink);
 }

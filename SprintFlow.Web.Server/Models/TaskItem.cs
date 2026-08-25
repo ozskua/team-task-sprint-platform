@@ -30,7 +30,19 @@ public class TaskItem
     public int TaskColumnId { get; set; }
 
     /// <summary>Zero-based, contiguous within the column. Recomputed by the server, never sent by a client.</summary>
+    /// <remarks>
+    /// Positions run across <b>every</b> task in the column, not just those of one sprint. A
+    /// sprint-scoped board therefore shows a subset of them, and a drag inside that subset has to
+    /// be translated back to a position in the whole column — see <c>TaskService.MoveAsync</c>.
+    /// </remarks>
     public int Position { get; set; }
+
+    /// <summary>
+    /// The sprint this task is part of, or <c>null</c> when it is in none. Optional on purpose: a
+    /// task exists whether or not anyone has scheduled it, and every task predating sprints has no
+    /// sprint to belong to.
+    /// </summary>
+    public int? SprintId { get; set; }
 
     /// <summary>Resolved on the server from the caller's token, never from the request body.</summary>
     public int CreatedByUserId { get; set; }
@@ -41,6 +53,13 @@ public class TaskItem
     public Board Board { get; set; } = null!;
 
     public WorkflowColumn Column { get; set; } = null!;
+
+    /// <summary>
+    /// The sprint named by <see cref="SprintId"/>, or <c>null</c>. Always a sprint of
+    /// <see cref="BoardId"/> — the foreign key names both together, so it cannot be one from
+    /// another board.
+    /// </summary>
+    public Sprint? Sprint { get; set; }
 
     /// <summary>
     /// Loaded with <c>Include(t =&gt; t.CreatedByUser)</c> whenever a response carries the creator's

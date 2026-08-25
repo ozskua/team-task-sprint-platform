@@ -1,0 +1,109 @@
+<div class="sprints-page">
+  <p class="sprints-intro">
+    Every sprint in the system, grouped by the board that owns it. Each board keeps its own timeline,
+    so two boards can run sprints over the same days. Open a sprint to see its tasks; to create or
+    change one, open its board's Sprint tab.
+  </p>
+
+  @if (loading()) {
+    <p class="visually-hidden">Loading sprints.</p>
+    <div class="sprints-groups" aria-hidden="true">
+      @for (row of skeletonRows; track row) {
+        <div class="sprints-skeleton"></div>
+      }
+    </div>
+  } @else if (failed()) {
+    <section class="panel sprints-message">
+      <span class="sprints-message-title">Sprints could not be loaded</span>
+      <span class="sprints-message-hint">Please refresh the page to try again.</span>
+    </section>
+  } @else if (groups().length === 0) {
+    <section class="panel sprints-message">
+      <span class="sprints-message-title">No sprints yet</span>
+      <span class="sprints-message-hint">
+        Open a board's Sprint tab to create the first one.
+      </span>
+    </section>
+  } @else {
+    <div class="sprints-groups">
+      @for (group of groups(); track group.boardId) {
+        <section class="panel sprint-group">
+          <header class="sprint-group-head">
+            <div class="sprint-group-title">
+              <h2 class="sprint-group-board">{{ group.boardName }}</h2>
+              <!-- Board names are not unique; the area is what tells two of them apart. -->
+              <p class="sprint-group-area">{{ group.areaName }}</p>
+            </div>
+
+            <!-- Management lives on the board, not here. -->
+            <a class="sprint-group-manage" [routerLink]="sprintsPath(group.boardId)">Manage</a>
+          </header>
+
+          <ul class="sprint-rows">
+            @for (sprint of group.sprints; track sprint.sprintId) {
+              <li class="sprint-row">
+                <div class="sprint-row-line">
+                  <!-- Each row opens on its own; several may be open at once. -->
+                  <button
+                    class="sprint-row-toggle"
+                    type="button"
+                    [attr.aria-expanded]="isExpanded(sprint.sprintId)"
+                    [attr.aria-label]="'Tasks in ' + sprint.name"
+                    (click)="toggle(sprint.sprintId)">
+                    <mat-icon>{{ isExpanded(sprint.sprintId) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+                  </button>
+
+                  <!-- Opening the board means working in the sprint: the kanban, scoped to it. -->
+                  <a
+                    class="sprint-row-link"
+                    [routerLink]="boardPath(group.boardId)"
+                    [queryParams]="{ sprint: sprint.sprintId }">
+                    <span class="sprint-row-name">{{ sprint.name }}</span>
+
+                    <!-- "up to, not including" — the end day is not part of the sprint. -->
+                    <span class="sprint-row-dates">{{ sprint.startDate }} → {{ sprint.endDate }}</span>
+
+                    <span class="sprint-row-status" [class]="'sprint-row-status--' + sprint.status">
+                      {{ sprint.status }}
+                    </span>
+
+                    <span class="sprint-row-count">
+                      {{ sprint.taskCount }} task{{ sprint.taskCount === 1 ? '' : 's' }}
+                    </span>
+                  </a>
+                </div>
+
+                @if (isExpanded(sprint.sprintId)) {
+                  <div class="sprint-row-tasks">
+                    @if (taskStateOf(sprint.sprintId); as state) {
+                      @switch (state.status) {
+                        @case ('loading') {
+                          <p class="sprint-row-message">Loading tasks…</p>
+                        }
+                        @case ('failed') {
+                          <p class="sprint-row-message">Tasks could not be loaded.</p>
+                        }
+                        @default {
+                          @if (state.rows.length === 0) {
+                            <p class="sprint-row-message">
+                              No tasks in this sprint yet. Put work into it from the board's Backlog.
+                            </p>
+                          } @else {
+                            <!-- The same table the Backlog draws, read-only here. -->
+                            <app-task-table
+                              [rows]="state.rows"
+                              [caption]="'Tasks in ' + sprint.name" />
+                          }
+                        }
+                      }
+                    }
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </div>
+  }
+</div>

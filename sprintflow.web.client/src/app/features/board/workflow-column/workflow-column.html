@@ -16,7 +16,9 @@
       class="column-action"
       mat-icon-button
       type="button"
+      [disabled]="!canAddTask()"
       [attr.aria-label]="'Add a task to ' + column().name"
+      [attr.title]="canAddTask() ? null : 'No sprint is running on this board. Create tasks from the Backlog.'"
       (click)="addTask.emit(column().workflowColumnId)">
       <mat-icon>add</mat-icon>
     </button>
@@ -32,16 +34,9 @@
         <mat-icon>more_horiz</mat-icon>
       </button>
 
+      <!-- Reordering is the grip's job and only the grip's job, so it is not repeated here. -->
       <mat-menu #columnMenu="matMenu">
         <button mat-menu-item type="button" (click)="renameColumn.emit(column())">Rename</button>
-
-        <!-- Reordering without dragging. -->
-        <button mat-menu-item type="button" [disabled]="!canMoveLeft()" (click)="shiftColumn.emit(-1)">
-          Move left
-        </button>
-        <button mat-menu-item type="button" [disabled]="!canMoveRight()" (click)="shiftColumn.emit(1)">
-          Move right
-        </button>
 
         <!-- Offered whatever the column holds. Whether it can actually go is explained when it is
              tried, rather than by a warning that sits there all the time. -->

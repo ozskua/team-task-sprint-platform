@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.DTOs.Areas;
+using SprintFlow.Web.Server.Extensions;
 using SprintFlow.Web.Server.Interfaces.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
@@ -32,7 +32,8 @@ public class AreasController : ControllerBase
         [FromBody] CreateAreaRequestDto request,
         CancellationToken cancellationToken)
     {
-        var area = await areaService.CreateAsync(request, GetAuthenticatedUserId(), cancellationToken);
+        var area = await areaService.CreateAsync(
+            request, User.GetAuthenticatedUserId(), cancellationToken);
 
         return CreatedAtAction(nameof(GetAll), new { }, area);
     }
@@ -45,24 +46,5 @@ public class AreasController : ControllerBase
         CancellationToken cancellationToken)
     {
         return Ok(await areaService.GetAllAsync(cancellationToken));
-    }
-
-    /// <summary>
-    /// The creator, taken from the validated token. The request body has no say in this — a client
-    /// that sends its own id is simply not modelled by <see cref="CreateAreaRequestDto"/>.
-    /// </summary>
-    private int GetAuthenticatedUserId()
-    {
-        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        // Every token this server issues carries the claim, so its absence means the server is
-        // misconfigured — not that the caller did anything wrong. A 500 states that honestly.
-        if (!int.TryParse(claim, out var userId))
-        {
-            throw new InvalidOperationException(
-                "The authenticated token carries no usable NameIdentifier claim.");
-        }
-
-        return userId;
     }
 }

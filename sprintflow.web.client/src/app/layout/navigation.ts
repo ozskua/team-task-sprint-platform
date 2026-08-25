@@ -11,7 +11,10 @@ export interface NavItem {
 export const ADMIN_NAVIGATION: readonly NavItem[] = [
   { label: 'Dashboard', path: '/admin/dashboard' },
   { label: 'Users', path: '/admin/users' },
-  { label: 'Teams', path: '/admin/teams' }
+  { label: 'Teams', path: '/admin/teams' },
+  // Below Teams: a sprint belongs to a board, and a board is what a team is, so the two read
+  // together. The page surveys every board's sprints; creating one stays on the board itself.
+  { label: 'Sprints', path: '/admin/sprints' }
 ];
 
 /**
@@ -22,5 +25,6 @@ export const ADMIN_NAVIGATION: readonly NavItem[] = [
 export const USER_NAVIGATION: readonly NavItem[] = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Users', path: '/users' },
-  { label: 'Teams', path: '/teams' }
+  { label: 'Teams', path: '/teams' },
+  { label: 'Sprints', path: '/sprints' }
 ];

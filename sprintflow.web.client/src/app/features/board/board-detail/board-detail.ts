@@ -2,20 +2,20 @@ import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { ActivatedRoute, Router } from '@angular/router';
-import { switchMap } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 
-import { BoardColumn, BoardTask } from '../../../core/models/board-detail-models';
-import { AreaService } from '../../../core/services/area.service';
+import { Observable, combineLatest } from 'rxjs';
+
+// Aliased: the model and this component are both called BoardDetail.
+import {
+  BoardColumn,
+  BoardDetail as BoardDetailModel,
+  BoardTask
+} from '../../../core/models/board-detail-models';
 import { BoardDetailService } from '../../../core/services/board-detail.service';
+import { BoardActions } from '../board-actions';
 import { ConfirmDialog, ConfirmDialogData } from '../dialogs/confirm-dialog/confirm-dialog';
 import { ColumnFormDialog, ColumnFormDialogData } from '../dialogs/column-form-dialog/column-form-dialog';
-import { TaskDetailDialog, TaskDetailDialogResult } from '../dialogs/task-detail-dialog/task-detail-dialog';
-import {
-  TaskFormDialog,
-  TaskFormDialogData,
-  TaskFormDialogResult
-} from '../dialogs/task-form-dialog/task-form-dialog';
 
 /**
  * Below this a lane stops being readable, so the workflow area starts scrolling sideways instead of
@@ -25,12 +25,15 @@ const LANE_MIN_WIDTH = 260;
 const LANE_GAP = 12;
 
 /**
- * The board page. Everything the user does to a board is started here; the columns and cards below
- * only report what was clicked or dragged.
+ * The board page. The columns and cards below only report what was clicked or dragged.
  *
- * Moves are shown before the server has answered, because a card that lags behind the pointer
- * feels broken. Each one keeps the board exactly as it was beforehand, so a failed request puts
- * the card back where it was picked up from rather than leaving a lie on screen.
+ * Anything a task or the board itself can have done to it lives in BoardActions, because the
+ * backlog offers the same things and they must not drift apart. What stays here is what only a
+ * kanban has: the columns, and the drag that moves a card between them.
+ *
+ * Moves are shown before the server has answered, because a card that lags behind the pointer feels
+ * broken. Each one keeps the board exactly as it was beforehand, so a failed request puts the card
+ * back where it was picked up from rather than leaving a lie on screen.
  */
 @Component({
   selector: 'app-board-detail',
@@ -41,9 +44,8 @@ const LANE_GAP = 12;
 })
 export class BoardDetail {
   private readonly boardDetail = inject(BoardDetailService);
+  private readonly boardActions = inject(BoardActions);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly areaService = inject(AreaService);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -69,11 +71,10 @@ export class BoardDetail {
       .sort((left, right) => left.position - right.position));
 
   /**
-   * The two outcome columns, shown stacked in one lane on the right.
+   * The two outcome columns, drawn as one lane on the right.
    *
    * They stay two separate columns in every sense that matters — their own ids, their own tasks and
-   * their own drop lists. Only the lane they are drawn in is shared, because a board rarely needs a
-   * full column's width for either of them.
+   * their own drop lists. Only the way they are drawn is shared.
    */
   protected readonly completedColumn = computed(() =>
     this.board()?.columns.find(column => column.systemKind === 'Completed'));
@@ -100,10 +101,32 @@ export class BoardDetail {
     return lanes === 0 ? 0 : lanes * LANE_MIN_WIDTH + (lanes - 1) * LANE_GAP;
   });
 
+  /**
+   * The sprint whose tasks are on screen, or `null` when none is.
+   *
+   * Resolved by the server: naming no sprint means "whichever is running today", so this is the
+   * answer rather than anything this page worked out.
+   */
+  protected readonly selectedSprint = computed(() => this.board()?.selectedSprint ?? null);
+
+  /**
+   * Whether the board has a sprint in context at all.
+   *
+   * When it does not, the kanban is deliberately empty — the board's columns are all there with no
+   * cards in them — and creating a task is turned off, because a task made here would belong to no
+   * sprint and so would not appear in the very view it was created from. The backlog is where a
+   * task without a sprint is created.
+   */
+  protected readonly hasSprintContext = computed(() => this.selectedSprint() !== null);
+
   constructor() {
-    this.route.paramMap
+    // The board comes from the path and the sprint from the query string, so both have to be
+    // watched: switching sprints changes only the latter and would otherwise not reload anything.
+    combineLatest([this.route.paramMap, this.route.queryParamMap])
       .pipe(takeUntilDestroyed())
-      .subscribe(params => this.loadBoard(Number(params.get('boardId'))));
+      .subscribe(([params, query]) => this.loadBoard(
+        Number(params.get('boardId')),
+        parseSprintId(query.get('sprint'))));
 
     // Dropped on the way out, so opening another board never shows this one's cards first.
     this.destroyRef.onDestroy(() => this.boardDetail.clear());
@@ -113,143 +136,41 @@ export class BoardDetail {
     this.actionError.set(null);
   }
 
-  protected isMovingTask(taskId: number): boolean {
-    return this.movingTaskIds().has(taskId);
-  }
-
-  protected canMoveLeft(column: BoardColumn): boolean {
-    return this.customColumns().findIndex(c => c.workflowColumnId === column.workflowColumnId) > 0;
-  }
-
-  protected canMoveRight(column: BoardColumn): boolean {
-    const columns = this.customColumns();
-
-    return columns.findIndex(c => c.workflowColumnId === column.workflowColumnId) < columns.length - 1;
-  }
-
   // --- Tasks --------------------------------------------------------------
 
   /** The board-level action. Sends no column, so the server starts the task in To Do. */
   protected createTaskInToDo(): void {
-    this.openTaskForm({ heading: 'New task', confirmLabel: 'Create' }, result =>
-      this.submitCreate(result, undefined));
-  }
-
-  /** Opened straight from a card's menu, skipping the details dialog. */
-  protected editTaskDirectly(task: BoardTask): void {
-    this.editTask(task.taskId);
-  }
-
-  protected deleteTaskDirectly(task: BoardTask): void {
-    this.confirmDeleteTask(task.taskId);
+    this.run(
+      board => this.boardActions.createTask(board.boardId),
+      'That task could not be created.');
   }
 
   /** A column's own action. Sends that column, and the server checks it belongs to this board. */
   protected createTaskInColumn(columnId: number): void {
     const column = this.allColumns().find(c => c.workflowColumnId === columnId);
 
-    this.openTaskForm(
-      { heading: `New task in ${column?.name ?? 'this column'}`, confirmLabel: 'Create' },
-      result => this.submitCreate(result, columnId));
+    this.run(
+      board => this.boardActions.createTask(board.boardId, columnId, column?.name),
+      'That task could not be created.');
   }
 
   protected openTask(task: BoardTask): void {
-    const boardId = this.board()?.boardId;
-
-    if (boardId === undefined) {
-      return;
-    }
-
-    this.dialog
-      .open<TaskDetailDialog, unknown, TaskDetailDialogResult>(TaskDetailDialog, {
-        data: { taskId: task.taskId },
-        autoFocus: 'dialog',
-        width: '460px'
-      })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(result => {
-        if (result === 'edit') {
-          this.editTask(task.taskId);
-        } else if (result === 'delete') {
-          this.confirmDeleteTask(task.taskId);
-        }
-      });
+    this.run(
+      board => this.boardActions.openTaskDetail(board.boardId, task.taskId),
+      'That task could not be updated.');
   }
 
-  private editTask(taskId: number): void {
-    const task = this.findTask(taskId);
-
-    if (task === undefined) {
-      return;
-    }
-
-    const boardId = this.board()?.boardId;
-
-    if (boardId === undefined) {
-      return;
-    }
-
-    this.openTaskForm(
-      {
-        heading: 'Edit task',
-        confirmLabel: 'Save',
-        title: task.title,
-        description: task.description,
-        assigneeUserId: task.assignee?.userId ?? null
-      },
-      // Then re-read the board: changing who a task is assigned to changes who is on the team, and
-      // that is the server's answer rather than something to work out here.
-      result => this.boardDetail.updateTask(taskId, result)
-        .pipe(
-          switchMap(() => this.boardDetail.load(boardId)),
-          takeUntilDestroyed(this.destroyRef))
-        .subscribe({ error: () => this.reportError('That task could not be saved.') }));
+  /** Opened straight from a card's menu, skipping the details dialog. */
+  protected editTaskDirectly(task: BoardTask): void {
+    this.run(
+      board => this.boardActions.editTask(board.boardId, task.taskId),
+      'That task could not be saved.');
   }
 
-  private confirmDeleteTask(taskId: number): void {
-    const task = this.findTask(taskId);
-
-    if (task === undefined) {
-      return;
-    }
-
-    const data: ConfirmDialogData = {
-      title: 'Delete this task?',
-      message: `"${task.title}" will be removed from the board.`,
-      consequence:
-        'The task and its participant records are deleted permanently. This cannot be undone, '
-        + 'and anyone whose only participation was on this task will no longer be a team member.',
-      confirmLabel: 'Delete permanently'
-    };
-
-    this.dialog
-      .open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, { data, autoFocus: 'dialog' })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(confirmed => {
-        if (confirmed === true) {
-          this.deleteTask(taskId);
-        }
-      });
-  }
-
-  private deleteTask(taskId: number): void {
-    const boardId = this.board()?.boardId;
-
-    if (boardId === undefined) {
-      return;
-    }
-
-    // Not optimistic: a delete cannot be taken back, so the card stays until the server confirms.
-    this.boardDetail.deleteTask(taskId)
-      // Then re-read the board. The task's participation rows went with it, so anyone whose only
-      // participation was on this task has just stopped being a member — and who is a member is
-      // the server's answer, not something to recompute here.
-      .pipe(
-        switchMap(() => this.boardDetail.load(boardId)),
-        takeUntilDestroyed(this.destroyRef))
-      .subscribe({ error: () => this.reportError('That task could not be deleted.') });
+  protected deleteTaskDirectly(task: BoardTask): void {
+    this.run(
+      board => this.boardActions.deleteTask(board.boardId, task.taskId),
+      'That task could not be deleted.');
   }
 
   // --- Moving -------------------------------------------------------------
@@ -288,7 +209,13 @@ export class BoardDetail {
     this.setMoving(move.taskId, true);
 
     this.boardDetail
-      .moveTask(move.taskId, { targetColumnId: move.targetColumnId, targetIndex: move.targetIndex })
+      .moveTask(move.taskId, {
+        targetColumnId: move.targetColumnId,
+        targetIndex: move.targetIndex,
+        // What the index was counted against. On a scoped board the user only sees this sprint's
+        // cards, so the server has to translate the slot back into the whole column.
+        sprintId: this.boardDetail.scope()
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => this.setMoving(move.taskId, false),
@@ -301,6 +228,7 @@ export class BoardDetail {
   }
 
   // --- Columns ------------------------------------------------------------
+  // Not shared with the backlog: it has no columns on screen to act on.
 
   protected createColumn(): void {
     const boardId = this.board()?.boardId;
@@ -390,90 +318,7 @@ export class BoardDetail {
       });
   }
 
-  // --- The board itself ---------------------------------------------------
-
-  protected renameBoard(): void {
-    const board = this.board();
-
-    if (board === undefined || board === null) {
-      return;
-    }
-
-    const data: ColumnFormDialogData = {
-      heading: 'Rename board',
-      confirmLabel: 'Save',
-      name: board.name
-    };
-
-    this.dialog
-      .open<ColumnFormDialog, ColumnFormDialogData, string>(ColumnFormDialog, { data, autoFocus: 'dialog' })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(name => {
-        if (name !== undefined) {
-          this.boardDetail.renameBoard(board.boardId, { name })
-            .pipe(
-              // Re-read both the board and the Area list: the name shows in the sidebar too.
-              switchMap(() => this.boardDetail.load(board.boardId)),
-              switchMap(() => this.areaService.load()),
-              takeUntilDestroyed(this.destroyRef))
-            .subscribe({ error: () => this.reportError('That board could not be renamed.') });
-        }
-      });
-  }
-
-  protected confirmDeleteBoard(): void {
-    const board = this.board();
-
-    if (board === undefined || board === null) {
-      return;
-    }
-
-    const data: ConfirmDialogData = {
-      title: 'Delete this board?',
-      message: `"${board.name}" will be removed from its area.`,
-      consequence:
-        'The board, its team, its workflow columns, every task on it and every task assignment are '
-        + 'deleted permanently. This cannot be undone.',
-      confirmLabel: 'Delete permanently'
-    };
-
-    this.dialog
-      .open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, { data, autoFocus: 'dialog' })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(confirmed => {
-        if (confirmed === true) {
-          this.deleteBoard(board.boardId);
-        }
-      });
-  }
-
-  private deleteBoard(boardId: number): void {
-    this.boardDetail.deleteBoard(boardId)
-      // The sidebar still lists the board that has just gone, so the Area list is re-read before
-      // leaving. Navigating away matters as much as the delete: this page describes something that
-      // no longer exists, and its route would 404 on the next load.
-      .pipe(
-        switchMap(() => this.areaService.load()),
-        takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => void this.router.navigateByUrl(this.dashboardOfCurrentShell()),
-        error: () => this.reportError('That board could not be deleted.')
-      });
-  }
-
-  /**
-   * Where to go once the board is gone. Worked out from the current URL rather than hard-coded,
-   * because the same page is mounted at `/boards/:id` in one shell and `/admin/boards/:id` in the
-   * other — and a relative hop would land on the app root, which redirects to the sign-in page.
-   */
-  private dashboardOfCurrentShell(): string {
-    const prefix = this.router.url.split('/boards/')[0];
-
-    return `${prefix}/dashboard`;
-  }
-
+  /** Dragging the grip is the only way to reorder a column, so this is the only caller. */
   protected onColumnDropped(event: CdkDragDrop<BoardColumn[]>): void {
     if (event.previousIndex === event.currentIndex) {
       return;
@@ -483,21 +328,6 @@ export class BoardDetail {
     moveItemInArray(ordered, event.previousIndex, event.currentIndex);
 
     this.submitColumnOrder(ordered.map(column => column.workflowColumnId));
-  }
-
-  /** The keyboard and menu path to the same result as dragging a column. */
-  protected shiftColumn(column: BoardColumn, delta: number): void {
-    const ordered = this.customColumns().slice();
-    const from = ordered.findIndex(c => c.workflowColumnId === column.workflowColumnId);
-    const to = from + delta;
-
-    if (from < 0 || to < 0 || to >= ordered.length) {
-      return;
-    }
-
-    moveItemInArray(ordered, from, to);
-
-    this.submitColumnOrder(ordered.map(c => c.workflowColumnId));
   }
 
   private submitColumnOrder(orderedColumnIds: readonly number[]): void {
@@ -519,9 +349,38 @@ export class BoardDetail {
       });
   }
 
+  // --- The board itself ---------------------------------------------------
+
+  protected renameBoard(): void {
+    this.run(board => this.boardActions.renameBoard(board), 'That board could not be renamed.');
+  }
+
+  protected confirmDeleteBoard(): void {
+    this.run(board => this.boardActions.deleteBoard(board), 'That board could not be deleted.');
+  }
+
   // --- Plumbing -----------------------------------------------------------
 
-  private loadBoard(boardId: number): void {
+  /**
+   * Runs one shared action against the board currently loaded, and turns any failure into this
+   * page's own wording. The action already knows how to cancel quietly, so there is nothing to
+   * handle here but the error.
+   */
+  private run(
+    action: (board: BoardDetailModel) => Observable<unknown>,
+    failureMessage: string): void {
+    const board = this.board();
+
+    if (board === null) {
+      return;
+    }
+
+    action(board)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ error: () => this.reportError(failureMessage) });
+  }
+
+  private loadBoard(boardId: number, sprintId: number | null): void {
     if (!Number.isInteger(boardId) || boardId <= 0) {
       this.loading.set(false);
       this.failed.set(true);
@@ -533,57 +392,17 @@ export class BoardDetail {
     this.failed.set(false);
     this.actionError.set(null);
 
-    this.boardDetail.load(boardId)
+    this.boardDetail.load(boardId, sprintId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => this.loading.set(false),
         error: () => {
+          // Also covers a sprint that is not this board's, which the server refuses rather than
+          // answering with an empty board.
           this.failed.set(true);
           this.loading.set(false);
         }
       });
-  }
-
-  private openTaskForm(
-    data: TaskFormDialogData,
-    onResult: (result: TaskFormDialogResult) => void): void {
-    this.dialog
-      .open<TaskFormDialog, TaskFormDialogData, TaskFormDialogResult>(TaskFormDialog, {
-        data,
-        autoFocus: 'dialog',
-        width: '460px'
-      })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(result => {
-        if (result !== undefined) {
-          onResult(result);
-        }
-      });
-  }
-
-  private submitCreate(result: TaskFormDialogResult, columnId: number | undefined): void {
-    const boardId = this.board()?.boardId;
-
-    if (boardId === undefined) {
-      return;
-    }
-
-    // The task added to the board is the one the server returned — never a local stand-in, so the
-    // creator's name, the position and the date are real from the first render. The board is then
-    // re-read because creating an assigned task can add someone to the team.
-    this.boardDetail.createTask(boardId, { ...result, columnId })
-      .pipe(
-        switchMap(() => this.boardDetail.load(boardId)),
-        takeUntilDestroyed(this.destroyRef))
-      .subscribe({ error: () => this.reportError('That task could not be created.') });
-  }
-
-  private findTask(taskId: number): BoardTask | undefined {
-    return this.board()
-      ?.columns
-      .flatMap(column => column.tasks)
-      .find(task => task.taskId === taskId);
   }
 
   private setMoving(taskId: number, moving: boolean): void {
@@ -603,4 +422,20 @@ export class BoardDetail {
   private reportError(message: string): void {
     this.actionError.set(message);
   }
+}
+
+/**
+ * The `sprint` query parameter as a positive integer, or `null` for anything else.
+ *
+ * A URL can carry anything, so a value that is not a sprint id is treated as no sprint at all —
+ * the whole board — rather than being sent on for the server to reject.
+ */
+function parseSprintId(raw: string | null): number | null {
+  if (raw === null) {
+    return null;
+  }
+
+  const parsed = Number(raw);
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }

@@ -38,6 +38,12 @@ public class BoardRepository : IBoardRepository
     public Task<bool> ExistsAsync(int boardId, CancellationToken cancellationToken)
         => context.Boards.AnyAsync(b => b.BoardId == boardId, cancellationToken);
 
+    public Task<Board?> GetWithAreaAsync(int boardId, CancellationToken cancellationToken)
+        => context.Boards
+            .AsNoTracking()
+            .Include(b => b.Area)
+            .FirstOrDefaultAsync(b => b.BoardId == boardId, cancellationToken);
+
     public Task<int> CountAsync(CancellationToken cancellationToken)
         => context.Boards.CountAsync(cancellationToken);
 
@@ -51,17 +57,39 @@ public class BoardRepository : IBoardRepository
     public Task SaveChangesAsync(CancellationToken cancellationToken)
         => context.SaveChangesAsync(cancellationToken);
 
-    public Task<Board?> GetDetailAsync(int boardId, CancellationToken cancellationToken)
+    public Task<Board?> GetDetailAsync(
+        int boardId,
+        int? sprintId,
+        bool allTasks,
+        CancellationToken cancellationToken)
         => context.Boards
             .AsNoTracking()
             .Include(b => b.CreatedByUser)
+            // Filtered includes. The same filter is repeated on every chain because EF requires the
+            // repeated navigation to be filtered identically; written any other way it refuses the
+            // query.
+            //
+            // One predicate, three answers:
+            //   allTasks            → every task on the board, which is the backlog;
+            //   sprintId supplied   → that sprint's tasks, which is the kanban;
+            //   neither             → nothing, which is the kanban of a board with no sprint
+            //                         running. An empty board is the correct answer there, not
+            //                         every task it has ever held.
+            //
+            // Only the tasks are filtered. The columns never are: a sprint with nothing in Testing
+            // still has a Testing column, and dropping empty lanes would make the board change
+            // shape as sprints are switched. There is one kanban per board, and this is what keeps
+            // it that way.
             .Include(b => b.WorkflowColumns)
-                .ThenInclude(c => c.Tasks)
+                .ThenInclude(c => c.Tasks.Where(t => allTasks || (sprintId != null && t.SprintId == sprintId)))
                     .ThenInclude(t => t.CreatedByUser) // Every card shows who created it.
             .Include(b => b.WorkflowColumns)
-                .ThenInclude(c => c.Tasks)
+                .ThenInclude(c => c.Tasks.Where(t => allTasks || (sprintId != null && t.SprintId == sprintId)))
                     .ThenInclude(t => t.Participants)
                         .ThenInclude(p => p.User)
+            .Include(b => b.WorkflowColumns)
+                .ThenInclude(c => c.Tasks.Where(t => allTasks || (sprintId != null && t.SprintId == sprintId)))
+                    .ThenInclude(t => t.Sprint)
             // Ordering is applied when mapping rather than here: EF cannot order an Include chain
             // this deep in one expression, and the mapping has to walk the collections anyway.
             .FirstOrDefaultAsync(b => b.BoardId == boardId, cancellationToken);

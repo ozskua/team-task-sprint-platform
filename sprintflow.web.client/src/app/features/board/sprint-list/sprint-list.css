@@ -1,0 +1,181 @@
+.sprint-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px;
+}
+
+.sprint-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.sprint-heading {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.sprint-create {
+    height: 36px;
+    padding: 0 16px;
+    border: none;
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-primary-action);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--app-on-primary-action);
+    cursor: pointer;
+}
+
+.sprint-create:hover {
+    filter: brightness(1.08);
+}
+
+.sprint-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sprint-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-card);
+}
+
+.sprint-row--skeleton {
+    height: 54px;
+    background-color: var(--app-skeleton);
+}
+
+.sprint-row-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.sprint-name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+    text-decoration: none;
+}
+
+.sprint-name:hover {
+    text-decoration: underline;
+}
+
+.sprint-dates {
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.sprint-row-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Tinted by state, so the timeline reads at a glance rather than by comparing dates. */
+.sprint-status {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.sprint-status--Active {
+    background-color: var(--app-chip-progress-bg, rgba(37, 99, 235, 0.16));
+    color: var(--app-chip-progress-fg, #93b4fd);
+}
+
+.sprint-status--Upcoming {
+    background-color: var(--app-chip-neutral-bg, rgba(148, 163, 184, 0.16));
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.sprint-status--Archived {
+    background-color: var(--app-chip-neutral-bg, rgba(148, 163, 184, 0.10));
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.sprint-count {
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.sprint-detail-link {
+    font-size: 0.8125rem;
+    color: var(--app-primary);
+    text-decoration: none;
+}
+
+.sprint-detail-link:hover {
+    text-decoration: underline;
+}
+
+.sprint-state {
+    padding: 32px 16px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-card);
+    text-align: center;
+}
+
+.sprint-state-title {
+    margin: 0 0 6px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.sprint-state-detail {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.sprint-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    border: 1px solid var(--mat-sys-error);
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface);
+}
+
+.sprint-alert-dismiss {
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 0.8125rem;
+    color: var(--app-primary);
+    cursor: pointer;
+}
+
+@media (max-width: 767.98px) {
+    .sprint-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

@@ -29,9 +29,13 @@ export class WorkflowColumnComponent {
   /** Task ids whose move has not come back yet. */
   readonly movingTaskIds = input.required<ReadonlySet<number>>();
 
-  /** False for the leftmost and rightmost custom column, so the menu cannot offer a no-op. */
-  readonly canMoveLeft = input(false);
-  readonly canMoveRight = input(false);
+  /**
+   * Whether a task can be added to this column.
+   *
+   * False on a kanban with no sprint running: the new task would belong to no sprint and would not
+   * appear here, so offering it would be a trap.
+   */
+  readonly canAddTask = input(true);
 
   readonly addTask = output<number>();
   readonly openTask = output<BoardTask>();
@@ -40,7 +44,6 @@ export class WorkflowColumnComponent {
   readonly taskDropped = output<CdkDragDrop<BoardColumn>>();
   readonly renameColumn = output<BoardColumn>();
   readonly deleteColumn = output<BoardColumn>();
-  readonly shiftColumn = output<number>();
 
   protected readonly isSystem = computed(() => this.column().systemKind !== null);
 

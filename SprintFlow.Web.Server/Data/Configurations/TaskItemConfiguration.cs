@@ -55,11 +55,34 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
             .HasForeignKey(t => t.CreatedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Optional, and composite for the same reason the column relationship above is: naming the
+        // sprint and the board together means a sprint from another board has no matching
+        // (SprintId, BoardId) row and the insert is rejected outright, rather than relying on a
+        // service check.
+        //
+        // SprintId is nullable, and SQL Server does not check a composite foreign key when any of
+        // its columns is null — which is exactly right for a task that is in no sprint.
+        //
+        // Restrict, for the same two reasons as the column relationship:
+        //   * it is the deletion rule itself — a sprint still holding tasks cannot be removed;
+        //   * Boards already cascades to Tasks, and a second cascade path to the same table is
+        //     rejected by SQL Server (error 1785).
+        builder.HasOne(t => t.Sprint)
+            .WithMany(s => s.Tasks)
+            .HasForeignKey(t => new { t.SprintId, t.BoardId })
+            .HasPrincipalKey(s => new { s.SprintId, s.BoardId })
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Reading a column means reading its tasks in order.
         builder.HasIndex(t => new { t.TaskColumnId, t.Position });
 
         // Team membership is derived by filtering tasks on their board, so that column is looked up
         // on its own often enough to index.
         builder.HasIndex(t => t.BoardId);
+
+        // No index on SprintId alone. The sprint relationship above already produces
+        // IX_Tasks_SprintId_BoardId, and SprintId leads it, so that index serves a lookup by sprint
+        // on its own as well. A second one would only be another index to keep up to date on every
+        // task written.
     }
 }

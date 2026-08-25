@@ -5,6 +5,26 @@
     <!-- Three separate facts, deliberately not run together: who wrote it, when, and who owes it.
          The first two describe the past, the third describes who is answerable now. -->
     <dl class="task-detail-facts">
+      <dt>Status</dt>
+      <dd>
+        <!-- The column's own name. Completed and Cancelled are two separate statuses, whatever
+             they look like sharing a lane on the board. -->
+        @if (currentColumn(); as column) {
+          <span class="task-detail-status">
+            @if (outcomeOf(column); as outcome) {
+              <span
+                class="task-detail-dot"
+                [class.task-detail-dot--completed]="outcome === 'Completed'"
+                [class.task-detail-dot--cancelled]="outcome === 'Cancelled'"
+                aria-hidden="true"></span>
+            }
+            {{ column.name }}
+          </span>
+        } @else {
+          <span class="task-detail-muted">Unknown</span>
+        }
+      </dd>
+
       <dt>Created by</dt>
       <dd>{{ task.createdByFullName }}</dd>
 
@@ -31,6 +51,35 @@
       <p class="task-detail-description">{{ task.description }}</p>
     } @else {
       <p class="task-detail-muted">No description.</p>
+    }
+
+    <!--
+      Every column of this board, so the task can be moved without hunting for the right lane. Uses
+      the same move endpoint a drag does; the server decides where in the column it lands.
+    -->
+    <div class="task-detail-move">
+      <label class="task-detail-move-label" for="task-status">Move to</label>
+
+      <!-- Marked on the options rather than bound on the select: the options are rendered in the
+           same pass, so a value set on the select has nothing to match yet and the field would
+           open showing the wrong status. -->
+      <select
+        id="task-status"
+        class="task-detail-select"
+        [disabled]="changingStatus()"
+        (change)="onStatusChange($any($event.target).value)">
+        @for (column of columns(); track column.workflowColumnId) {
+          <option
+            [value]="column.workflowColumnId"
+            [selected]="column.workflowColumnId === task.taskColumnId">
+            {{ column.name }}
+          </option>
+        }
+      </select>
+    </div>
+
+    @if (statusFailed()) {
+      <p class="task-detail-error" role="alert">This task could not be moved.</p>
     }
   </mat-dialog-content>
 

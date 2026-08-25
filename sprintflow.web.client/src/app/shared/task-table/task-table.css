@@ -1,0 +1,159 @@
+/*
+  The task table's own styles, moved here with the markup so the Backlog and the sprint pages cannot
+  drift apart visually. The Backlog keeps only what is unique to it — its two selector columns.
+*/
+
+/*
+  The one scroll surface on this page: the rows move under a header that stays put. The table inside
+  keeps its normal display, so the header cells and the body cells go on sharing column widths.
+*/
+.task-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-card);
+}
+
+.task-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+/*
+  Sticky on the cells rather than on the row: `position: sticky` does not apply to `<tr>` in every
+  engine, and the cells are what actually paint. An opaque background is required — without it the
+  rows scroll visibly through the header.
+*/
+.task-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--app-border-card);
+    background-color: var(--app-surface-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.task-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--app-border-card);
+    vertical-align: middle;
+    color: var(--mat-sys-on-surface);
+}
+
+.task-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.task-row:hover td {
+    background-color: var(--app-surface-hover);
+}
+
+/* A move in flight. Reduced opacity plus a disabled select, never colour alone. */
+.task-row--busy td {
+    opacity: 0.55;
+}
+
+.task-title {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    color: var(--mat-sys-on-surface);
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.task-title:hover {
+    color: var(--app-primary);
+}
+
+.task-title:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.task-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+/*
+  The same green and red as the card badge. Here the column's name is written out beside it, so the
+  dot is only a repetition of something already said in words — it never carries the meaning alone.
+*/
+.task-dot {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.task-dot--completed {
+    background-color: var(--app-status-done);
+}
+
+.task-dot--cancelled {
+    background-color: var(--app-status-overdue);
+}
+
+.task-assignee {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.task-assignee-name {
+    overflow-wrap: anywhere;
+}
+
+/* The same circle the card shows, so the person is recognisable in both places. */
+.assignee-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border: 2px solid var(--app-primary);
+    border-radius: 50%;
+    background-color: var(--app-surface-card);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--mat-sys-on-surface);
+    cursor: default;
+}
+
+.task-muted {
+    font-style: italic;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.task-date {
+    white-space: nowrap;
+}
+
+/* Plain text where the Backlog has a button: the sprint pages have nothing to open. */
+.task-title--plain {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    cursor: default;
+}
+

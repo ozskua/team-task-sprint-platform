@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.DTOs.Boards;
+using SprintFlow.Web.Server.Extensions;
 using SprintFlow.Web.Server.Interfaces.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
@@ -38,7 +38,7 @@ public class BoardsController : ControllerBase
         var board = await boardService.CreateAsync(
             areaId,
             request,
-            GetAuthenticatedUserId(),
+            User.GetAuthenticatedUserId(),
             cancellationToken);
 
         // Turning "no such Area" into a status code is an HTTP concern, so it belongs here rather
@@ -52,24 +52,5 @@ public class BoardsController : ControllerBase
         }
 
         return StatusCode(StatusCodes.Status201Created, board);
-    }
-
-    /// <summary>
-    /// The creator, taken from the validated token. The request body has no say in this — a client
-    /// that sends its own id is simply not modelled by <see cref="CreateBoardRequestDto"/>.
-    /// </summary>
-    private int GetAuthenticatedUserId()
-    {
-        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        // Every token this server issues carries the claim, so its absence means the server is
-        // misconfigured — not that the caller did anything wrong. A 500 states that honestly.
-        if (!int.TryParse(claim, out var userId))
-        {
-            throw new InvalidOperationException(
-                "The authenticated token carries no usable NameIdentifier claim.");
-        }
-
-        return userId;
     }
 }

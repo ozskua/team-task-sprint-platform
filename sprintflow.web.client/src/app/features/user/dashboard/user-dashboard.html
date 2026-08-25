@@ -3,26 +3,54 @@
   <!-- Welcome + compact summary. The numbers are context, not the subject. -->
   <section class="welcome">
     <h2 class="welcome-title">Welcome back</h2>
-    <p class="welcome-context">{{ contextLine() }}</p>
+
+    @if (loading()) {
+      <span class="welcome-skeleton" aria-hidden="true"></span>
+    } @else if (!failed()) {
+      <p class="welcome-context">{{ contextLine() }}</p>
+    }
 
     <div class="summary">
       <div class="summary-counts">
+        <!-- Four buckets, one per kind of column. Together they account for every task assigned
+             to this user, so nothing is hidden by the list below only showing two of them. -->
         <div class="summary-item">
-          <span class="summary-label">Todo</span>
-          <span class="summary-value">{{ counts().todo }}</span>
+          <span class="summary-label">To Do</span>
+          @if (loading()) {
+            <span class="summary-value-skeleton" aria-hidden="true"></span>
+          } @else {
+            <span class="summary-value">{{ myCounts().toDo }}</span>
+          }
         </div>
         <div class="summary-item">
-          <span class="summary-label">In Progress</span>
-          <span class="summary-value">{{ counts().inProgress }}</span>
+          <span class="summary-label">Open</span>
+          @if (loading()) {
+            <span class="summary-value-skeleton" aria-hidden="true"></span>
+          } @else {
+            <span class="summary-value">{{ myCounts().open }}</span>
+          }
         </div>
         <div class="summary-item">
           <span class="summary-label">Completed</span>
-          <span class="summary-value">{{ counts().completed }}</span>
+          @if (loading()) {
+            <span class="summary-value-skeleton" aria-hidden="true"></span>
+          } @else {
+            <span class="summary-value">{{ myCounts().completed }}</span>
+          }
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Cancelled</span>
+          @if (loading()) {
+            <span class="summary-value-skeleton" aria-hidden="true"></span>
+          } @else {
+            <span class="summary-value">{{ myCounts().cancelled }}</span>
+          }
         </div>
       </div>
 
       <div class="summary-progress">
         <div class="summary-progress-head">
+          <!-- Cancelled is not in the denominator: abandoned work is neither done nor outstanding. -->
           <span class="summary-label">Overall progress</span>
           <span class="summary-percent">{{ progressPercent() }}%</span>
         </div>
@@ -32,8 +60,7 @@
           [attr.aria-valuenow]="progressPercent()"
           aria-valuemin="0"
           aria-valuemax="100"
-          aria-label="Overall task progress">
-          <div class="summary-fill" [style.width.%]="progressPercent()"></div>
+          aria-label="Overall task progress"><div class="summary-fill" [style.width.%]="progressPercent()"></div>
         </div>
       </div>
     </div>
@@ -51,6 +78,39 @@
     </section>
   }
 
+  <!--
+    Tasks assigned to this user, across every board they are on. Not tasks they created: being the
+    author of a task says who wrote it down, not who owes it.
+  -->
+  <section class="dashboard-section">
+    <h2 class="section-title">My Tasks</h2>
+
+    @if (loading()) {
+      <div class="task-list" aria-hidden="true">
+        @for (row of skeletonRows; track row) {
+          <span class="row-skeleton"></span>
+        }
+      </div>
+      <p class="visually-hidden">Loading your dashboard.</p>
+    } @else if (failed()) {
+      <section class="panel message">
+        <span class="message-title">Your dashboard could not be loaded</span>
+        <span class="message-hint">Please refresh the page to try again.</span>
+      </section>
+    } @else if (myTasks().length === 0) {
+      <section class="panel message">
+        <span class="message-title">Nothing is assigned to you</span>
+        <span class="message-hint">Tasks appear here when someone assigns one to you on a board.</span>
+      </section>
+    } @else {
+      <div class="task-list">
+        @for (task of myTasks(); track task.taskId) {
+          <app-my-task-row [task]="task" />
+        }
+      </div>
+    }
+  </section>
+
   <section class="dashboard-section">
     <h2 class="section-title">Upcoming Tasks</h2>
 
@@ -65,21 +125,33 @@
     }
   </section>
 
+  <!--
+    A team is a board you hold a task on. Creating a board does not put you on its team, and no
+    membership is stored anywhere — it is worked out from assignment every time this is read.
+  -->
   <section class="dashboard-section">
     <h2 class="section-title">My Teams</h2>
 
-    @if (teams().length === 0) {
-      <p class="empty-state">You are not a member of any team yet.</p>
+    @if (loading()) {
+      <div class="card-grid" aria-hidden="true">
+        @for (row of skeletonRows; track row) {
+          <span class="team-skeleton"></span>
+        }
+      </div>
+    } @else if (failed()) {
+      <section class="panel message">
+        <span class="message-title">Your teams could not be loaded</span>
+        <span class="message-hint">Please refresh the page to try again.</span>
+      </section>
+    } @else if (myTeams().length === 0) {
+      <section class="panel message">
+        <span class="message-title">You are not on a team yet</span>
+        <span class="message-hint">You join a board's team as soon as a task there is assigned to you.</span>
+      </section>
     } @else {
-      <div class="card-grid card-grid--teams">
-        @for (team of teams(); track team.teamId) {
-          <article class="team-card">
-            <span class="team-monogram" aria-hidden="true">{{ initialOf(team) }}</span>
-            <span class="team-info">
-              <span class="team-name">{{ team.teamName }}</span>
-              <span class="team-members">{{ team.memberCount }} members</span>
-            </span>
-          </article>
+      <div class="card-grid">
+        @for (team of myTeams(); track team.boardId) {
+          <app-team-summary-card [team]="team" />
         }
       </div>
     }

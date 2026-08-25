@@ -43,4 +43,10 @@ public class Board
     /// filtering these, which is why tasks carry the board directly.
     /// </summary>
     public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
+
+    /// <summary>
+    /// The board's sprints, together forming one timeline — no two of them cover the same day. A
+    /// board starts with none, and tasks do not need one.
+    /// </summary>
+    public ICollection<Sprint> Sprints { get; set; } = new List<Sprint>();
 }

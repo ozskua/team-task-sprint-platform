@@ -1,0 +1,37 @@
+:host {
+    display: block;
+    flex: 0 0 auto;
+}
+
+/* An underlined strip rather than boxed tabs: it belongs to the board above it, not to the page. */
+.board-views {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--app-border-card);
+}
+
+.board-view {
+    padding: 8px 14px;
+    /* Transparent, so the active tab's underline does not shift the label by 2px when it appears. */
+    border-bottom: 2px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.board-view:hover {
+    color: var(--mat-sys-on-surface);
+}
+
+.board-view:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: -2px;
+    border-radius: 4px;
+}
+
+/* Colour and an underline together — the underline is what carries it if the colour does not. */
+.board-view--active {
+    border-bottom-color: var(--app-primary);
+    color: var(--app-primary);
+}

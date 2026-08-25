@@ -1,0 +1,58 @@
+.sprint-form-title {
+    font-size: 1.125rem;
+}
+
+.sprint-form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.sprint-form-input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 280px;
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface);
+}
+
+.sprint-form-input:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 1px;
+}
+
+/* Side by side: the two dates are one decision, and reading them apart invites transposing them. */
+.sprint-form-dates {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.sprint-form-field {
+    flex: 1;
+    min-width: 0;
+}
+
+/* The narrower of the pair, so two fit where one full-width field would. */
+.sprint-form-field .sprint-form-input {
+    min-width: 0;
+}
+
+.sprint-form-hint {
+    margin: 12px 0 0;
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.sprint-form-error {
+    margin: 8px 0 0;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-error);
+}

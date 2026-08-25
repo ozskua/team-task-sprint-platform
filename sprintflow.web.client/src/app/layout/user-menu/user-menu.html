@@ -3,12 +3,64 @@
   mat-button
   type="button"
   [matMenuTriggerFor]="menu"
-  aria-label="Account menu">
-  <span class="user-menu-label">Account</span>
+  [attr.aria-label]="triggerLabel()">
+  <!--
+    Avatar and chevron only. The initials are decorative here — the button's aria-label already
+    names whose account this is, so announcing "AD" as well would only be noise. The full name and
+    role are inside the card, which is where they are actually readable.
+  -->
+  <span class="user-menu-trigger-avatar" aria-hidden="true">{{ initials() }}</span>
   <!-- iconPositionEnd: MatButton projects icons before the label by default. -->
   <mat-icon iconPositionEnd class="user-menu-chevron">expand_more</mat-icon>
 </button>
 
-<mat-menu #menu="matMenu">
-  <button mat-menu-item type="button" (click)="logout.emit()">Log out</button>
+<mat-menu #menu="matMenu" class="user-menu-panel">
+  <!--
+    Who is signed in. A plain div, deliberately not a mat-menu-item: it is an identity, not an
+    action, so it must not be focusable and must not sit in the arrow-key order.
+  -->
+  <div class="user-menu-card">
+    <span class="user-menu-avatar" role="img" [attr.aria-label]="profileLabel()">
+      <span aria-hidden="true">{{ initials() }}</span>
+    </span>
+
+    <!-- Both in words. The avatar is never the only place the user is identified. -->
+    <span class="user-menu-identity">
+      <span class="user-menu-name">{{ fullName() }}</span>
+      <span
+        class="user-menu-role"
+        [class.user-menu-role--admin]="roleLabel() === 'Admin'">{{ roleLabel() }}</span>
+    </span>
+  </div>
+
+  <!--
+    Reachable by arrow keys and announced as unavailable, but activation leads nowhere.
+
+    The state is carried by the accessible name rather than aria-disabled: MatMenuItem host-binds
+    that attribute to its own `disabled` input, so it cannot be set from here — and setting
+    `disabled` instead would drop the item out of the arrow-key order entirely.
+  -->
+  <button
+    class="user-menu-action user-menu-action--muted"
+    mat-menu-item
+    type="button"
+    aria-label="Settings, coming soon. Not available yet."
+    (click)="onSettingsActivate($event)"
+    (keydown.enter)="onSettingsActivate($event)"
+    (keydown.space)="onSettingsActivate($event)">
+    <mat-icon>settings</mat-icon>
+    <span class="user-menu-action-label">Settings</span>
+    <span class="user-menu-action-note">Coming soon</span>
+  </button>
+
+  <div class="user-menu-divider" role="separator"></div>
+
+  <button
+    class="user-menu-action user-menu-action--exit"
+    mat-menu-item
+    type="button"
+    (click)="logout.emit()">
+    <mat-icon>logout</mat-icon>
+    <span class="user-menu-action-label">Log out</span>
+  </button>
 </mat-menu>

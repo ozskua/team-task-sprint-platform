@@ -35,6 +35,11 @@ const routes: Routes = [
         path: 'teams',
         loadChildren: () => import('../features/teams/teams-module').then(m => m.TeamsModule)
       },
+      // The same overview the admin shell shows, at this shell's own prefix.
+      {
+        path: 'sprints',
+        loadChildren: () => import('../features/sprints/sprints-module').then(m => m.SprintsModule)
+      },
       // The same feature module the admin shell loads, at this shell's own prefix.
       {
         path: 'boards/:boardId',

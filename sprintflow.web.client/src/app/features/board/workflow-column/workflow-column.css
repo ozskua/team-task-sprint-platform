@@ -8,10 +8,21 @@
     min-width: 0;
 }
 
+/*
+  `min-height` rather than `height`: the frame fills the lane it was stretched to, and grows past it
+  when the cards need more room. The workflow area is what scrolls, so a column is free to be as
+  tall as its contents.
+
+  `border-box` is not optional here. There is no global box-sizing reset in this project, so under
+  the default sizing `min-height: 100%` means "the lane's height *plus* my own padding and border" —
+  every column ended up 26px taller than the lane holding it, and the workflow area showed a
+  permanent 17px scrollbar on boards whose cards fit the screen perfectly well.
+*/
 .column {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    box-sizing: border-box;
+    min-height: 100%;
     min-width: 0;
     padding: 12px;
     border: 1px solid var(--app-border-card);
@@ -63,8 +74,9 @@
 }
 
 /*
-  Cards stack and the lane scrolls. `min-height: 0` lets this shrink inside a flex column so the
-  overflow actually engages instead of the list growing past the lane and over its neighbour.
+  Cards stack downwards and the list simply gets longer — no scrollbar of its own. A column with
+  twenty cards makes every lane on the row twenty cards tall and the workflow area scrolls once,
+  which is the behaviour you expect from a board; a little scrolling box inside a fixed lane is not.
   A floor of 60px keeps an empty lane a visible drop target.
 */
 .column-tasks {
@@ -74,8 +86,6 @@
     flex: 1 1 auto;
     min-height: 60px;
     margin-top: 12px;
-    overflow-y: auto;
-    overflow-x: hidden;
 }
 
 .column-empty {

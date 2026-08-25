@@ -20,6 +20,24 @@ import { initialsOf } from '../../../shared/initials';
 export class BoardHeader {
   readonly board = input.required<BoardDetail>();
 
+  /**
+   * One flag per action rather than a single "show the actions" switch, so a view can drop the one
+   * thing that does not apply to it without losing the rest. Only the backlog uses them, and only
+   * to hide Add column: it has no columns on screen to add one next to, while creating a task,
+   * renaming the board and deleting it all mean exactly what they mean on the kanban.
+   */
+  readonly showAddColumn = input(true);
+  readonly showNewTask = input(true);
+  readonly showBoardMenu = input(true);
+
+  /**
+   * Whether a task can be created from here.
+   *
+   * False on a kanban with no sprint running: the task would belong to no sprint and so would not
+   * appear in the view it was made from. The backlog is where an unsprinted task is created.
+   */
+  readonly canCreateTask = input(true);
+
   readonly newTask = output<void>();
   readonly newColumn = output<void>();
   readonly renameBoard = output<void>();

@@ -15,6 +15,14 @@ namespace SprintFlow.Web.Server.DTOs.Tasks;
 /// creator: writing a task down and being answerable for it are different things, and they are
 /// routinely different people.
 /// </param>
+/// <param name="SprintId">
+/// The sprint this task is part of, or <c>null</c> when it is in none. Always a sprint of
+/// <paramref name="BoardId"/>.
+/// </param>
+/// <param name="SprintName">
+/// That sprint's name, or <c>null</c>. Carried alongside the id so a card can name its sprint
+/// without the client having to hold the board's sprint list to look it up.
+/// </param>
 public record TaskResponseDto(
     int TaskId,
     string Title,
@@ -25,4 +33,6 @@ public record TaskResponseDto(
     int CreatedByUserId,
     string CreatedByFullName,
     DateTime CreatedDate,
-    TaskAssigneeResponseDto? Assignee);
+    TaskAssigneeResponseDto? Assignee,
+    int? SprintId,
+    string? SprintName);

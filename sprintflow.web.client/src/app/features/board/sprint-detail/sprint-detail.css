@@ -1,0 +1,114 @@
+.sprint-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+}
+
+.detail-crumbs {
+    display: flex;
+    gap: 8px;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.detail-crumbs a {
+    color: var(--app-primary);
+    text-decoration: none;
+}
+
+.detail-crumbs a:hover {
+    text-decoration: underline;
+}
+
+.detail-card {
+    padding: 24px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-card);
+}
+
+.detail-card--skeleton {
+    height: 220px;
+    background-color: var(--app-skeleton);
+}
+
+.detail-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.detail-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.detail-status {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background-color: rgba(148, 163, 184, 0.16);
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.detail-status--Active {
+    background-color: rgba(37, 99, 235, 0.16);
+    color: #93b4fd;
+}
+
+.detail-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    margin: 0;
+}
+
+.detail-fact dt {
+    margin-bottom: 4px;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.detail-fact dd {
+    margin: 0;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--mat-sys-on-surface);
+}
+
+/* The sprint's own work, directly under its facts. */
+.detail-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detail-tasks-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.detail-card--tasks {
+    height: 160px;
+}
+
+.detail-state-title {
+    margin: 0 0 6px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.detail-state-detail {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}

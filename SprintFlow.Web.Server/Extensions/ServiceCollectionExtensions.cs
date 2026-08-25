@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.Configure<ApplicationOptions>(configuration.GetSection(ApplicationOptions.SectionName));
         services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
 
@@ -78,6 +79,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBoardService, BoardService>();
         services.AddScoped<IBoardDetailService, BoardDetailService>();
 
+        // One board's own figures. Separate from the admin dashboard service, which answers the
+        // same kind of question about the whole system.
+        services.AddScoped<IBoardSummaryService, BoardSummaryService>();
+
         services.AddScoped<IWorkflowColumnRepository, WorkflowColumnRepository>();
         services.AddScoped<IWorkflowColumnService, WorkflowColumnService>();
 
@@ -86,8 +91,18 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<ITaskParticipantRepository, TaskParticipantRepository>();
 
+        // Singleton: it resolves the configured timezone once and then only reads the clock, so
+        // there is nothing per-request about it.
+        services.AddSingleton<IApplicationClock, ApplicationClock>();
+
+        services.AddScoped<ISprintRepository, SprintRepository>();
+        services.AddScoped<ISprintService, SprintService>();
+
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<ITeamService, TeamService>();
+
+        // Reads through the task and participant repositories; it needs none of its own.
+        services.AddScoped<IDashboardService, DashboardService>();
 
         // The system-wide view, over the task, user and board repositories. Separate from the one
         // above because the two answer different questions: "everything" versus "mine".

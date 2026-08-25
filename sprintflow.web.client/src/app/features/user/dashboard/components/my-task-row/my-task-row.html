@@ -1,0 +1,10 @@
+<a class="task-row" [routerLink]="['/boards', task().boardId]">
+  <span class="task-row-main">
+    <span class="task-row-title">{{ task().title }}</span>
+    <!-- Where it lives. A title alone is not placeable when the list spans every board. -->
+    <span class="task-row-board">{{ task().areaName }} · {{ task().boardName }}</span>
+  </span>
+
+  <!-- The column's own name, not a translation of it. -->
+  <span class="column-chip" [class]="chipClass()">{{ task().columnName }}</span>
+</a>

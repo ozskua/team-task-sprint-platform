@@ -50,6 +50,36 @@ public class TaskParticipantRepository : ITaskParticipantRepository
                     .ToList());
     }
 
+    public async Task<IReadOnlyDictionary<int, IReadOnlyList<User>>> GetMembersByBoardsAsync(
+        IReadOnlyCollection<int> boardIds,
+        CancellationToken cancellationToken)
+    {
+        if (boardIds.Count == 0)
+        {
+            return new Dictionary<int, IReadOnlyList<User>>();
+        }
+
+        var rows = await context.TaskParticipants
+            .AsNoTracking()
+            .Where(p => boardIds.Contains(p.Task.BoardId))
+            .Select(p => new { p.Task.BoardId, p.User })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .GroupBy(row => row.BoardId)
+            .ToDictionary(
+                group => group.Key,
+                // One row per assigned task, so someone holding three tasks on this board arrives
+                // three times. Distinct on the user id collapses them into the one member they are.
+                // Done here, before anything is mapped, so no caller can render a duplicate.
+                group => (IReadOnlyList<User>)group
+                    .DistinctBy(row => row.User.UserId)
+                    .Select(row => row.User)
+                    .OrderBy(user => user.FirstName)
+                    .ThenBy(user => user.LastName)
+                    .ToList());
+    }
+
     public Task<List<TaskParticipant>> GetForTaskAsync(int taskId, CancellationToken cancellationToken)
         => context.TaskParticipants
             .Where(p => p.TaskId == taskId)

@@ -16,6 +16,12 @@ public interface IBoardRepository
     /// <summary>Whether a Board with this id exists.</summary>
     Task<bool> ExistsAsync(int boardId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The Board with its Area loaded, or <c>null</c>. For pages that title themselves with both —
+    /// board names are not unique, so the area is what tells two of them apart.
+    /// </summary>
+    Task<Board?> GetWithAreaAsync(int boardId, CancellationToken cancellationToken);
+
     /// <summary>How many Boards exist, across every Area. An aggregate — no Board is loaded.</summary>
     Task<int> CountAsync(CancellationToken cancellationToken);
 
@@ -31,7 +37,22 @@ public interface IBoardRepository
     /// tasks with their creators and participants. Team members are not here — they are computed
     /// separately, from participation.
     /// </summary>
-    Task<Board?> GetDetailAsync(int boardId, CancellationToken cancellationToken);
+    /// <param name="sprintId">
+    /// Restricts the tasks to that sprint's. Ignored when <paramref name="allTasks"/> is set.
+    /// </param>
+    /// <param name="allTasks">
+    /// Every task on the board, whatever sprint it is in or is not — the backlog's view.
+    /// </param>
+    /// <remarks>
+    /// With neither a sprint nor <paramref name="allTasks"/>, **no** tasks are returned. That is the
+    /// kanban of a board with no sprint running: the columns are all there and empty. The columns
+    /// themselves are never filtered, so a board keeps its shape whatever is being looked at.
+    /// </remarks>
+    Task<Board?> GetDetailAsync(
+        int boardId,
+        int? sprintId,
+        bool allTasks,
+        CancellationToken cancellationToken);
 
     /// <summary>
     /// Runs work that reads and rewrites this board's positions, holding an exclusive lock on the

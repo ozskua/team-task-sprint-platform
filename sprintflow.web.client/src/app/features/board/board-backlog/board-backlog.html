@@ -1,0 +1,119 @@
+@if (loading()) {
+  <div class="backlog-page">
+    <section class="panel board-panel">
+      <span class="board-skeleton board-skeleton--title" aria-hidden="true"></span>
+      <span class="board-skeleton board-skeleton--line" aria-hidden="true"></span>
+    </section>
+
+    <div class="backlog-scroll" aria-hidden="true">
+      @for (row of skeletonRows; track row) {
+        <span class="board-skeleton board-skeleton--row"></span>
+      }
+    </div>
+
+    <p class="visually-hidden">Loading the backlog.</p>
+  </div>
+} @else if (failed()) {
+  <div class="backlog-page">
+    <section class="panel board-message">
+      <span class="board-message-title">This board could not be loaded</span>
+      <span class="board-message-hint">Please refresh the page to try again.</span>
+    </section>
+  </div>
+} @else if (board(); as board) {
+  <div class="backlog-page">
+    <section class="panel board-panel">
+      <!-- Only Add column is dropped: there are no columns on screen to add one beside. Everything
+           else the header offers means the same here as it does on the kanban. -->
+      <app-board-header
+        [board]="board"
+        [showAddColumn]="false"
+        (newTask)="createTask()"
+        (renameBoard)="renameBoard()"
+        (deleteBoard)="confirmDeleteBoard()" />
+    </section>
+
+    <app-board-view-nav [boardId]="board.boardId" />
+
+    @if (actionError(); as message) {
+      <div class="board-error" role="alert">
+        <span>{{ message }}</span>
+        <button mat-button type="button" (click)="dismissError()">Dismiss</button>
+      </div>
+    }
+
+    @if (rows().length === 0) {
+      <section class="panel board-message">
+        <span class="board-message-title">No tasks on this board yet</span>
+        <span class="board-message-hint">Use New task above to add the first one.</span>
+      </section>
+    } @else {
+      <!--
+        The same table the sprint pages draw. The two columns only the Backlog has — putting a task
+        into a sprint, and moving it between columns — are passed in as templates, so this page keeps
+        everything it had without a second copy of the markup existing anywhere.
+      -->
+      <app-task-table
+        [rows]="taskRows()"
+        [caption]="'Every task on ' + board.name"
+        [busyTaskIds]="movingTaskIds()"
+        [titleOpensTask]="true"
+        [extraHeaders]="backlogHeaders"
+        [extraCells]="backlogCells"
+        (openTask)="openTaskById($event)" />
+
+      <ng-template #backlogHeaders>
+        <th scope="col">Sprint</th>
+        <th scope="col">Move to</th>
+      </ng-template>
+
+      <ng-template #backlogCells let-row>
+        <!--
+          Scheduling a task, which the kanban has no room for. The backlog is where the whole board
+          is visible at once, so it is where work gets put into sprints.
+        -->
+        <td>
+          @if (sprintsFailed()) {
+            <span class="backlog-muted">—</span>
+          } @else {
+            <select
+              class="backlog-select"
+              [disabled]="isAssigningSprint(row.taskId) || sprintsLoading()"
+              [attr.aria-label]="'Sprint of ' + row.title"
+              (change)="onSprintChangeById(row.taskId, $any($event.target).value)">
+              <!-- A visible way back out, exactly like the assignee picker's Unassigned. -->
+              <option value="" [selected]="sprintIdOf(row.taskId) === null">No sprint</option>
+
+              @for (sprint of sprints(); track sprint.sprintId) {
+                <option
+                  [value]="sprint.sprintId"
+                  [selected]="sprint.sprintId === sprintIdOf(row.taskId)">
+                  {{ sprint.name }}
+                </option>
+              }
+            </select>
+          }
+        </td>
+
+        <td>
+          <!-- Marked on the options rather than bound on the select: the options are rendered in
+               the same pass, so a value set on the select has nothing to match yet and the field
+               would open showing the wrong status. -->
+          <select
+            class="backlog-select"
+            [disabled]="isMoving(row.taskId)"
+            [attr.aria-label]="'Status of ' + row.title"
+            (change)="onStatusChangeById(row.taskId, $any($event.target).value)">
+            @for (column of columns(); track column.workflowColumnId) {
+              <option
+                [value]="column.workflowColumnId"
+                [selected]="column.workflowColumnId === columnIdOf(row.taskId)">
+                {{ column.name }}
+              </option>
+            }
+          </select>
+        </td>
+      </ng-template>
+    }
+  </div>
+}

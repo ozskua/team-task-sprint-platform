@@ -1,0 +1,66 @@
+:host {
+    display: block;
+}
+
+/*
+  A row rather than a card: the list has no cap, so it can run long, and rows scan faster down one
+  column than a grid does.
+*/
+.task-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-card);
+    box-shadow: var(--app-shadow-card);
+    text-decoration: none;
+}
+
+.task-row:hover {
+    background-color: var(--app-surface-hover);
+}
+
+.task-row:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 2px;
+}
+
+.task-row-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.task-row-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+    overflow-wrap: anywhere;
+}
+
+.task-row-board {
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+    overflow-wrap: anywhere;
+}
+
+/*
+  Fill carries the meaning and the label stays dark ink — these tints cannot be read as text, which
+  is the same rule the board's own status chips follow.
+*/
+.column-chip {
+    flex: 0 0 auto;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--app-ink);
+}
+
+.column-chip--todo { background-color: var(--app-status-todo); }
+.column-chip--open { background-color: var(--app-status-progress); }

@@ -31,6 +31,7 @@ public class TaskRepository : ITaskRepository
             .Include(t => t.CreatedByUser) // Every task response carries the creator's name.
             .Include(t => t.Participants)  // Zero or one — the task's assignee.
                 .ThenInclude(p => p.User)
+            .Include(t => t.Sprint)        // Null unless the task is in one; the response names it.
             .FirstOrDefaultAsync(t => t.TaskId == taskId, cancellationToken);
 
     public Task<List<TaskItem>> GetColumnTasksForUpdateAsync(int columnId, CancellationToken cancellationToken)
@@ -51,6 +52,7 @@ public class TaskRepository : ITaskRepository
             .Include(t => t.CreatedByUser)
             .Include(t => t.Participants)
                 .ThenInclude(p => p.User)
+            .Include(t => t.Sprint)
             .Where(t => columnIds.Contains(t.TaskColumnId))
             .OrderBy(t => t.Position)
             .ThenBy(t => t.TaskId)
@@ -58,6 +60,87 @@ public class TaskRepository : ITaskRepository
 
     public Task<int> CountInColumnAsync(int columnId, CancellationToken cancellationToken)
         => context.TaskItems.CountAsync(t => t.TaskColumnId == columnId, cancellationToken);
+
+    public async Task<IReadOnlyDictionary<int, int>> CountByBoardSprintAsync(
+        int boardId,
+        CancellationToken cancellationToken)
+        => await context.TaskItems
+            .AsNoTracking()
+            // Tasks in no sprint are excluded rather than grouped under a null key: the caller is
+            // filling in a count per sprint, and "not in any sprint" is not one of them.
+            .Where(t => t.BoardId == boardId && t.SprintId != null)
+            .GroupBy(t => t.SprintId!.Value)
+            // One grouped query for the whole list, so a board with twenty sprints still costs one
+            // round trip rather than twenty counts.
+            .Select(group => new { SprintId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(row => row.SprintId, row => row.Count, cancellationToken);
+
+    public async Task<IReadOnlyDictionary<int, int>> CountBySprintAsync(
+        CancellationToken cancellationToken)
+        => await context.TaskItems
+            .AsNoTracking()
+            // Tasks in no sprint are excluded rather than grouped under a null key: the caller is
+            // filling in a count per sprint, and "not in any sprint" is not one of them.
+            .Where(t => t.SprintId != null)
+            .GroupBy(t => t.SprintId!.Value)
+            // One grouped query for the whole system, so the page costs the same however many
+            // boards and sprints exist.
+            .Select(group => new { SprintId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(row => row.SprintId, row => row.Count, cancellationToken);
+
+    public Task<int> CountInSprintAsync(int sprintId, CancellationToken cancellationToken)
+        => context.TaskItems.CountAsync(t => t.SprintId == sprintId, cancellationToken);
+
+    public async Task<IReadOnlyList<TaskItem>> GetBoardTasksForSummaryAsync(
+        int boardId,
+        CancellationToken cancellationToken)
+        => await context.TaskItems
+            .AsNoTracking()
+            .Where(t => t.BoardId == boardId)
+            // The column carries the status; nothing else about the task is counted.
+            .Include(t => t.Column)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<TaskItem>> GetBySprintAsync(
+        int sprintId,
+        CancellationToken cancellationToken)
+        => await context.TaskItems
+            .AsNoTracking()
+            .Where(t => t.SprintId == sprintId)
+            // The column is what says whether a task is To Do, in a custom column, Completed or
+            // Cancelled — the task itself carries no status.
+            .Include(t => t.Column)
+            .Include(t => t.CreatedByUser)
+            // Zero or one — the task's assignee, guaranteed by the unique index on TaskId.
+            .Include(t => t.Participants)
+                .ThenInclude(p => p.User)
+            // The order the board itself reads in, so the list and the kanban agree.
+            .OrderBy(t => t.Column.Position)
+            .ThenBy(t => t.Position)
+            .ThenBy(t => t.TaskId)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<TaskItem>> GetAssignedToUserAsync(
+        int userId,
+        CancellationToken cancellationToken)
+        => await context.TaskItems
+            .AsNoTracking()
+            // Assignment, not authorship. The participation row is the only thing consulted, so a
+            // task this user wrote but does not hold is not theirs and does not appear.
+            .Where(t => t.Participants.Any(p => p.UserId == userId))
+            .Include(t => t.Board)
+                .ThenInclude(b => b.Area)
+            // The column is what says whether a task is To Do, in a custom column, Completed or
+            // Cancelled — the task itself carries no status.
+            .Include(t => t.Column)
+            // Grouped the way the page reads: areas together, boards alphabetical inside them, and
+            // within a board the same order as the kanban. Ties broken by id so it never varies.
+            .OrderBy(t => t.Board.Area.Name)
+            .ThenBy(t => t.Board.Name)
+            .ThenBy(t => t.Column.Position)
+            .ThenBy(t => t.Position)
+            .ThenBy(t => t.TaskId)
+            .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<TaskItem>> GetAllWithDetailsAsync(
         CancellationToken cancellationToken)

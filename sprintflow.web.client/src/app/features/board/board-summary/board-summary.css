@@ -1,0 +1,125 @@
+.board-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px;
+}
+
+/* Says whose figures these are, so a board summary is never mistaken for the Dashboard's. */
+.summary-scope {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.summary-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.summary-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.summary-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.summary-grid--four {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.summary-grid--three {
+    grid-template-columns: repeat(3, minmax(0, 220px));
+}
+
+/* Scale, not action: narrower than the workflow buckets so they read as context beside them. */
+.summary-grid--two {
+    grid-template-columns: repeat(2, minmax(0, 240px));
+}
+
+.summary-skeleton {
+    height: 96px;
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-skeleton);
+}
+
+.panel {
+    padding: 20px 24px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-card);
+}
+
+.summary-progress-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.summary-progress-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.summary-progress-percent {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--mat-sys-on-surface);
+}
+
+.summary-track {
+    height: 6px;
+    border-radius: 999px;
+    background-color: var(--app-skeleton);
+    overflow: hidden;
+}
+
+.summary-fill {
+    height: 100%;
+    border-radius: 999px;
+    background-color: var(--app-primary);
+}
+
+.summary-message {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+}
+
+.summary-message-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.summary-message-hint {
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+@media (max-width: 1023.98px) {
+    .summary-grid--four {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 767.98px) {
+    .summary-grid--four,
+    .summary-grid--three,
+    .summary-grid--two {
+        grid-template-columns: 1fr;
+    }
+}

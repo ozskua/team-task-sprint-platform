@@ -117,6 +117,48 @@ namespace SprintFlow.Web.Server.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Sprint", b =>
+                {
+                    b.Property<int>("SprintId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SprintId"));
+
+                    b.Property<int>("BoardId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("SprintId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("BoardId", "StartDate");
+
+                    b.ToTable("Sprints", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Sprints_EndAfterStart", "[EndDate] > [StartDate]");
+                        });
+                });
+
             modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskItem", b =>
                 {
                     b.Property<int>("TaskId")
@@ -143,6 +185,9 @@ namespace SprintFlow.Web.Server.Migrations
                     b.Property<int>("Position")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SprintId")
+                        .HasColumnType("int");
+
                     b.Property<int>("TaskColumnId")
                         .HasColumnType("int");
 
@@ -156,6 +201,8 @@ namespace SprintFlow.Web.Server.Migrations
                     b.HasIndex("BoardId");
 
                     b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("SprintId", "BoardId");
 
                     b.HasIndex("TaskColumnId", "BoardId");
 
@@ -401,6 +448,25 @@ namespace SprintFlow.Web.Server.Migrations
                     b.Navigation("CreatedByUser");
                 });
 
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Sprint", b =>
+                {
+                    b.HasOne("SprintFlow.Web.Server.Models.Board", "Board")
+                        .WithMany("Sprints")
+                        .HasForeignKey("BoardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SprintFlow.Web.Server.Models.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Board");
+
+                    b.Navigation("CreatedByUser");
+                });
+
             modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskItem", b =>
                 {
                     b.HasOne("SprintFlow.Web.Server.Models.Board", "Board")
@@ -415,6 +481,12 @@ namespace SprintFlow.Web.Server.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SprintFlow.Web.Server.Models.Sprint", "Sprint")
+                        .WithMany("Tasks")
+                        .HasForeignKey("SprintId", "BoardId")
+                        .HasPrincipalKey("SprintId", "BoardId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SprintFlow.Web.Server.Models.WorkflowColumn", "Column")
                         .WithMany("Tasks")
                         .HasForeignKey("TaskColumnId", "BoardId")
@@ -427,6 +499,8 @@ namespace SprintFlow.Web.Server.Migrations
                     b.Navigation("Column");
 
                     b.Navigation("CreatedByUser");
+
+                    b.Navigation("Sprint");
                 });
 
             modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskParticipant", b =>
@@ -497,6 +571,8 @@ namespace SprintFlow.Web.Server.Migrations
 
             modelBuilder.Entity("SprintFlow.Web.Server.Models.Board", b =>
                 {
+                    b.Navigation("Sprints");
+
                     b.Navigation("Tasks");
 
                     b.Navigation("Team")
@@ -508,6 +584,11 @@ namespace SprintFlow.Web.Server.Migrations
             modelBuilder.Entity("SprintFlow.Web.Server.Models.Role", b =>
                 {
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Sprint", b =>
+                {
+                    b.Navigation("Tasks");
                 });
 
             modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskItem", b =>

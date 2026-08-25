@@ -9,7 +9,8 @@ namespace SprintFlow.Web.Server.Mappings;
 public static class TaskMappings
 {
     /// <summary>
-    /// Requires <c>Include(t =&gt; t.CreatedByUser)</c> and the assignment row with its user loaded.
+    /// Requires <c>Include(t =&gt; t.CreatedByUser)</c>, <c>Include(t =&gt; t.Sprint)</c> and the
+    /// assignment row with its user loaded.
     /// </summary>
     public static TaskResponseDto ToResponseDto(this TaskItem task)
         => new(
@@ -28,7 +29,11 @@ public static class TaskMappings
                 .Select(participant => new TaskAssigneeResponseDto(
                     participant.UserId,
                     participant.User.FullName))
-                .FirstOrDefault());
+                .FirstOrDefault(),
+            task.SprintId,
+            // Null both when the task is in no sprint and, defensively, when the navigation was not
+            // loaded — the id above is the field callers filter on either way.
+            task.Sprint?.Name);
 
     /// <summary>
     /// Tasks in the order the column shows them. Ties are broken by id so the order never depends

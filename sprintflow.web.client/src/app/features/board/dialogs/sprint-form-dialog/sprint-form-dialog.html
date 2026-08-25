@@ -1,0 +1,58 @@
+<h2 class="sprint-form-title" mat-dialog-title>New sprint</h2>
+
+<form (submit)="$event.preventDefault(); submit()">
+  <mat-dialog-content>
+    <label class="sprint-form-label" for="sprint-name">Sprint name</label>
+    <input
+      id="sprint-name"
+      class="sprint-form-input"
+      type="text"
+      autocomplete="off"
+      cdkFocusInitial
+      [attr.maxlength]="maxLength"
+      [value]="name()"
+      (input)="onNameInput($any($event.target).value)" />
+
+    <!--
+      Native date inputs on purpose: no hours, no minutes, and the value is a plain YYYY-MM-DD
+      string, so nothing here can shift a day into another timezone.
+    -->
+    <div class="sprint-form-dates">
+      <div class="sprint-form-field">
+        <label class="sprint-form-label" for="sprint-start">First day</label>
+        <input
+          id="sprint-start"
+          class="sprint-form-input"
+          type="date"
+          [value]="startDate()"
+          (input)="onStartInput($any($event.target).value)" />
+      </div>
+
+      <div class="sprint-form-field">
+        <!-- Exclusive: the first day after the sprint, and where the next one may begin. -->
+        <label class="sprint-form-label" for="sprint-end">Ends before</label>
+        <input
+          id="sprint-end"
+          class="sprint-form-input"
+          type="date"
+          [value]="endDate()"
+          [attr.min]="startDate() || null"
+          (input)="onEndInput($any($event.target).value)" />
+      </div>
+    </div>
+
+    <p class="sprint-form-hint">
+      The sprint starts on the first day and stops before the second — that day is not part of it,
+      and the next sprint can start on it. Sprints on one board may not overlap.
+    </p>
+
+    @if (datesOutOfOrder()) {
+      <p class="sprint-form-error">The end date must be after the start date.</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancel</button>
+    <button mat-button type="submit" [disabled]="!canSubmit()">Create</button>
+  </mat-dialog-actions>
+</form>

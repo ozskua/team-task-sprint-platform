@@ -1,0 +1,79 @@
+<div class="sprint-detail">
+
+  @if (loading()) {
+    <p class="visually-hidden">Loading the sprint.</p>
+    <div class="detail-card detail-card--skeleton" aria-hidden="true"></div>
+  } @else if (failed() || sprint() === null) {
+    <div class="detail-card">
+      <p class="detail-state-title">The sprint could not be loaded</p>
+      <p class="detail-state-detail">It may no longer exist. Please go back and try again.</p>
+    </div>
+  } @else if (sprint(); as s) {
+    <nav class="detail-crumbs">
+      <a [routerLink]="sprintsPath()">Sprints</a>
+      <span aria-hidden="true">/</span>
+      <span>{{ s.name }}</span>
+    </nav>
+
+    <!-- Sprint information, then the work in it. -->
+    <div class="detail-card">
+      <div class="detail-head">
+        <h2 class="detail-title">{{ s.name }}</h2>
+        <span class="detail-status" [class]="'detail-status--' + s.status">{{ s.status }}</span>
+      </div>
+
+      <dl class="detail-facts">
+        <div class="detail-fact">
+          <dt>Board</dt>
+          <dd>{{ s.boardName }}</dd>
+        </div>
+        <div class="detail-fact">
+          <dt>Starts</dt>
+          <dd>{{ s.startDate }}</dd>
+        </div>
+        <div class="detail-fact">
+          <!-- Exclusive: the sprint stops before this day, and the next one may start on it. -->
+          <dt>Ends before</dt>
+          <dd>{{ s.endDate }}</dd>
+        </div>
+        <div class="detail-fact">
+          <dt>Tasks</dt>
+          <dd>{{ s.taskCount }}</dd>
+        </div>
+        <div class="detail-fact">
+          <dt>Created by</dt>
+          <dd>{{ s.createdByFullName }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <section class="detail-tasks">
+      <h3 class="detail-tasks-title">Tasks in this sprint</h3>
+
+      @if (tasksLoading()) {
+        <p class="visually-hidden">Loading the sprint's tasks.</p>
+        <div class="detail-card detail-card--skeleton detail-card--tasks" aria-hidden="true"></div>
+      } @else if (tasksFailed()) {
+        <div class="detail-card">
+          <p class="detail-state-title">The tasks could not be loaded</p>
+          <p class="detail-state-detail">Please refresh the page to try again.</p>
+        </div>
+      } @else if (taskRows().length === 0) {
+        <div class="detail-card">
+          <p class="detail-state-title">No tasks in this sprint yet</p>
+          <p class="detail-state-detail">
+            Put work into it from the board's Backlog, or add a task on the Kanban while this sprint
+            is the one showing.
+          </p>
+        </div>
+      } @else {
+        <!-- The same table the Backlog draws, without its selectors: this page shows the sprint,
+             it is not where work is reassigned. -->
+        <app-task-table
+          [rows]="taskRows()"
+          [caption]="'Tasks in ' + s.name" />
+      }
+    </section>
+  }
+
+</div>

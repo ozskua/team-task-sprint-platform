@@ -24,6 +24,12 @@ const routes: Routes = [
         path: 'teams',
         loadChildren: () => import('../features/teams/teams-module').then(m => m.TeamsModule)
       },
+      // The system-wide sprint overview. Read-only — a board's own Sprint tab is where they are
+      // created and managed.
+      {
+        path: 'sprints',
+        loadChildren: () => import('../features/sprints/sprints-module').then(m => m.SprintsModule)
+      },
       // The same feature module the user shell loads. A board looks and behaves identically in
       // both; only the URL differs, because each shell owns its own prefix.
       //

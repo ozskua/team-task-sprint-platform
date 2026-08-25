@@ -1,19 +1,52 @@
-/* Width, centring and outer padding come from the layout frame. */
-.user-dashboard {
+/*
+  Width, centring and outer padding come from the layout frame.
+
+  The task rows and team cards style themselves — they are components of their own, like the task
+  card and status chip beside them. What is left here is the page: the welcome panel, the section
+  headings, and the states each section can be in.
+*/
+.user-dashboard,
+.dashboard-section,
+.task-list,
+.summary-item,
+.message {
     display: flex;
     flex-direction: column;
-    gap: 48px;
 }
 
-/* ---- Welcome + summary ---------------------------------------------------- */
+.user-dashboard { gap: 48px; }
+.dashboard-section { gap: 20px; }
+.task-list { gap: 8px; }
+.summary-item { gap: 2px; }
 
-.welcome {
-    padding: 32px;
+/* The raised surfaces, declared once rather than repeated per block. */
+.welcome,
+.empty-state,
+.message {
     border: 1px solid var(--app-border-card);
     border-radius: var(--app-radius-card);
     background-color: var(--app-surface-card);
     box-shadow: var(--app-shadow-card);
 }
+
+/* Every skeleton is a neutral block sized to what it replaces, so nothing shifts on arrival. */
+.welcome-skeleton,
+.summary-value-skeleton,
+.row-skeleton,
+.team-skeleton {
+    display: block;
+    background-color: var(--app-skeleton);
+    border-radius: 6px;
+}
+
+.welcome-skeleton { width: 280px; max-width: 100%; height: 1.125rem; }
+.summary-value-skeleton { width: 2rem; height: 1.5rem; }
+.row-skeleton { height: 62px; border-radius: var(--app-radius-card); }
+.team-skeleton { height: 132px; border-radius: var(--app-radius-card); }
+
+/* ---- Welcome + summary ---------------------------------------------------- */
+
+.welcome { padding: 32px; }
 
 .welcome-title {
     margin: 0 0 4px;
@@ -30,26 +63,18 @@
 }
 
 /* A strip, not cards — the numbers stay subordinate to the tasks below. */
-.summary {
-    display: flex;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    gap: 32px;
-    margin-top: 24px;
-    padding-top: 24px;
-    border-top: 1px solid var(--app-border);
-}
-
+.summary,
 .summary-counts {
     display: flex;
     flex-wrap: wrap;
     gap: 32px;
 }
 
-.summary-item {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+.summary {
+    align-items: flex-end;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--app-border);
 }
 
 .summary-label {
@@ -59,18 +84,18 @@
     color: var(--mat-sys-on-surface-variant);
 }
 
-.summary-value {
-    font-size: 1.5rem;
+/* Tabular figures, so a count going from 9 to 10 does not shuffle the strip. */
+.summary-value,
+.summary-percent {
     font-weight: 600;
-    line-height: 1.1;
     font-variant-numeric: tabular-nums;
     color: var(--mat-sys-on-surface);
 }
 
-.summary-progress {
-    flex: 1;
-    min-width: 200px;
-}
+.summary-value { font-size: 1.5rem; line-height: 1.1; }
+.summary-percent { font-size: 0.875rem; }
+
+.summary-progress { flex: 1; min-width: 200px; }
 
 .summary-progress-head {
     display: flex;
@@ -80,23 +105,17 @@
     margin-bottom: 8px;
 }
 
-.summary-percent {
-    font-size: 0.875rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--mat-sys-on-surface);
-}
+.summary-track,
+.summary-fill { border-radius: 999px; }
 
 .summary-track {
     height: 6px;
-    border-radius: 999px;
     background-color: var(--app-skeleton);
     overflow: hidden;
 }
 
 .summary-fill {
     height: 100%;
-    border-radius: 999px;
     background-color: var(--app-primary);
 }
 
@@ -117,13 +136,7 @@
     color: var(--app-attention-ink);
 }
 
-/* ---- Sections ------------------------------------------------------------- */
-
-.dashboard-section {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
+/* ---- Sections and their states -------------------------------------------- */
 
 .section-title {
     margin: 0;
@@ -141,92 +154,53 @@
 .empty-state {
     margin: 0;
     padding: 40px 24px;
-    border: 1px solid var(--app-border-card);
-    border-radius: var(--app-radius-card);
-    background-color: var(--app-surface-card);
+    box-shadow: none;
     text-align: center;
     font-size: 0.9375rem;
     color: var(--mat-sys-on-surface-variant);
 }
 
-/* ---- Team cards ----------------------------------------------------------- */
-
-.team-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    box-sizing: border-box;
-    padding: 18px 20px;
-    border: 1px solid var(--app-border-card);
-    border-radius: var(--app-radius-card);
-    background-color: var(--app-surface-card);
-    box-shadow: var(--app-shadow-card);
+/* The two-part message the rest of the app uses for empty and failed states. */
+.message {
+    gap: 4px;
+    padding: 32px 20px;
+    text-align: center;
 }
 
-/* Single tone — one monogram colour, not one per team. */
-.team-monogram {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    width: 40px;
-    height: 40px;
-    border-radius: var(--app-radius-control);
-    background-color: var(--app-surface-muted);
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--app-primary-action);
-}
-
-.team-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
-.team-name {
+.message-title {
     font-size: 0.9375rem;
     font-weight: 600;
     color: var(--mat-sys-on-surface);
 }
 
-.team-members {
-    font-size: 0.8125rem;
+.message-hint {
+    font-size: 0.875rem;
     color: var(--mat-sys-on-surface-variant);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* ---- Responsive ----------------------------------------------------------- */
 
 @media (max-width: 1023.98px) {
-    .card-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    .card-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 767.98px) {
-    .user-dashboard {
-        gap: 32px;
-    }
-
-    .welcome {
-        padding: 20px;
-    }
-
-    .summary {
-        gap: 20px;
-    }
-
-    .summary-counts {
-        gap: 20px;
-        width: 100%;
-    }
-
-    .card-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .attention {
-        padding: 16px;
-    }
+    .user-dashboard { gap: 32px; }
+    .welcome { padding: 20px; }
+    .summary { gap: 20px; }
+    .summary-counts { gap: 20px; width: 100%; }
+    .card-grid { grid-template-columns: 1fr; }
+    .attention { padding: 16px; }
 }

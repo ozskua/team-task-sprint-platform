@@ -6,6 +6,9 @@ import { AdminDashboardService } from './services/admin-dashboard.service';
 import { AreaService } from './services/area.service';
 import { AuthService } from './services/auth.service';
 import { BoardDetailService } from './services/board-detail.service';
+import { BoardSummaryService } from './services/board-summary.service';
+import { DashboardService } from './services/dashboard.service';
+import { SprintService } from './services/sprint.service';
 import { TeamService } from './services/team.service';
 import { TokenStorage } from './services/token-storage';
 import { UserService } from './services/user.service';
@@ -23,7 +26,10 @@ import { UserService } from './services/user.service';
     // One board is on screen at a time, so its state is a singleton like the Area list rather than
     // something each visit to the page recreates.
     BoardDetailService,
+    BoardSummaryService,
+    SprintService,
     TeamService,
+    DashboardService,
     AdminDashboardService,
     // Class-based rather than functional: AppModule imports HttpClientModule, which has no
     // withInterceptors equivalent. `multi` appends to the chain instead of replacing it.
