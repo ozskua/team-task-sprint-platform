@@ -1,9 +1,9 @@
 import { NgModule } from '@angular/core';
 
-import { MyTaskRow } from './components/my-task-row/my-task-row';
-import { StatusChip } from './components/status-chip/status-chip';
-import { TaskCard } from './components/task-card/task-card';
-import { TeamSummaryCard } from './components/team-summary-card/team-summary-card';
+import { MyTaskRow } from './my-task-row/my-task-row';
+import { StatusChip } from './status-chip/status-chip';
+import { TaskCard } from './task-card/task-card';
+import { TeamSummaryCard } from './team-summary-card/team-summary-card';
 import { UserDashboardRoutingModule } from './user-dashboard-routing-module';
 import { UserDashboard } from './user-dashboard';
 

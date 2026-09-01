@@ -33,24 +33,28 @@
     </span>
   </div>
 
-  <!--
-    Reachable by arrow keys and announced as unavailable, but activation leads nowhere.
+  <button
+    class="user-menu-action"
+    mat-menu-item
+    type="button"
+    (click)="onInvite()">
+    <mat-icon>person_add</mat-icon>
+    <span class="user-menu-action-label">Invite</span>
+  </button>
 
-    The state is carried by the accessible name rather than aria-disabled: MatMenuItem host-binds
-    that attribute to its own `disabled` input, so it cannot be set from here — and setting
-    `disabled` instead would drop the item out of the arrow-key order entirely.
+  <!--
+    Reachable by arrow keys, but activation still leads nowhere — Settings has no screen yet. The
+    handler below swallows the activation; nothing on the item advertises that any more.
   -->
   <button
     class="user-menu-action user-menu-action--muted"
     mat-menu-item
     type="button"
-    aria-label="Settings, coming soon. Not available yet."
     (click)="onSettingsActivate($event)"
     (keydown.enter)="onSettingsActivate($event)"
     (keydown.space)="onSettingsActivate($event)">
     <mat-icon>settings</mat-icon>
     <span class="user-menu-action-label">Settings</span>
-    <span class="user-menu-action-note">Coming soon</span>
   </button>
 
   <div class="user-menu-divider" role="separator"></div>

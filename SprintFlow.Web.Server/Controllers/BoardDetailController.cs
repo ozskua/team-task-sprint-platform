@@ -6,7 +6,7 @@ using SprintFlow.Web.Server.DTOs.Columns;
 using SprintFlow.Web.Server.DTOs.Sprints;
 using SprintFlow.Web.Server.DTOs.Tasks;
 using SprintFlow.Web.Server.Extensions;
-using SprintFlow.Web.Server.Interfaces.Services;
+using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
@@ -23,27 +23,21 @@ namespace SprintFlow.Web.Server.Controllers;
 [Authorize]
 public class BoardDetailController : ControllerBase
 {
-    private readonly IBoardDetailService boardDetailService;
-    private readonly IWorkflowColumnService workflowColumnService;
-    private readonly ITaskService taskService;
-    private readonly IBoardService boardService;
-    private readonly ISprintService sprintService;
-    private readonly IBoardSummaryService boardSummaryService;
+    private readonly BoardService boardService;
+    private readonly WorkflowColumnService workflowColumnService;
+    private readonly TaskService taskService;
+    private readonly SprintService sprintService;
 
     public BoardDetailController(
-        IBoardDetailService boardDetailService,
-        IWorkflowColumnService workflowColumnService,
-        ITaskService taskService,
-        IBoardService boardService,
-        ISprintService sprintService,
-        IBoardSummaryService boardSummaryService)
+        BoardService boardService,
+        WorkflowColumnService workflowColumnService,
+        TaskService taskService,
+        SprintService sprintService)
     {
-        this.boardDetailService = boardDetailService;
+        this.boardService = boardService;
         this.workflowColumnService = workflowColumnService;
         this.taskService = taskService;
-        this.boardService = boardService;
         this.sprintService = sprintService;
-        this.boardSummaryService = boardSummaryService;
     }
 
     /// <summary>The board page: metadata, creator, computed team members, columns and tasks.</summary>
@@ -72,7 +66,7 @@ public class BoardDetailController : ControllerBase
         [FromQuery] bool allTasks,
         CancellationToken cancellationToken)
     {
-        var (outcome, board) = await boardDetailService.GetAsync(
+        var (outcome, board) = await boardService.GetDetailAsync(
             boardId, sprintId, allTasks, cancellationToken);
 
         return outcome switch
@@ -220,7 +214,7 @@ public class BoardDetailController : ControllerBase
         int boardId,
         CancellationToken cancellationToken)
     {
-        var summary = await boardSummaryService.GetAsync(boardId, cancellationToken);
+        var summary = await boardService.GetSummaryAsync(boardId, cancellationToken);
 
         return summary is null ? BoardNotFound() : Ok(summary);
     }

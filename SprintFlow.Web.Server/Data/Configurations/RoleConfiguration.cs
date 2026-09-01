@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SprintFlow.Web.Server.Common.Constants;
+using SprintFlow.Web.Server.Common;
 using SprintFlow.Web.Server.Models;
 
 namespace SprintFlow.Web.Server.Data.Configurations;

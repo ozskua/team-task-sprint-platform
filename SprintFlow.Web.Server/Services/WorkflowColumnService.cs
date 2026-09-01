@@ -1,24 +1,20 @@
 using SprintFlow.Web.Server.Common.Enums;
+using SprintFlow.Web.Server.Data.Repositories;
 using SprintFlow.Web.Server.DTOs.Columns;
-using SprintFlow.Web.Server.Interfaces.Repositories;
-using SprintFlow.Web.Server.Interfaces.Services;
 using SprintFlow.Web.Server.Mappings;
 using SprintFlow.Web.Server.Models;
 
 namespace SprintFlow.Web.Server.Services;
 
-public class WorkflowColumnService : IWorkflowColumnService
+public class WorkflowColumnService
 {
-    private readonly IWorkflowColumnRepository columnRepository;
-    private readonly IBoardRepository boardRepository;
-    private readonly ITaskRepository taskRepository;
+    private readonly BoardRepository boardRepository;
+    private readonly TaskRepository taskRepository;
 
     public WorkflowColumnService(
-        IWorkflowColumnRepository columnRepository,
-        IBoardRepository boardRepository,
-        ITaskRepository taskRepository)
+        BoardRepository boardRepository,
+        TaskRepository taskRepository)
     {
-        this.columnRepository = columnRepository;
         this.boardRepository = boardRepository;
         this.taskRepository = taskRepository;
     }
@@ -40,7 +36,7 @@ public class WorkflowColumnService : IWorkflowColumnService
             boardId,
             async token =>
             {
-                var columns = await columnRepository.GetBoardColumnsForUpdateAsync(boardId, token);
+                var columns = await boardRepository.GetBoardColumnsForUpdateAsync(boardId, token);
 
                 var column = new WorkflowColumn
                 {
@@ -56,7 +52,7 @@ public class WorkflowColumnService : IWorkflowColumnService
                     // CreatedDate is intentionally not set; the database default supplies it.
                 };
 
-                columnRepository.Add(column);
+                boardRepository.AddColumn(column);
 
                 // Appended to the custom columns, which is what "immediately before Completed"
                 // means once the canonical order is applied.
@@ -65,7 +61,7 @@ public class WorkflowColumnService : IWorkflowColumnService
 
                 // One save for the insert and every changed position, so the board is never briefly
                 // ordered in a way no rule allows.
-                await columnRepository.SaveChangesAsync(token);
+                await boardRepository.SaveChangesAsync(token);
 
                 // A new column holds nothing yet, so an empty task list here is the truth, not a
                 // shortcut.
@@ -79,7 +75,7 @@ public class WorkflowColumnService : IWorkflowColumnService
         RenameWorkflowColumnRequestDto request,
         CancellationToken cancellationToken)
     {
-        var column = await columnRepository.GetForUpdateAsync(columnId, cancellationToken);
+        var column = await boardRepository.GetColumnForUpdateAsync(columnId, cancellationToken);
 
         if (column is null)
         {
@@ -93,7 +89,7 @@ public class WorkflowColumnService : IWorkflowColumnService
 
         column.Name = request.Name.Trim();
 
-        await columnRepository.SaveChangesAsync(cancellationToken);
+        await boardRepository.SaveChangesAsync(cancellationToken);
 
         // Read the tasks back rather than returning an empty list: renaming changes nothing about
         // them, and a response that implied otherwise would be wrong.
@@ -107,7 +103,7 @@ public class WorkflowColumnService : IWorkflowColumnService
         // Read without the lock only to learn which board to lock, and to reject a system column
         // before taking a lock that would achieve nothing. Everything this decision rests on is
         // read again inside.
-        var column = await columnRepository.GetByIdAsync(columnId, cancellationToken);
+        var column = await boardRepository.GetColumnAsync(columnId, cancellationToken);
 
         if (column is null)
         {
@@ -125,7 +121,7 @@ public class WorkflowColumnService : IWorkflowColumnService
             {
                 // Re-read under the lock: between the check above and here, another request may
                 // have deleted this column or moved a task into it.
-                var tracked = await columnRepository.GetForUpdateAsync(columnId, token);
+                var tracked = await boardRepository.GetColumnForUpdateAsync(columnId, token);
 
                 if (tracked is null)
                 {
@@ -142,18 +138,18 @@ public class WorkflowColumnService : IWorkflowColumnService
                 // anyway; this check is what turns that into a clear 400 instead of a database
                 // error. Asked under the lock, so a task cannot arrive between the answer and the
                 // delete.
-                if (await columnRepository.HasTasksAsync(columnId, token))
+                if (await boardRepository.ColumnHasTasksAsync(columnId, token))
                 {
                     return DeleteColumnOutcome.ColumnHasTasks;
                 }
 
-                var columns = await columnRepository.GetBoardColumnsForUpdateAsync(tracked.BoardId, token);
+                var columns = await boardRepository.GetBoardColumnsForUpdateAsync(tracked.BoardId, token);
 
-                columnRepository.Remove(tracked);
+                boardRepository.RemoveColumn(tracked);
                 columns.RemoveAll(candidate => candidate.WorkflowColumnId == columnId);
                 ApplyCanonicalOrder(columns);
 
-                await columnRepository.SaveChangesAsync(token);
+                await boardRepository.SaveChangesAsync(token);
 
                 return DeleteColumnOutcome.Deleted;
             },
@@ -177,7 +173,7 @@ public class WorkflowColumnService : IWorkflowColumnService
             boardId,
             async token =>
             {
-                var columns = await columnRepository.GetBoardColumnsForUpdateAsync(boardId, token);
+                var columns = await boardRepository.GetBoardColumnsForUpdateAsync(boardId, token);
                 var requestedIds = request.OrderedColumnIds;
 
                 // Checked before the set comparison so naming a system column reports the real
@@ -206,7 +202,7 @@ public class WorkflowColumnService : IWorkflowColumnService
 
                 ApplyCanonicalOrder(columns, requestedIds);
 
-                await columnRepository.SaveChangesAsync(token);
+                await boardRepository.SaveChangesAsync(token);
 
                 var tasks = await taskRepository.GetTasksWithDetailsAsync(
                     columns.Select(column => column.WorkflowColumnId).ToList(),

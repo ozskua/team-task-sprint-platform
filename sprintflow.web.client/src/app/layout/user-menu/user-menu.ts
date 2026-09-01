@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 
 import { AuthService } from '../../core/services/auth.service';
 import { initialsOf } from '../../shared/initials';
+import { InviteDialog } from '../invite-dialog/invite-dialog';
 
 /**
  * The account control in the header, shared by both shells.
@@ -22,6 +24,7 @@ import { initialsOf } from '../../shared/initials';
 })
 export class UserMenu {
   private readonly authService = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   readonly logout = output<void>();
 
@@ -41,15 +44,25 @@ export class UserMenu {
   protected readonly triggerLabel = computed(() => `Account menu for ${this.fullName()}`);
 
   /**
-   * Settings is announced and reachable but does nothing yet.
+   * Settings is reachable but does nothing yet.
    *
    * `[disabled]` would have been the obvious way to grey it out, but MatMenu's key manager skips
    * disabled items, so arrow keys would step straight past it and a keyboard user would never learn
-   * it exists. It stays an enabled item carrying `aria-disabled` instead — the focusable-disabled
-   * pattern — and this swallows the activation so nothing can follow from it.
+   * it exists. It stays an enabled item, muted by styling only, and this swallows the activation so
+   * nothing can follow from it.
    */
   protected onSettingsActivate(event: Event): void {
     event.preventDefault();
     event.stopImmediatePropagation();
+  }
+
+  /**
+   * Opens the invite dialog, which creates the link itself.
+   *
+   * No role check, deliberately: a Member may bring someone in exactly as an Admin may, and the
+   * server enforces the same — the endpoint requires only that the caller is signed in.
+   */
+  protected onInvite(): void {
+    this.dialog.open(InviteDialog, { autoFocus: false });
   }
 }

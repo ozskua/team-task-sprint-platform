@@ -118,17 +118,9 @@
     font-size: 0.875rem;
 }
 
-/* Pushed to the far end so the row reads "Settings ......... Coming soon". */
-.user-menu-action-note {
-    margin-left: auto;
-    padding-left: 16px;
-    font-size: 0.75rem;
-    color: var(--mat-sys-on-surface-variant);
-}
-
 /*
-  Muted, and without the pointer — it is reachable and announced, but there is nothing behind it
-  yet. Still focusable on purpose: see the comment on onSettingsActivate.
+  Muted, and without the pointer — it is reachable, but there is nothing behind it yet. Still
+  focusable on purpose: see the comment on onSettingsActivate.
 */
 .user-menu-action--muted,
 .user-menu-action--muted .mat-icon {

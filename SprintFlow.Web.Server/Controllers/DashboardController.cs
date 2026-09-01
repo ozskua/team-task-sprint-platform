@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.DTOs.Dashboard;
 using SprintFlow.Web.Server.Extensions;
-using SprintFlow.Web.Server.Interfaces.Services;
+using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
@@ -19,9 +19,9 @@ namespace SprintFlow.Web.Server.Controllers;
 [Authorize]
 public class DashboardController : ControllerBase
 {
-    private readonly IDashboardService dashboardService;
+    private readonly DashboardService dashboardService;
 
-    public DashboardController(IDashboardService dashboardService)
+    public DashboardController(DashboardService dashboardService)
     {
         this.dashboardService = dashboardService;
     }

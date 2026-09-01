@@ -1,9 +1,4 @@
 <div class="teams-page">
-  <p class="teams-intro">
-    Every board has one team. People join a team by being assigned a task on its board — there is
-    nothing to add or remove here.
-  </p>
-
   @if (loading()) {
     <div class="teams-grid" aria-hidden="true">
       @for (row of skeletonRows; track row) {

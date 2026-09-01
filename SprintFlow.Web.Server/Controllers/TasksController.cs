@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.Common.Enums;
 using SprintFlow.Web.Server.DTOs.Columns;
 using SprintFlow.Web.Server.DTOs.Tasks;
-using SprintFlow.Web.Server.Interfaces.Services;
+using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
@@ -20,9 +20,9 @@ namespace SprintFlow.Web.Server.Controllers;
 [Authorize]
 public class TasksController : ControllerBase
 {
-    private readonly ITaskService taskService;
+    private readonly TaskService taskService;
 
-    public TasksController(ITaskService taskService)
+    public TasksController(TaskService taskService)
     {
         this.taskService = taskService;
     }

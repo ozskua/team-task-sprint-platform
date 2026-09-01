@@ -1,7 +1,6 @@
 using SprintFlow.Web.Server.Common.Enums;
+using SprintFlow.Web.Server.Data.Repositories;
 using SprintFlow.Web.Server.DTOs.Sprints;
-using SprintFlow.Web.Server.Interfaces.Repositories;
-using SprintFlow.Web.Server.Interfaces.Services;
 using SprintFlow.Web.Server.Mappings;
 using SprintFlow.Web.Server.Models;
 
@@ -24,23 +23,26 @@ namespace SprintFlow.Web.Server.Services;
 /// and the board's row is the lock, so the two match exactly.
 /// </para>
 /// </remarks>
-public class SprintService : ISprintService
+public class SprintService
 {
-    private readonly ISprintRepository sprintRepository;
-    private readonly IBoardRepository boardRepository;
-    private readonly ITaskRepository taskRepository;
+    private readonly SprintRepository sprintRepository;
+    private readonly BoardRepository boardRepository;
+    private readonly TaskRepository taskRepository;
     private readonly IApplicationClock clock;
+    private readonly IBoardSummaryCache summaryCache;
 
     public SprintService(
-        ISprintRepository sprintRepository,
-        IBoardRepository boardRepository,
-        ITaskRepository taskRepository,
-        IApplicationClock clock)
+        SprintRepository sprintRepository,
+        BoardRepository boardRepository,
+        TaskRepository taskRepository,
+        IApplicationClock clock,
+        IBoardSummaryCache summaryCache)
     {
         this.sprintRepository = sprintRepository;
         this.boardRepository = boardRepository;
         this.taskRepository = taskRepository;
         this.clock = clock;
+        this.summaryCache = summaryCache;
     }
 
     public async Task<(CreateSprintOutcome Outcome, SprintResponseDto? Sprint)> CreateAsync(
@@ -103,11 +105,18 @@ public class SprintService : ISprintService
             },
             cancellationToken);
 
+        if (sprintId is null)
+        {
+            return (outcome, null);
+        }
+
+        // The board has one more sprint, counted by the summary as active, upcoming or archived
+        // depending on where today falls in it.
+        await summaryCache.RemoveAsync(boardId, cancellationToken);
+
         // Read back outside the lock: the row is committed by now, and assembling a response is not
         // work the board needs to be held for.
-        return sprintId is null
-            ? (outcome, null)
-            : (outcome, await ReadBackAsync(sprintId.Value, cancellationToken));
+        return (outcome, await ReadBackAsync(sprintId.Value, cancellationToken));
     }
 
     public async Task<IReadOnlyList<SprintResponseDto>?> GetBoardSprintsAsync(

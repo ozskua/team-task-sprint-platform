@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using SprintFlow.Web.Server.Common.Constants;
+using SprintFlow.Web.Server.Common;
 using SprintFlow.Web.Server.Data;
 using SprintFlow.Web.Server.Options;
 
@@ -42,6 +42,16 @@ public static class StartupValidationExtensions
         {
             throw new InvalidOperationException(
                 "Configuration 'Auth:AdminUserId' is missing or not a positive number.");
+        }
+
+        var invitations = provider.GetRequiredService<IOptions<InvitationOptions>>().Value;
+
+        // Zero or negative would mint invitations that have already expired — every registration
+        // link would fail, and it would look like a bug in registration rather than a setting.
+        if (invitations.ExpiryHours <= 0)
+        {
+            throw new InvalidOperationException(
+                "Configuration 'Invitations:ExpiryHours' must be greater than zero.");
         }
 
         var context = provider.GetRequiredService<SprintFlowDbContext>();

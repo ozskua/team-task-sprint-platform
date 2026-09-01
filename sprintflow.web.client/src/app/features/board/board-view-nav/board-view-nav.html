@@ -2,14 +2,14 @@
   <a
     class="board-view"
     routerLinkActive="board-view--active"
-    [routerLink]="links().summary">Özet</a>
+    [routerLink]="links().summary">Summary</a>
 
   <!-- Exact matching, or the kanban tab would stay lit on the backlog URL, which is a prefix of it. -->
   <a
     class="board-view"
     routerLinkActive="board-view--active"
     [routerLink]="links().kanban"
-    [routerLinkActiveOptions]="{ exact: true }">Kanban</a>
+    [routerLinkActiveOptions]="{ exact: true }">Board</a>
 
   <a
     class="board-view"

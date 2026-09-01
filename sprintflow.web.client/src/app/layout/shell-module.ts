@@ -4,10 +4,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { AreaInfoDialog } from './area-info-dialog/area-info-dialog';
 import { AreaNav } from './area-nav/area-nav';
+import { InviteDialog } from './invite-dialog/invite-dialog';
 import { Sidebar } from './sidebar/sidebar';
 import { UserMenu } from './user-menu/user-menu';
 
@@ -26,7 +28,10 @@ import { UserMenu } from './user-menu/user-menu';
     UserMenu,
     AreaNav,
     // Opened programmatically by AreaNav, so it only needs declaring, not exporting.
-    AreaInfoDialog
+    AreaInfoDialog,
+    // Same: opened by UserMenu. Declared here so both shells' menus can reach it, which is what
+    // makes inviting available to Admin and Member alike.
+    InviteDialog
   ],
   imports: [
     DatePipe,
@@ -35,6 +40,8 @@ import { UserMenu } from './user-menu/user-menu';
     MatDialogModule,
     MatIconModule,
     MatMenuModule,
+    // For the invite dialog, while its link is being created.
+    MatProgressSpinnerModule,
     RouterLink,
     RouterLinkActive
   ],

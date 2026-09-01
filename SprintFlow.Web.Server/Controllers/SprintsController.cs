@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.DTOs.Sprints;
-using SprintFlow.Web.Server.Interfaces.Services;
+using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
@@ -16,9 +16,9 @@ namespace SprintFlow.Web.Server.Controllers;
 [Authorize]
 public class SprintsController : ControllerBase
 {
-    private readonly ISprintService sprintService;
+    private readonly SprintService sprintService;
 
-    public SprintsController(ISprintService sprintService)
+    public SprintsController(SprintService sprintService)
     {
         this.sprintService = sprintService;
     }

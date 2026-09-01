@@ -1,36 +1,32 @@
 using SprintFlow.Web.Server.Common.Enums;
+using SprintFlow.Web.Server.Data.Repositories;
 using SprintFlow.Web.Server.DTOs.Columns;
 using SprintFlow.Web.Server.DTOs.Tasks;
-using SprintFlow.Web.Server.Interfaces.Repositories;
-using SprintFlow.Web.Server.Interfaces.Services;
 using SprintFlow.Web.Server.Mappings;
 using SprintFlow.Web.Server.Models;
 
 namespace SprintFlow.Web.Server.Services;
 
-public class TaskService : ITaskService
+public class TaskService
 {
-    private readonly ITaskRepository taskRepository;
-    private readonly IWorkflowColumnRepository columnRepository;
-    private readonly IBoardRepository boardRepository;
-    private readonly ITaskParticipantRepository participantRepository;
-    private readonly IUserRepository userRepository;
-    private readonly ISprintRepository sprintRepository;
+    private readonly TaskRepository taskRepository;
+    private readonly BoardRepository boardRepository;
+    private readonly UserRepository userRepository;
+    private readonly SprintRepository sprintRepository;
+    private readonly IBoardSummaryCache summaryCache;
 
     public TaskService(
-        ITaskRepository taskRepository,
-        IWorkflowColumnRepository columnRepository,
-        IBoardRepository boardRepository,
-        ITaskParticipantRepository participantRepository,
-        IUserRepository userRepository,
-        ISprintRepository sprintRepository)
+        TaskRepository taskRepository,
+        BoardRepository boardRepository,
+        UserRepository userRepository,
+        SprintRepository sprintRepository,
+        IBoardSummaryCache summaryCache)
     {
         this.taskRepository = taskRepository;
-        this.columnRepository = columnRepository;
         this.boardRepository = boardRepository;
-        this.participantRepository = participantRepository;
         this.userRepository = userRepository;
         this.sprintRepository = sprintRepository;
+        this.summaryCache = summaryCache;
     }
 
     public async Task<(CreateTaskOutcome Outcome, TaskResponseDto? Task)> CreateAsync(
@@ -115,11 +111,17 @@ public class TaskService : ITaskService
             },
             cancellationToken);
 
+        if (taskId is null)
+        {
+            return (outcome, null);
+        }
+
+        // The board has one more task than its cached summary says, in a column that summary counts.
+        await summaryCache.RemoveAsync(boardId, cancellationToken);
+
         // Read back outside the lock: the row is committed by now, and holding the board while
         // assembling a response would make every other request on it wait for no reason.
-        return taskId is null
-            ? (outcome, null)
-            : (outcome, await ReadBackAsync(taskId.Value, cancellationToken));
+        return (outcome, await ReadBackAsync(taskId.Value, cancellationToken));
     }
 
     public async Task<(UpdateTaskOutcome Outcome, TaskResponseDto? Task)> UpdateAsync(
@@ -166,6 +168,10 @@ public class TaskService : ITaskService
             },
             cancellationToken);
 
+        // The board summary is deliberately not invalidated here. This method changes a task's
+        // title, description and assignee, and the summary reports none of those — it counts tasks
+        // by their column and by whether they carry a sprint, and this touches neither. Dropping the
+        // entry anyway would throw away a correct cached answer on every text edit.
         return outcome == UpdateTaskOutcome.Updated
             ? (outcome, await ReadBackAsync(taskId, cancellationToken))
             : (outcome, null);
@@ -189,7 +195,7 @@ public class TaskService : ITaskService
         int? assigneeUserId,
         CancellationToken cancellationToken)
     {
-        var existing = await participantRepository.GetForTaskAsync(taskId, cancellationToken);
+        var existing = await taskRepository.GetParticipantsAsync(taskId, cancellationToken);
 
         // Already the right person: leave the row alone so its AddedDate is not reset by an edit
         // that did not change the assignment.
@@ -200,12 +206,12 @@ public class TaskService : ITaskService
 
         if (existing.Count > 0)
         {
-            participantRepository.RemoveRange(existing);
+            taskRepository.RemoveRange(existing);
         }
 
         if (assigneeUserId is int assignee)
         {
-            participantRepository.Add(new TaskParticipant { TaskId = taskId, UserId = assignee });
+            taskRepository.Add(new TaskParticipant { TaskId = taskId, UserId = assignee });
         }
     }
 
@@ -248,6 +254,9 @@ public class TaskService : ITaskService
 
         await taskRepository.SaveChangesAsync(cancellationToken);
 
+        // Changes how many of the board's tasks are in no sprint, which the summary reports.
+        await summaryCache.RemoveAsync(task.BoardId, cancellationToken);
+
         return (AssignSprintOutcome.Assigned, await ReadBackAsync(taskId, cancellationToken));
     }
 
@@ -264,7 +273,7 @@ public class TaskService : ITaskService
 
         // Under the board's lock: deleting renumbers the survivors, which is the same kind of
         // rewrite a move performs and has to be serialised for the same reason.
-        return await boardRepository.RunBoardOrderingAsync(
+        var deleted = await boardRepository.RunBoardOrderingAsync(
             boardId.Value,
             async token =>
             {
@@ -289,6 +298,14 @@ public class TaskService : ITaskService
                 return true;
             },
             cancellationToken);
+
+        if (deleted)
+        {
+            // One fewer task on the board, and one fewer in whichever bucket it was counted in.
+            await summaryCache.RemoveAsync(boardId.Value, cancellationToken);
+        }
+
+        return deleted;
     }
 
     public async Task<(MoveTaskOutcome Outcome, IReadOnlyList<WorkflowColumnResponseDto>? Columns)> MoveAsync(
@@ -299,7 +316,7 @@ public class TaskService : ITaskService
         // Read without the lock only to learn which board to lock. The target column names the
         // board the move must happen on; if the task turns out to belong to a different one, the
         // move is rejected inside and nothing is written.
-        var targetColumn = await columnRepository.GetByIdAsync(request.TargetColumnId, cancellationToken);
+        var targetColumn = await boardRepository.GetColumnAsync(request.TargetColumnId, cancellationToken);
 
         if (targetColumn is null)
         {
@@ -367,12 +384,20 @@ public class TaskService : ITaskService
             },
             cancellationToken);
 
+        if (affectedColumnIds is null)
+        {
+            return (outcome, null);
+        }
+
+        // A move changes which column the task is counted in, and the summary's buckets — and the
+        // progress figure derived from them — are exactly that count. The board is the target
+        // column's, which the check inside the lock has already proven is also the task's.
+        await summaryCache.RemoveAsync(targetColumn.BoardId, cancellationToken);
+
         // Read back outside the lock: the move is committed, and assembling a response is not
         // ordering work. Reported through the same sprint the caller was looking at, so the columns
         // that come back are the columns they can see rather than the whole board's.
-        return affectedColumnIds is null
-            ? (outcome, null)
-            : (outcome, await ReadColumnsAsync(affectedColumnIds, request.SprintId, cancellationToken));
+        return (outcome, await ReadColumnsAsync(affectedColumnIds, request.SprintId, cancellationToken));
     }
 
     /// <summary>
@@ -386,7 +411,7 @@ public class TaskService : ITaskService
     {
         if (requestedColumnId is null)
         {
-            var toDo = await columnRepository.GetSystemColumnAsync(
+            var toDo = await boardRepository.GetSystemColumnAsync(
                 boardId,
                 SystemColumnKind.ToDo,
                 cancellationToken);
@@ -399,7 +424,7 @@ public class TaskService : ITaskService
                     $"Board {boardId} is missing its To Do column, which every board is required to have."));
         }
 
-        var column = await columnRepository.GetByIdAsync(requestedColumnId.Value, cancellationToken);
+        var column = await boardRepository.GetColumnAsync(requestedColumnId.Value, cancellationToken);
 
         if (column is null)
         {
@@ -537,7 +562,7 @@ public class TaskService : ITaskService
 
         foreach (var columnId in columnIds)
         {
-            var column = await columnRepository.GetByIdAsync(columnId, cancellationToken)
+            var column = await boardRepository.GetColumnAsync(columnId, cancellationToken)
                 ?? throw new InvalidOperationException($"Column {columnId} disappeared while moving a task.");
 
             columns.Add(column.ToResponseDto(tasksByColumn[columnId]));

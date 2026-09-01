@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.DTOs.AdminDashboard;
-using SprintFlow.Web.Server.Interfaces.Services;
+using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
@@ -19,11 +19,11 @@ namespace SprintFlow.Web.Server.Controllers;
 [Authorize]
 public class AdminDashboardController : ControllerBase
 {
-    private readonly IAdminDashboardService adminDashboardService;
+    private readonly DashboardService dashboardService;
 
-    public AdminDashboardController(IAdminDashboardService adminDashboardService)
+    public AdminDashboardController(DashboardService dashboardService)
     {
-        this.adminDashboardService = adminDashboardService;
+        this.dashboardService = dashboardService;
     }
 
     /// <summary>The system's task counts, user and board totals, and every task in it.</summary>
@@ -34,6 +34,6 @@ public class AdminDashboardController : ControllerBase
     {
         // An empty system is not a missing resource: it answers with zeros and an empty list, so
         // there is no 404 to return here.
-        return Ok(await adminDashboardService.GetAsync(cancellationToken));
+        return Ok(await dashboardService.GetSystemAsync(cancellationToken));
     }
 }

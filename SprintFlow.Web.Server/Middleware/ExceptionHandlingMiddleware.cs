@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using SprintFlow.Web.Server.Common.Exceptions;
+using SprintFlow.Web.Server.Common;
 
 namespace SprintFlow.Web.Server.Middleware;
 

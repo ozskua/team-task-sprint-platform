@@ -4,12 +4,6 @@
     gap: 24px;
 }
 
-.teams-intro {
-    margin: 0;
-    font-size: 0.9375rem;
-    color: var(--mat-sys-on-surface-variant);
-}
-
 .panel {
     border: 1px solid var(--app-border-card);
     border-radius: var(--app-radius-card);

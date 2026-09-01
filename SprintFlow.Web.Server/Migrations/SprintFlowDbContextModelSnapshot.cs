@@ -83,6 +83,52 @@ namespace SprintFlow.Web.Server.Migrations
                     b.ToTable("Boards", (string)null);
                 });
 
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Invitation", b =>
+                {
+                    b.Property<int>("InvitationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InvitationId"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("InvitedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RegisteredUserId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("varbinary(32)");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("InvitationId");
+
+                    b.HasIndex("InvitedByUserId")
+                        .HasDatabaseName("IX_Invitations_InvitedByUserId");
+
+                    b.HasIndex("RegisteredUserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Invitations_RegisteredUserId")
+                        .HasFilter("[RegisteredUserId] IS NOT NULL");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Invitations_TokenHash");
+
+                    b.ToTable("Invitations", (string)null);
+                });
+
             modelBuilder.Entity("SprintFlow.Web.Server.Models.Role", b =>
                 {
                     b.Property<int>("RoleId")
@@ -446,6 +492,24 @@ namespace SprintFlow.Web.Server.Migrations
                     b.Navigation("Area");
 
                     b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.Invitation", b =>
+                {
+                    b.HasOne("SprintFlow.Web.Server.Models.User", "InvitedByUser")
+                        .WithMany()
+                        .HasForeignKey("InvitedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SprintFlow.Web.Server.Models.User", "RegisteredUser")
+                        .WithMany()
+                        .HasForeignKey("RegisteredUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("InvitedByUser");
+
+                    b.Navigation("RegisteredUser");
                 });
 
             modelBuilder.Entity("SprintFlow.Web.Server.Models.Sprint", b =>

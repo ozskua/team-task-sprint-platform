@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Options;
-using SprintFlow.Web.Server.Interfaces.Services;
 using SprintFlow.Web.Server.Options;
 
 namespace SprintFlow.Web.Server.Services;

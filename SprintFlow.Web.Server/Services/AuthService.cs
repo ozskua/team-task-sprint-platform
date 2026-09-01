@@ -1,22 +1,26 @@
 using Microsoft.Extensions.Options;
 using SprintFlow.Web.Server.Authentication;
-using SprintFlow.Web.Server.Common.Exceptions;
+using SprintFlow.Web.Server.Common;
+using SprintFlow.Web.Server.Data.Repositories;
 using SprintFlow.Web.Server.DTOs.Auth;
-using SprintFlow.Web.Server.Interfaces.Repositories;
-using SprintFlow.Web.Server.Interfaces.Services;
+using SprintFlow.Web.Server.DTOs.Users;
+using SprintFlow.Web.Server.Mappings;
 using SprintFlow.Web.Server.Options;
 
 namespace SprintFlow.Web.Server.Services;
 
-public class AuthService : IAuthService
+/// <summary>
+/// Who the users are and how they sign in.
+/// </summary>
+public class AuthService
 {
-    private readonly IUserRepository userRepository;
+    private readonly UserRepository userRepository;
     private readonly IPasswordHasher passwordHasher;
     private readonly ITokenService tokenService;
     private readonly AuthOptions authOptions;
 
     public AuthService(
-        IUserRepository userRepository,
+        UserRepository userRepository,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
         IOptions<AuthOptions> authOptions)
@@ -36,19 +40,19 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request, CancellationToken cancellationToken)
     {
-        var email = CanonicalizeEmail(request.Email); // Normalize email for consistent lookup.
+        var email = CanonicalizeEmail(request.Email);
 
         var user = await userRepository.GetByEmailAsync(email, cancellationToken);
 
         if (user is null)
         {
-            // Verify against a dummy hash to reduce timing differences; response time must not
-            // reveal whether the email exists.
+            // Verified against a dummy hash so response time cannot reveal whether the address
+            // exists.
             passwordHasher.VerifyAgainstDummy(request.Password);
             throw new AuthenticationFailedException();
         }
 
-        // Password is checked before IsActive so a disabled account is not distinguishable by timing.
+        // Password checked before IsActive, so a disabled account is not distinguishable by timing.
         var passwordMatches = passwordHasher.Verify(request.Password, user.PasswordHash);
 
         if (!passwordMatches || !user.IsActive)
@@ -56,8 +60,17 @@ public class AuthService : IAuthService
             throw new AuthenticationFailedException(); // One error for all three causes.
         }
 
-        var isAdmin = user.UserId == authOptions.AdminUserId; // Admin access is tied to UserId, not email or role.
+        // Admin access is tied to UserId, never to the e-mail or the role name.
+        var isAdmin = user.UserId == authOptions.AdminUserId;
 
         return new LoginResponseDto(tokenService.CreateToken(user), user.FullName, isAdmin);
+    }
+
+    /// <summary>The company directory. No password, hash or token is exposed.</summary>
+    public async Task<IReadOnlyList<UserListItemDto>> GetUsersAsync(CancellationToken cancellationToken)
+    {
+        var users = await userRepository.GetAllAsync(cancellationToken);
+
+        return users.Select(user => user.ToListItemDto()).ToList();
     }
 }

@@ -1,10 +1,4 @@
 <div class="sprints-page">
-  <p class="sprints-intro">
-    Every sprint in the system, grouped by the board that owns it. Each board keeps its own timeline,
-    so two boards can run sprints over the same days. Open a sprint to see its tasks; to create or
-    change one, open its board's Sprint tab.
-  </p>
-
   @if (loading()) {
     <p class="visually-hidden">Loading sprints.</p>
     <div class="sprints-groups" aria-hidden="true">
@@ -43,21 +37,21 @@
             @for (sprint of group.sprints; track sprint.sprintId) {
               <li class="sprint-row">
                 <div class="sprint-row-line">
-                  <!-- Each row opens on its own; several may be open at once. -->
+                  <!--
+                    The whole row is the disclosure: clicking a sprint shows its tasks. Each row
+                    opens on its own, so several may be open at once. The chevron is inside the
+                    button rather than beside it, so there is one control and one thing to announce.
+                  -->
                   <button
                     class="sprint-row-toggle"
                     type="button"
                     [attr.aria-expanded]="isExpanded(sprint.sprintId)"
                     [attr.aria-label]="'Tasks in ' + sprint.name"
                     (click)="toggle(sprint.sprintId)">
-                    <mat-icon>{{ isExpanded(sprint.sprintId) ? 'expand_more' : 'chevron_right' }}</mat-icon>
-                  </button>
+                    <mat-icon class="sprint-row-chevron" aria-hidden="true">
+                      {{ isExpanded(sprint.sprintId) ? 'expand_more' : 'chevron_right' }}
+                    </mat-icon>
 
-                  <!-- Opening the board means working in the sprint: the kanban, scoped to it. -->
-                  <a
-                    class="sprint-row-link"
-                    [routerLink]="boardPath(group.boardId)"
-                    [queryParams]="{ sprint: sprint.sprintId }">
                     <span class="sprint-row-name">{{ sprint.name }}</span>
 
                     <!-- "up to, not including" — the end day is not part of the sprint. -->
@@ -70,7 +64,14 @@
                     <span class="sprint-row-count">
                       {{ sprint.taskCount }} task{{ sprint.taskCount === 1 ? '' : 's' }}
                     </span>
-                  </a>
+                  </button>
+
+                  <!-- Working in the sprint is a different intent from looking at it, so it keeps
+                       its own control: the kanban, scoped to this sprint. -->
+                  <a
+                    class="sprint-row-open"
+                    [routerLink]="boardPath(group.boardId)"
+                    [queryParams]="{ sprint: sprint.sprintId }">Open</a>
                 </div>
 
                 @if (isExpanded(sprint.sprintId)) {

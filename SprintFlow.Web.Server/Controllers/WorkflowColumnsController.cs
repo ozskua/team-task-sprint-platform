@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.Common.Enums;
 using SprintFlow.Web.Server.DTOs.Columns;
-using SprintFlow.Web.Server.Interfaces.Services;
+using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
@@ -15,9 +15,9 @@ namespace SprintFlow.Web.Server.Controllers;
 [Authorize]
 public class WorkflowColumnsController : ControllerBase
 {
-    private readonly IWorkflowColumnService workflowColumnService;
+    private readonly WorkflowColumnService workflowColumnService;
 
-    public WorkflowColumnsController(IWorkflowColumnService workflowColumnService)
+    public WorkflowColumnsController(WorkflowColumnService workflowColumnService)
     {
         this.workflowColumnService = workflowColumnService;
     }

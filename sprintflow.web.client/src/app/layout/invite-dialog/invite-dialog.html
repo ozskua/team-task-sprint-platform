@@ -1,0 +1,45 @@
+<h2 class="invite-title" mat-dialog-title>Invite</h2>
+
+<mat-dialog-content>
+  @if (loading()) {
+    <div class="invite-loading" role="status">
+      <mat-spinner diameter="28" />
+      <span>Creating an invitation…</span>
+    </div>
+  } @else if (errorMessage(); as message) {
+    <p class="invite-error" role="alert">{{ message }}</p>
+  } @else {
+    <p class="invite-intro">
+      Share this link with the person you are inviting. It creates one account and then stops
+      working.
+    </p>
+
+    <!-- Readonly rather than plain text: it stays selectable for anyone whose browser refuses
+         clipboard access, and cannot be edited into a different link by accident. -->
+    <input
+      class="invite-link"
+      type="text"
+      readonly
+      aria-label="Registration link"
+      [value]="url()"
+      (focus)="$any($event.target).select()" />
+
+    @if (expiresAt(); as expiry) {
+      <p class="invite-expiry">Expires {{ expiry | date:'dd MMM yyyy, HH:mm' }}.</p>
+    }
+
+    <p class="invite-note">
+      Anyone with this link can create an account. Send it only to the person you mean to invite.
+    </p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (url()) {
+    <button mat-button type="button" (click)="onCopy()">
+      {{ copied() ? 'Copied' : 'Copy link' }}
+    </button>
+  }
+
+  <button mat-button type="button" mat-dialog-close>Close</button>
+</mat-dialog-actions>

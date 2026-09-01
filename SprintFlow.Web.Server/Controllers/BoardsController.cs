@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.DTOs.Boards;
 using SprintFlow.Web.Server.Extensions;
-using SprintFlow.Web.Server.Interfaces.Services;
+using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
@@ -17,9 +17,9 @@ namespace SprintFlow.Web.Server.Controllers;
 [Authorize]
 public class BoardsController : ControllerBase
 {
-    private readonly IBoardService boardService;
+    private readonly BoardService boardService;
 
-    public BoardsController(IBoardService boardService)
+    public BoardsController(BoardService boardService)
     {
         this.boardService = boardService;
     }

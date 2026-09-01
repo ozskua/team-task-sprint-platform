@@ -14,8 +14,8 @@ public static class AdminDashboardMappings
     /// The column's kind travels as its name rather than its number, so a client reads
     /// <c>"Completed"</c> instead of <c>2</c> — the same rule the board endpoint follows.
     /// </remarks>
-    public static AdminDashboardTaskDto ToAdminDashboardTaskDto(this TaskItem task)
-        => new(
+    public static AdminDashboardTaskDto ToAdminDashboardTaskDto(this TaskItem task) => new (
+
             task.TaskId,
             task.Title,
             task.BoardId,
@@ -29,7 +29,6 @@ public static class AdminDashboardMappings
             task.CreatedDate,
             // Zero or one: the unique index on TaskId makes a second assignee unstorable, so the
             // first row is the assignee and its absence means nobody is answerable yet.
-            task.Participants
-                .Select(p => new TaskAssigneeResponseDto(p.UserId, p.User.FullName))
-                .FirstOrDefault());
+
+            task.Participants.Select(p => new TaskAssigneeResponseDto(p.UserId, p.User.FullName)).FirstOrDefault());
 }

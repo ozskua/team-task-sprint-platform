@@ -32,6 +32,8 @@ public class SprintFlowDbContext : DbContext
 
     public DbSet<Sprint> Sprints => Set<Sprint>();
 
+    public DbSet<Invitation> Invitations => Set<Invitation>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

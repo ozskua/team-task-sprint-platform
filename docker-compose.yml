@@ -1,0 +1,25 @@
+# Development infrastructure for SprintFlow.
+#
+# The application itself is NOT containerised: it runs as a normal Windows .NET process, against
+# SQL Server installed natively on Windows. Only Redis runs here, because Redis has no official
+# Windows build and a container is the reproducible way to get one.
+#
+#   docker compose up -d     start Redis
+#   docker compose ps        check it is running
+#   docker compose down      stop it, keeping the data volume
+#
+# There is deliberately no Dockerfile: nothing in this repository is built into an image.
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: sprintflow-redis
+    ports:
+      # Loopback only. The instance has no password, so it must not be reachable from the network.
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - sprintflow-redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  sprintflow-redis-data:

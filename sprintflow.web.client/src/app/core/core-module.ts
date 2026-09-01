@@ -8,6 +8,7 @@ import { AuthService } from './services/auth.service';
 import { BoardDetailService } from './services/board-detail.service';
 import { BoardSummaryService } from './services/board-summary.service';
 import { DashboardService } from './services/dashboard.service';
+import { InvitationService } from './services/invitation.service';
 import { SprintService } from './services/sprint.service';
 import { TeamService } from './services/team.service';
 import { TokenStorage } from './services/token-storage';
@@ -28,6 +29,9 @@ import { UserService } from './services/user.service';
     BoardDetailService,
     BoardSummaryService,
     SprintService,
+    // Stateless, but a singleton like the rest: both shells' user menu creates invitations, and the
+    // register page redeems them.
+    InvitationService,
     TeamService,
     DashboardService,
     AdminDashboardService,

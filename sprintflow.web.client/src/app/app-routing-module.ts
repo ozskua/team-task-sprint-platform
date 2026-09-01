@@ -11,6 +11,14 @@ const routes: Routes = [
     path: 'login',
     loadChildren: () => import('./features/auth/auth-module').then(m => m.AuthModule)
   },
+  // Unguarded, because whoever opens it has no account yet — that is the point. It is not open
+  // house: without a usable invitation token in the query string the page shows no form, and the
+  // server creates nothing. Nothing links here; the URL arrives by invitation.
+  {
+    path: 'register',
+    loadChildren: () =>
+      import('./features/auth/register/register-module').then(m => m.RegisterModule)
+  },
   {
     path: 'admin',
     canActivate: [authGuard, adminGuard], // Signed out goes to /login, a Member goes to /dashboard.

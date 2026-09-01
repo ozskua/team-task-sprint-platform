@@ -36,6 +36,8 @@ try
 
     builder.Services.AddAuthenticationServices(builder.Configuration);
 
+    builder.Services.AddCachingServices(builder.Configuration);
+
     builder.Services.AddApplicationServices();
 
     var app = builder.Build();

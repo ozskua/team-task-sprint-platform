@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.DTOs.Areas;
 using SprintFlow.Web.Server.Extensions;
-using SprintFlow.Web.Server.Interfaces.Services;
+using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
@@ -16,11 +16,11 @@ namespace SprintFlow.Web.Server.Controllers;
 [Authorize]
 public class AreasController : ControllerBase
 {
-    private readonly IAreaService areaService;
+    private readonly BoardService boardService;
 
-    public AreasController(IAreaService areaService)
+    public AreasController(BoardService boardService)
     {
-        this.areaService = areaService;
+        this.boardService = boardService;
     }
 
     /// <summary>Creates an Area owned by the caller.</summary>
@@ -32,7 +32,7 @@ public class AreasController : ControllerBase
         [FromBody] CreateAreaRequestDto request,
         CancellationToken cancellationToken)
     {
-        var area = await areaService.CreateAsync(
+        var area = await boardService.CreateAreaAsync(
             request, User.GetAuthenticatedUserId(), cancellationToken);
 
         return CreatedAtAction(nameof(GetAll), new { }, area);
@@ -45,6 +45,6 @@ public class AreasController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<AreaResponseDto>>> GetAll(
         CancellationToken cancellationToken)
     {
-        return Ok(await areaService.GetAllAsync(cancellationToken));
+        return Ok(await boardService.GetAreasAsync(cancellationToken));
     }
 }

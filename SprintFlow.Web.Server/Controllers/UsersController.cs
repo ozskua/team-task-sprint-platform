@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.DTOs.Users;
-using SprintFlow.Web.Server.Interfaces.Services;
+using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
@@ -18,11 +18,11 @@ namespace SprintFlow.Web.Server.Controllers;
 [Authorize]
 public class UsersController : ControllerBase
 {
-    private readonly IUserService userService;
+    private readonly AuthService authService;
 
-    public UsersController(IUserService userService)
+    public UsersController(AuthService authService)
     {
-        this.userService = userService;
+        this.authService = authService;
     }
 
     /// <summary>Lists every user in the company.</summary>
@@ -32,6 +32,6 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<UserListItemDto>>> GetAll(
         CancellationToken cancellationToken)
     {
-        return Ok(await userService.GetAllAsync(cancellationToken));
+        return Ok(await authService.GetUsersAsync(cancellationToken));
     }
 }

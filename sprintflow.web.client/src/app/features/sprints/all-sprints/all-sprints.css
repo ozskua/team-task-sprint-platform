@@ -4,12 +4,6 @@
     gap: 20px;
 }
 
-.sprints-intro {
-    margin: 0;
-    font-size: 0.8125rem;
-    color: var(--mat-sys-on-surface-variant);
-}
-
 .sprints-groups {
     display: flex;
     flex-direction: column;
@@ -67,31 +61,56 @@
     list-style: none;
 }
 
-/* The disclosure sits beside the link, so opening a row and opening its board stay separate. */
+/* The row is the disclosure; opening the board is a separate control beside it. */
 .sprint-row-line {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
+/* Carries the row's own layout: chevron, then the four facts the row states. */
 .sprint-row-toggle {
-    display: inline-flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
     align-items: center;
-    justify-content: center;
-    flex: none;
-    width: 24px;
-    height: 24px;
-    padding: 0;
+    gap: 16px;
+    padding: 10px 12px;
     border: none;
+    border-radius: var(--app-radius-control);
     background: none;
-    color: var(--mat-sys-on-surface-variant);
+    color: var(--mat-sys-on-surface);
+    font: inherit;
+    text-align: left;
     cursor: pointer;
 }
 
-.sprint-row-toggle mat-icon {
+.sprint-row-toggle:hover {
+    background-color: rgba(148, 163, 184, 0.10);
+}
+
+.sprint-row-chevron {
+    flex: none;
+    /* The grid gap already separates it; without this the icon's own box adds a second gap. */
+    margin-right: -8px;
     font-size: 18px;
     width: 18px;
     height: 18px;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.sprint-row-open {
+    flex: none;
+    padding: 6px 10px;
+    border-radius: var(--app-radius-control);
+    color: var(--mat-sys-primary);
+    font-size: 0.8125rem;
+    text-decoration: none;
+}
+
+.sprint-row-open:hover {
+    text-decoration: underline;
 }
 
 /* Indented past the disclosure, so the tasks read as belonging to the row above them. */
@@ -107,23 +126,6 @@
 }
 
 /* The rest of the row is the link, so the target is the row and not just its name. */
-.sprint-row-link {
-    flex: 1 1 auto;
-    min-width: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
-    align-items: center;
-    gap: 16px;
-    padding: 10px 12px;
-    border-radius: var(--app-radius-control);
-    color: var(--mat-sys-on-surface);
-    text-decoration: none;
-}
-
-.sprint-row-link:hover {
-    background-color: rgba(148, 163, 184, 0.10);
-}
-
 .sprint-row-name {
     overflow: hidden;
     font-size: 0.875rem;
@@ -174,8 +176,29 @@
 }
 
 @media (max-width: 767.98px) {
-    .sprint-row-link {
-        grid-template-columns: 1fr;
-        gap: 4px;
+    /* One column for the chevron, one for everything it opens — so the facts stack beside the
+       disclosure rather than underneath it. */
+    .sprint-row-toggle {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 4px 8px;
+    }
+
+    .sprint-row-chevron {
+        grid-row: 1 / span 4;
+        align-self: start;
+        margin-top: 2px;
+        margin-right: 0;
+    }
+
+    .sprint-row-name,
+    .sprint-row-dates,
+    .sprint-row-status,
+    .sprint-row-count {
+        grid-column: 2;
+    }
+
+    /* A pill should be as wide as its text, not as wide as the column. */
+    .sprint-row-status {
+        justify-self: start;
     }
 }

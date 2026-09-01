@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.DTOs.Teams;
-using SprintFlow.Web.Server.Interfaces.Services;
+using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
@@ -14,11 +14,11 @@ namespace SprintFlow.Web.Server.Controllers;
 [Authorize]
 public class TeamsController : ControllerBase
 {
-    private readonly ITeamService teamService;
+    private readonly BoardService boardService;
 
-    public TeamsController(ITeamService teamService)
+    public TeamsController(BoardService boardService)
     {
-        this.teamService = teamService;
+        this.boardService = boardService;
     }
 
     /// <summary>Every team, with the members currently derived from assignment.</summary>
@@ -28,6 +28,6 @@ public class TeamsController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<TeamResponseDto>>> GetAll(
         CancellationToken cancellationToken)
     {
-        return Ok(await teamService.GetAllAsync(cancellationToken));
+        return Ok(await boardService.GetTeamsAsync(cancellationToken));
     }
 }
