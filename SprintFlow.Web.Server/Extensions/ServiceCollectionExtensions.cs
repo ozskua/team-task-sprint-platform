@@ -74,6 +74,26 @@ public static class ServiceCollectionExtensions
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                     NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
                 };
+
+                bearer.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        // A WebSocket handshake cannot carry an Authorization header, so the SignalR
+                        // client sends the token in the query string instead. Read only for the hub
+                        // paths: everything else keeps taking the header and nothing about how the
+                        // REST endpoints authenticate changes.
+                        var accessToken = context.Request.Query["access_token"];
+
+                        if (!string.IsNullOrEmpty(accessToken)
+                            && context.Request.Path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         services.AddAuthorization();

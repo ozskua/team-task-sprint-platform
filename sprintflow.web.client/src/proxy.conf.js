@@ -13,6 +13,17 @@ const PROXY_CONFIG = [
     ],
     target,
     secure: false
+  },
+  // The SignalR hub, kept as its own entry so the API's forwarding is untouched. `ws` is what
+  // matters here: without it the WebSocket upgrade is not proxied and SignalR silently falls back
+  // to long polling. Production needs none of this — one origin serves both.
+  {
+    context: [
+      "/hubs",
+    ],
+    target,
+    secure: false,
+    ws: true
   }
 ]
 

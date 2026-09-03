@@ -6,6 +6,7 @@ import { AdminDashboardService } from './services/admin-dashboard.service';
 import { AreaService } from './services/area.service';
 import { AuthService } from './services/auth.service';
 import { BoardDetailService } from './services/board-detail.service';
+import { BoardRealtimeService } from './services/board-realtime.service';
 import { BoardSummaryService } from './services/board-summary.service';
 import { DashboardService } from './services/dashboard.service';
 import { InvitationService } from './services/invitation.service';
@@ -27,6 +28,7 @@ import { UserService } from './services/user.service';
     // One board is on screen at a time, so its state is a singleton like the Area list rather than
     // something each visit to the page recreates.
     BoardDetailService,
+    BoardRealtimeService,
     BoardSummaryService,
     SprintService,
     // Stateless, but a singleton like the rest: both shells' user menu creates invitations, and the

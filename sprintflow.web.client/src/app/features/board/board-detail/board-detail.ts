@@ -13,6 +13,7 @@ import {
   BoardTask
 } from '../../../core/models/board-detail-models';
 import { BoardDetailService } from '../../../core/services/board-detail.service';
+import { BoardRealtimeService } from '../../../core/services/board-realtime.service';
 import { BoardActions } from '../board-actions';
 import { ConfirmDialog, ConfirmDialogData } from '../dialogs/confirm-dialog/confirm-dialog';
 import { ColumnFormDialog, ColumnFormDialogData } from '../dialogs/column-form-dialog/column-form-dialog';
@@ -44,6 +45,7 @@ const LANE_GAP = 12;
 })
 export class BoardDetail {
   private readonly boardDetail = inject(BoardDetailService);
+  private readonly realtime = inject(BoardRealtimeService);
   private readonly boardActions = inject(BoardActions);
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
@@ -124,12 +126,22 @@ export class BoardDetail {
     // watched: switching sprints changes only the latter and would otherwise not reload anything.
     combineLatest([this.route.paramMap, this.route.queryParamMap])
       .pipe(takeUntilDestroyed())
-      .subscribe(([params, query]) => this.loadBoard(
-        Number(params.get('boardId')),
-        parseSprintId(query.get('sprint'))));
+      .subscribe(([params, query]) => {
+        const boardId = Number(params.get('boardId'));
+
+        this.loadBoard(boardId, parseSprintId(query.get('sprint')));
+
+        // Here rather than in an init hook: moving to another board only changes the route
+        // parameter, so this component is reused and would otherwise stay in the old board's group.
+        // Switching sprints repeats the same id, which the service ignores.
+        this.realtime.watch(boardId);
+      });
 
     // Dropped on the way out, so opening another board never shows this one's cards first.
-    this.destroyRef.onDestroy(() => this.boardDetail.clear());
+    this.destroyRef.onDestroy(() => {
+      this.boardDetail.clear();
+      this.realtime.stop();
+    });
   }
 
   protected dismissError(): void {

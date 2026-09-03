@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.SignalR;
 using SprintFlow.Web.Server.Common.Enums;
 using SprintFlow.Web.Server.Data.Repositories;
 using SprintFlow.Web.Server.DTOs.Columns;
 using SprintFlow.Web.Server.DTOs.Tasks;
+using SprintFlow.Web.Server.Hubs;
 using SprintFlow.Web.Server.Mappings;
 using SprintFlow.Web.Server.Models;
 
@@ -15,6 +17,7 @@ public class TaskService
     private readonly SprintRepository sprintRepository;
     private readonly IBoardSummaryCache summaryCache;
     private readonly AttachmentStorage attachmentStorage;
+    private readonly IHubContext<BoardHub> boardHub;
 
     public TaskService(
         TaskRepository taskRepository,
@@ -22,7 +25,8 @@ public class TaskService
         UserRepository userRepository,
         SprintRepository sprintRepository,
         IBoardSummaryCache summaryCache,
-        AttachmentStorage attachmentStorage)
+        AttachmentStorage attachmentStorage,
+        IHubContext<BoardHub> boardHub)
     {
         this.taskRepository = taskRepository;
         this.boardRepository = boardRepository;
@@ -30,7 +34,22 @@ public class TaskService
         this.sprintRepository = sprintRepository;
         this.summaryCache = summaryCache;
         this.attachmentStorage = attachmentStorage;
+        this.boardHub = boardHub;
     }
+
+    /// <summary>
+    /// Tells the other clients watching this board to re-read it.
+    /// </summary>
+    /// <remarks>
+    /// Separate from cache invalidation on purpose, and not always paired with it: the summary
+    /// reports counts, while the board shows a task's title, priority and assignee. An edit changes
+    /// what is on screen without changing a single figure the summary holds, so it publishes here
+    /// and still, correctly, does not drop the cache entry.
+    /// </remarks>
+    private Task NotifyBoardChangedAsync(int boardId, string reason, CancellationToken cancellationToken)
+        => boardHub.Clients
+            .Group(BoardHub.GroupFor(boardId))
+            .SendAsync("boardChanged", new { boardId, reason }, cancellationToken);
 
     public async Task<(CreateTaskOutcome Outcome, TaskResponseDto? Task)> CreateAsync(
         int boardId,
@@ -123,6 +142,8 @@ public class TaskService
         // The board has one more task than its cached summary says, in a column that summary counts.
         await summaryCache.RemoveAsync(boardId, cancellationToken);
 
+        await NotifyBoardChangedAsync(boardId, "taskCreated", cancellationToken);
+
         // Read back outside the lock: the row is committed by now, and holding the board while
         // assembling a response would make every other request on it wait for no reason.
         return (outcome, await ReadBackAsync(taskId.Value, cancellationToken));
@@ -177,9 +198,16 @@ public class TaskService
         // title, description, priority and assignee, and the summary reports none of those — it
         // counts tasks by their column and by whether they carry a sprint, and this touches
         // neither. Dropping the entry would throw away a correct answer on every text edit.
-        return outcome == UpdateTaskOutcome.Updated
-            ? (outcome, await ReadBackAsync(taskId, cancellationToken))
-            : (outcome, null);
+        if (outcome != UpdateTaskOutcome.Updated)
+        {
+            return (outcome, null);
+        }
+
+        // The cards do show all four, though, so the other clients are told even though the cache
+        // keeps its entry.
+        await NotifyBoardChangedAsync(boardId.Value, "taskUpdated", cancellationToken);
+
+        return (outcome, await ReadBackAsync(taskId, cancellationToken));
     }
 
     /// <summary>
@@ -262,6 +290,8 @@ public class TaskService
         // Changes how many of the board's tasks are in no sprint, which the summary reports.
         await summaryCache.RemoveAsync(task.BoardId, cancellationToken);
 
+        await NotifyBoardChangedAsync(task.BoardId, "taskSprintChanged", cancellationToken);
+
         return (AssignSprintOutcome.Assigned, await ReadBackAsync(taskId, cancellationToken));
     }
 
@@ -318,6 +348,8 @@ public class TaskService
 
             // One fewer task on the board, and one fewer in whichever bucket it was counted in.
             await summaryCache.RemoveAsync(boardId.Value, cancellationToken);
+
+            await NotifyBoardChangedAsync(boardId.Value, "taskDeleted", cancellationToken);
         }
 
         return deleted;
@@ -408,6 +440,8 @@ public class TaskService
         // progress figure derived from them — are exactly that count. The board is the target
         // column's, which the check inside the lock has already proven is also the task's.
         await summaryCache.RemoveAsync(targetColumn.BoardId, cancellationToken);
+
+        await NotifyBoardChangedAsync(targetColumn.BoardId, "taskMoved", cancellationToken);
 
         // Read back outside the lock: the move is committed, and assembling a response is not
         // ordering work. Reported through the same sprint the caller was looking at, so the columns

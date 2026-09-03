@@ -3,6 +3,7 @@ using NLog;
 using NLog.Web;
 using SprintFlow.Web.Server.Data;
 using SprintFlow.Web.Server.Extensions;
+using SprintFlow.Web.Server.Hubs;
 using SprintFlow.Web.Server.Middleware;
 
 // Loaded before the host so that failures during start-up are still written to the log file.
@@ -40,6 +41,10 @@ try
 
     builder.Services.AddApplicationServices(builder.Configuration);
 
+    // In this process, not a container: SignalR is a library inside the application, and the hub is
+    // served by the same Kestrel on the same port as the API.
+    builder.Services.AddSignalR();
+
     var app = builder.Build();
 
     await app.ValidateAuthenticationConfigurationAsync(); // Fail fast rather than run misconfigured.
@@ -62,6 +67,9 @@ try
     app.UseAuthorization(); // Checks whether that user may access the endpoint. Order matters.
 
     app.MapControllers();
+
+    // Before the SPA fallback, which would otherwise answer the hub's own requests with index.html.
+    app.MapHub<BoardHub>("/hubs/board");
 
     app.MapFallbackToFile("/index.html");
 

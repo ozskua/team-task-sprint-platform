@@ -22,6 +22,7 @@
     "@angular/material": "^22.1.0",
     "@angular/platform-browser": "^22.1.0",
     "@angular/router": "^22.1.0",
+    "@microsoft/signalr": "^10.0.11",
     "jest-editor-support": "*",
     "run-script-os": "*",
     "rxjs": "~7.8.0",
