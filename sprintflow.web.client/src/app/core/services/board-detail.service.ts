@@ -9,9 +9,13 @@ import {
   BoardDetail,
   BoardTask,
   ColumnNameRequest,
+  CreateTaskCommentRequest,
   CreateTaskRequest,
   MoveTaskRequest,
   ReorderColumnsRequest,
+  TaskAttachment,
+  TaskComment,
+  TaskDetail,
   UpdateTaskRequest
 } from '../models/board-detail-models';
 
@@ -184,6 +188,58 @@ export class BoardDetailService {
     return this.http
       .put<BoardTask>(`${environment.apiBaseUrl}/tasks/${taskId}/sprint`, request)
       .pipe(tap(task => this.replaceTask(task)));
+  }
+
+  // --- The task card ------------------------------------------------------
+  //
+  // Read on its own rather than from the board signal: the card carries comments and attachments,
+  // which the board's own response has no reason to load for every card on screen.
+
+  taskDetail(taskId: number): Observable<TaskDetail> {
+    return this.http.get<TaskDetail>(`${environment.apiBaseUrl}/tasks/${taskId}`);
+  }
+
+  addComment(taskId: number, request: CreateTaskCommentRequest): Observable<TaskComment> {
+    return this.http.post<TaskComment>(
+      `${environment.apiBaseUrl}/tasks/${taskId}/comments`, request);
+  }
+
+  deleteComment(taskId: number, commentId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${environment.apiBaseUrl}/tasks/${taskId}/comments/${commentId}`);
+  }
+
+  /**
+   * Sent as multipart form data under the field name the server binds, `file`.
+   *
+   * `commentId` names the comment the file was posted with, so the thread can draw it under that
+   * message. Left out for a file attached to the task on its own.
+   */
+  uploadAttachment(taskId: number, file: File, commentId?: number): Observable<TaskAttachment> {
+    const form = new FormData();
+    form.append('file', file);
+
+    if (commentId !== undefined) {
+      form.append('commentId', String(commentId));
+    }
+
+    return this.http.post<TaskAttachment>(
+      `${environment.apiBaseUrl}/tasks/${taskId}/attachments`, form);
+  }
+
+  /**
+   * Fetched rather than linked: every API call carries a bearer token, and a plain anchor would
+   * send none — the download would come back 401.
+   */
+  downloadAttachment(taskId: number, attachmentId: number): Observable<Blob> {
+    return this.http.get(
+      `${environment.apiBaseUrl}/tasks/${taskId}/attachments/${attachmentId}`,
+      { responseType: 'blob' });
+  }
+
+  deleteAttachment(taskId: number, attachmentId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${environment.apiBaseUrl}/tasks/${taskId}/attachments/${attachmentId}`);
   }
 
   // --- Boards -------------------------------------------------------------

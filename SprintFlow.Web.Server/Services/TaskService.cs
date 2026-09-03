@@ -14,19 +14,22 @@ public class TaskService
     private readonly UserRepository userRepository;
     private readonly SprintRepository sprintRepository;
     private readonly IBoardSummaryCache summaryCache;
+    private readonly AttachmentStorage attachmentStorage;
 
     public TaskService(
         TaskRepository taskRepository,
         BoardRepository boardRepository,
         UserRepository userRepository,
         SprintRepository sprintRepository,
-        IBoardSummaryCache summaryCache)
+        IBoardSummaryCache summaryCache,
+        AttachmentStorage attachmentStorage)
     {
         this.taskRepository = taskRepository;
         this.boardRepository = boardRepository;
         this.userRepository = userRepository;
         this.sprintRepository = sprintRepository;
         this.summaryCache = summaryCache;
+        this.attachmentStorage = attachmentStorage;
     }
 
     public async Task<(CreateTaskOutcome Outcome, TaskResponseDto? Task)> CreateAsync(
@@ -83,6 +86,7 @@ public class TaskService
                     // reaches here — [Required] rejects it.
                     Title = request.Title.Trim(),
                     Description = Normalise(request.Description),
+                    Priority = request.Priority,
 
                     // From the caller's token. The request DTO has no property for it, so nothing a
                     // client sends can influence this.
@@ -156,6 +160,7 @@ public class TaskService
 
                 task.Title = request.Title.Trim();
                 task.Description = Normalise(request.Description);
+                task.Priority = request.Priority;
 
                 await ReplaceAssigneeAsync(taskId, request.AssigneeUserId, token);
 
@@ -169,9 +174,9 @@ public class TaskService
             cancellationToken);
 
         // The board summary is deliberately not invalidated here. This method changes a task's
-        // title, description and assignee, and the summary reports none of those — it counts tasks
-        // by their column and by whether they carry a sprint, and this touches neither. Dropping the
-        // entry anyway would throw away a correct cached answer on every text edit.
+        // title, description, priority and assignee, and the summary reports none of those — it
+        // counts tasks by their column and by whether they carry a sprint, and this touches
+        // neither. Dropping the entry would throw away a correct answer on every text edit.
         return outcome == UpdateTaskOutcome.Updated
             ? (outcome, await ReadBackAsync(taskId, cancellationToken))
             : (outcome, null);
@@ -271,6 +276,9 @@ public class TaskService
             return false;
         }
 
+        // Read before the delete, because the rows go by cascade and the files on disk do not.
+        var attachmentNames = await taskRepository.GetAttachmentNamesAsync(taskId, cancellationToken);
+
         // Under the board's lock: deleting renumbers the survivors, which is the same kind of
         // rewrite a move performs and has to be serialised for the same reason.
         var deleted = await boardRepository.RunBoardOrderingAsync(
@@ -301,6 +309,13 @@ public class TaskService
 
         if (deleted)
         {
+            // The comment and attachment rows went with the task by cascade. The files did not, so
+            // they are removed here — after the commit, because a deleted file cannot be rolled back.
+            foreach (var storedName in attachmentNames)
+            {
+                attachmentStorage.Delete(storedName);
+            }
+
             // One fewer task on the board, and one fewer in whichever bucket it was counted in.
             await summaryCache.RemoveAsync(boardId.Value, cancellationToken);
         }
@@ -399,6 +414,239 @@ public class TaskService
         // that come back are the columns they can see rather than the whole board's.
         return (outcome, await ReadColumnsAsync(affectedColumnIds, request.SprintId, cancellationToken));
     }
+
+    // --- The task card ------------------------------------------------------
+    //
+    // None of what follows invalidates the board summary. It counts tasks by their column and by
+    // whether they carry a sprint; a comment, an attachment and a priority appear in none of those.
+
+    /// <summary>The whole card in one read. <c>null</c> when there is no such task.</summary>
+    public async Task<TaskDetailResponseDto?> GetDetailAsync(int taskId, CancellationToken cancellationToken)
+        => (await taskRepository.GetDetailAsync(taskId, cancellationToken))?.ToDetailResponseDto();
+
+    /// <summary>
+    /// Adds a comment. The author comes from the caller's token — the request carries no user id,
+    /// so there is nothing to spoof. <c>null</c> when there is no such task.
+    /// </summary>
+    public async Task<TaskCommentResponseDto?> AddCommentAsync(
+        int taskId,
+        CreateTaskCommentRequestDto request,
+        int userId,
+        CancellationToken cancellationToken)
+    {
+        if (!await taskRepository.ExistsAsync(taskId, cancellationToken))
+        {
+            return null;
+        }
+
+        // A comment that is only whitespace never reaches here — [Required] rejects it.
+        var comment = new TaskComment
+        {
+            TaskId = taskId,
+            UserId = userId,
+            Content = request.Content.Trim()
+
+            // CreatedDate is intentionally not set; the database default supplies it.
+        };
+
+        taskRepository.AddComment(comment);
+
+        await taskRepository.SaveChangesAsync(cancellationToken);
+
+        var saved = await taskRepository.GetCommentAsync(comment.TaskCommentId, cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"Comment {comment.TaskCommentId} was saved but could not be read back.");
+
+        return saved.ToResponseDto();
+    }
+
+    /// <summary>
+    /// Removes a comment, and the files posted with it.
+    /// </summary>
+    /// <remarks>
+    /// The author check is the one place in this project where being the creator of something
+    /// decides what may be done to it. It is deliberately a single condition here rather than a
+    /// policy: everywhere else, ownership still grants nothing.
+    /// </remarks>
+    public async Task<DeleteCommentOutcome> DeleteCommentAsync(
+        int taskId,
+        int commentId,
+        int callerUserId,
+        CancellationToken cancellationToken)
+    {
+        var comment = await taskRepository.GetCommentForUpdateAsync(commentId, cancellationToken);
+
+        // A comment id belonging to another task is simply not found, so this cannot be used to
+        // learn which ids exist elsewhere.
+        if (comment is null || comment.TaskId != taskId)
+        {
+            return DeleteCommentOutcome.NotFound;
+        }
+
+        if (comment.UserId != callerUserId)
+        {
+            return DeleteCommentOutcome.NotAuthor;
+        }
+
+        // The FK is Restrict, so these do not go on their own — and their files never would.
+        var attachments = await taskRepository.GetCommentAttachmentsForUpdateAsync(
+            commentId,
+            cancellationToken);
+
+        taskRepository.RemoveRange(attachments);
+        taskRepository.Remove(comment);
+
+        await taskRepository.SaveChangesAsync(cancellationToken);
+
+        // After the commit: a deleted file cannot be put back if the save then fails.
+        foreach (var attachment in attachments)
+        {
+            attachmentStorage.Delete(attachment.StoredName);
+        }
+
+        return DeleteCommentOutcome.Deleted;
+    }
+
+    /// <summary>
+    /// Stores an uploaded file and records what it was. The bytes go to the attachment folder under
+    /// a name the server generates; the row keeps the name the uploader's file had.
+    /// </summary>
+    /// <param name="fileName">
+    /// What the client called it. Used for the download filename and shown to people — never as a
+    /// path, and only its extension decides anything.
+    /// </param>
+    /// <param name="commentId">
+    /// The comment this file was posted with, when it was posted with one. It has to belong to the
+    /// same task, or the thread could show a file under a message on a different card.
+    /// </param>
+    public async Task<(AddAttachmentOutcome Outcome, TaskAttachmentResponseDto? Attachment)> AddAttachmentAsync(
+        int taskId,
+        string fileName,
+        long sizeBytes,
+        Stream content,
+        int uploadedByUserId,
+        int? commentId,
+        CancellationToken cancellationToken)
+    {
+        // Any directory part the client sent is dropped here, before anything looks at the name.
+        var leafName = Path.GetFileName(fileName);
+
+        if (string.IsNullOrWhiteSpace(leafName) || sizeBytes <= 0)
+        {
+            return (AddAttachmentOutcome.FileMissing, null);
+        }
+
+        if (sizeBytes > AttachmentStorage.MaxSizeBytes)
+        {
+            return (AddAttachmentOutcome.FileTooLarge, null);
+        }
+
+        // The content type comes from the allowlist, not from the upload's own header.
+        var contentType = attachmentStorage.ContentTypeFor(Path.GetExtension(leafName));
+
+        if (contentType is null)
+        {
+            return (AddAttachmentOutcome.FileTypeNotAllowed, null);
+        }
+
+        if (!await taskRepository.ExistsAsync(taskId, cancellationToken))
+        {
+            return (AddAttachmentOutcome.TaskNotFound, null);
+        }
+
+        // A comment on another task is treated as no comment at all being found, for the same
+        // reason the delete does: the id says nothing about what exists elsewhere.
+        if (commentId is int comment
+            && !await taskRepository.CommentExistsOnTaskAsync(comment, taskId, cancellationToken))
+        {
+            return (AddAttachmentOutcome.CommentNotFound, null);
+        }
+
+        var storedName = await attachmentStorage.SaveAsync(
+            content,
+            Path.GetExtension(leafName),
+            cancellationToken);
+
+        var attachment = new TaskAttachment
+        {
+            TaskId = taskId,
+            TaskCommentId = commentId,
+            FileName = Truncate(leafName, 255),
+            StoredName = storedName,
+            ContentType = contentType,
+            SizeBytes = sizeBytes,
+            UploadedByUserId = uploadedByUserId
+        };
+
+        taskRepository.AddAttachment(attachment);
+
+        try
+        {
+            await taskRepository.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            // The file is already on disk and the row that gives it meaning is not. Removing it
+            // keeps the folder free of files nothing points at.
+            attachmentStorage.Delete(storedName);
+
+            throw;
+        }
+
+        var saved = await taskRepository.GetAttachmentAsync(attachment.TaskAttachmentId, cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"Attachment {attachment.TaskAttachmentId} was saved but could not be read back.");
+
+        return (AddAttachmentOutcome.Added, saved.ToResponseDto());
+    }
+
+    /// <summary>
+    /// The file behind an attachment, with what is needed to name it in the response. <c>null</c>
+    /// when the attachment does not exist, belongs to another task, or its file has gone.
+    /// </summary>
+    public async Task<(TaskAttachmentResponseDto Metadata, Stream Content)?> OpenAttachmentAsync(
+        int taskId,
+        int attachmentId,
+        CancellationToken cancellationToken)
+    {
+        var attachment = await taskRepository.GetAttachmentAsync(attachmentId, cancellationToken);
+
+        // Addressed through its task, so an id that belongs to a different one is simply not found.
+        if (attachment is null || attachment.TaskId != taskId)
+        {
+            return null;
+        }
+
+        var content = attachmentStorage.Open(attachment.StoredName);
+
+        return content is null ? null : (attachment.ToResponseDto(), content);
+    }
+
+    public async Task<bool> DeleteAttachmentAsync(
+        int taskId,
+        int attachmentId,
+        CancellationToken cancellationToken)
+    {
+        var attachment = await taskRepository.GetAttachmentForUpdateAsync(attachmentId, cancellationToken);
+
+        if (attachment is null || attachment.TaskId != taskId)
+        {
+            return false;
+        }
+
+        taskRepository.Remove(attachment);
+
+        await taskRepository.SaveChangesAsync(cancellationToken);
+
+        // After the commit: a deleted file cannot be put back if the save then fails.
+        attachmentStorage.Delete(attachment.StoredName);
+
+        return true;
+    }
+
+    /// <summary>Keeps a stored name inside its column, whatever the client called the file.</summary>
+    private static string Truncate(string value, int maxLength)
+        => value.Length <= maxLength ? value : value[..maxLength];
 
     /// <summary>
     /// Which column a new task starts in: To Do when the caller said nothing, otherwise the column

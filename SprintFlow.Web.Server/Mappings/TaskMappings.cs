@@ -20,6 +20,7 @@ public static class TaskMappings
             task.BoardId,
             task.TaskColumnId,
             task.Position,
+            task.Priority,
             task.CreatedByUserId,
             task.CreatedByUser.FullName,
             task.CreatedDate,
@@ -45,4 +46,65 @@ public static class TaskMappings
             .ThenBy(task => task.TaskId)
             .Select(task => task.ToResponseDto())
             .ToList();
+
+    /// <summary>
+    /// The task card. Requires the column, board, sprint, creator, assignment, comments and
+    /// attachments to be loaded, each with its user.
+    /// </summary>
+    public static TaskDetailResponseDto ToDetailResponseDto(this TaskItem task)
+        => new(
+            task.TaskId,
+            task.Title,
+            task.Description,
+            task.BoardId,
+            task.Board.Name,
+            task.TaskColumnId,
+            task.Column.Name,
+            task.Position,
+            task.Priority,
+            task.CreatedByUserId,
+            task.CreatedByUser.FullName,
+            task.CreatedDate,
+            task.Participants
+                .Select(participant => new TaskAssigneeResponseDto(
+                    participant.UserId,
+                    participant.User.FullName))
+                .FirstOrDefault(),
+            task.SprintId,
+            task.Sprint?.Name,
+            task.Comments
+                .OrderBy(comment => comment.CreatedDate)
+                .ThenBy(comment => comment.TaskCommentId)
+                .Select(comment => comment.ToResponseDto())
+                .ToList(),
+            // Only the loose ones. The rest are drawn under the comment they were posted with.
+            task.Attachments
+                .Where(attachment => attachment.TaskCommentId is null)
+                .OrderBy(attachment => attachment.CreatedDate)
+                .ThenBy(attachment => attachment.TaskAttachmentId)
+                .Select(attachment => attachment.ToResponseDto())
+                .ToList());
+
+    public static TaskCommentResponseDto ToResponseDto(this TaskComment comment)
+        => new(
+            comment.TaskCommentId,
+            comment.UserId,
+            comment.User.FullName,
+            comment.Content,
+            comment.CreatedDate,
+            comment.Attachments
+                .OrderBy(attachment => attachment.CreatedDate)
+                .ThenBy(attachment => attachment.TaskAttachmentId)
+                .Select(attachment => attachment.ToResponseDto())
+                .ToList());
+
+    public static TaskAttachmentResponseDto ToResponseDto(this TaskAttachment attachment)
+        => new(
+            attachment.TaskAttachmentId,
+            attachment.FileName,
+            attachment.ContentType,
+            attachment.SizeBytes,
+            attachment.UploadedByUserId,
+            attachment.UploadedByUser.FullName,
+            attachment.CreatedDate);
 }

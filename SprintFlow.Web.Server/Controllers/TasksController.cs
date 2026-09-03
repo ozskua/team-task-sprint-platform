@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SprintFlow.Web.Server.Common.Enums;
 using SprintFlow.Web.Server.DTOs.Columns;
 using SprintFlow.Web.Server.DTOs.Tasks;
+using SprintFlow.Web.Server.Extensions;
 using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
@@ -25,6 +26,22 @@ public class TasksController : ControllerBase
     public TasksController(TaskService taskService)
     {
         this.taskService = taskService;
+    }
+
+    /// <summary>
+    /// The task card: everything one task carries, including its comments and its attachments.
+    /// </summary>
+    [HttpGet("{taskId:int}")]
+    [ProducesResponseType(typeof(TaskDetailResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TaskDetailResponseDto>> GetDetail(
+        int taskId,
+        CancellationToken cancellationToken)
+    {
+        var task = await taskService.GetDetailAsync(taskId, cancellationToken);
+
+        return task is null ? TaskNotFound() : Ok(task);
     }
 
     /// <summary>
@@ -141,6 +158,183 @@ public class TasksController : ControllerBase
             _ => throw new InvalidOperationException($"Unhandled assign-sprint outcome {outcome}.")
         };
     }
+
+    /// <summary>
+    /// Adds a comment to the task. The author is the caller — the request body carries no user id.
+    /// </summary>
+    [HttpPost("{taskId:int}/comments")]
+    [ProducesResponseType(typeof(TaskCommentResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TaskCommentResponseDto>> AddComment(
+        int taskId,
+        [FromBody] CreateTaskCommentRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var comment = await taskService.AddCommentAsync(
+            taskId,
+            request,
+            User.GetAuthenticatedUserId(),
+            cancellationToken);
+
+        return comment is null
+            ? TaskNotFound()
+            : StatusCode(StatusCodes.Status201Created, comment);
+    }
+
+    /// <summary>
+    /// Removes a comment, and the files posted with it. Only its author may.
+    /// </summary>
+    [HttpDelete("{taskId:int}/comments/{commentId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteComment(
+        int taskId,
+        int commentId,
+        CancellationToken cancellationToken)
+    {
+        var outcome = await taskService.DeleteCommentAsync(
+            taskId,
+            commentId,
+            User.GetAuthenticatedUserId(),
+            cancellationToken);
+
+        return outcome switch
+        {
+            DeleteCommentOutcome.Deleted => NoContent(),
+
+            DeleteCommentOutcome.NotFound => Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Comment not found",
+                detail: "No comment exists with the requested id on this task."),
+
+            DeleteCommentOutcome.NotAuthor => Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Comment belongs to someone else",
+                detail: "A comment can only be deleted by the person who wrote it."),
+
+            _ => throw new InvalidOperationException($"Unhandled delete-comment outcome {outcome}.")
+        };
+    }
+
+    /// <summary>
+    /// Attaches a file to the task. The bytes are written to the server's attachment folder under a
+    /// name the server generates; the database keeps only the metadata.
+    /// </summary>
+    /// <param name="commentId">
+    /// Sent when the file was posted with a comment, so the thread can draw it under that message.
+    /// </param>
+    [HttpPost("{taskId:int}/attachments")]
+    [ProducesResponseType(typeof(TaskAttachmentResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TaskAttachmentResponseDto>> AddAttachment(
+        int taskId,
+        IFormFile? file,
+
+        // [FromForm] is required: IFormFile is bound from the form automatically, but a simple type
+        // is read from the route or the query string unless it is asked for explicitly.
+        [FromForm] int? commentId,
+        CancellationToken cancellationToken)
+    {
+        if (file is null)
+        {
+            return FileMissing();
+        }
+
+        await using var content = file.OpenReadStream();
+
+        var (outcome, attachment) = await taskService.AddAttachmentAsync(
+            taskId,
+            file.FileName,
+            file.Length,
+            content,
+            User.GetAuthenticatedUserId(),
+            commentId,
+            cancellationToken);
+
+        return outcome switch
+        {
+            AddAttachmentOutcome.Added => StatusCode(StatusCodes.Status201Created, attachment),
+
+            AddAttachmentOutcome.TaskNotFound => TaskNotFound(),
+
+            AddAttachmentOutcome.CommentNotFound => Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                title: "Comment not found",
+                detail: "No comment exists with the requested id on this task."),
+
+            AddAttachmentOutcome.FileMissing => FileMissing(),
+
+            AddAttachmentOutcome.FileTooLarge => Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "File is too large",
+                detail: $"An attachment may be at most {AttachmentStorage.MaxSizeBytes / (1024 * 1024)} MB."),
+
+            AddAttachmentOutcome.FileTypeNotAllowed => Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "File type is not allowed",
+                detail: "Images, PDF, Office documents, plain text and zip archives can be attached."),
+
+            _ => throw new InvalidOperationException($"Unhandled add-attachment outcome {outcome}.")
+        };
+    }
+
+    /// <summary>
+    /// Downloads one attachment. Addressed through its task, so an id belonging to another task is
+    /// simply not found.
+    /// </summary>
+    [HttpGet("{taskId:int}/attachments/{attachmentId:int}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadAttachment(
+        int taskId,
+        int attachmentId,
+        CancellationToken cancellationToken)
+    {
+        var download = await taskService.OpenAttachmentAsync(taskId, attachmentId, cancellationToken);
+
+        if (download is null)
+        {
+            return AttachmentNotFound();
+        }
+
+        // Naming the file makes this a download rather than something the browser renders in place.
+        return File(
+            download.Value.Content,
+            download.Value.Metadata.ContentType,
+            download.Value.Metadata.FileName);
+    }
+
+    /// <summary>Removes an attachment, and the file behind it.</summary>
+    [HttpDelete("{taskId:int}/attachments/{attachmentId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAttachment(
+        int taskId,
+        int attachmentId,
+        CancellationToken cancellationToken)
+        => await taskService.DeleteAttachmentAsync(taskId, attachmentId, cancellationToken)
+            ? NoContent()
+            : AttachmentNotFound();
+
+    private ObjectResult FileMissing()
+        => Problem(
+            statusCode: StatusCodes.Status400BadRequest,
+            title: "No file was sent",
+            detail: "Send the file as multipart form data under the field name 'file'.");
+
+    private ObjectResult AttachmentNotFound()
+        => Problem(
+            statusCode: StatusCodes.Status404NotFound,
+            title: "Attachment not found",
+            detail: "No attachment exists with the requested id on this task.");
 
     private ObjectResult AssigneeUnavailable()
         => Problem(

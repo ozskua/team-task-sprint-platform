@@ -1,0 +1,151 @@
+<!--
+  The thread scrolls on its own, so a task with many messages never lengthens the card. The composer
+  below it stays put.
+-->
+<div class="thread" #thread>
+  @if (comments().length === 0 && looseAttachments().length === 0) {
+    <p class="thread-empty">Henüz yorum yok. İlk mesajı siz yazın.</p>
+  }
+
+  @for (comment of comments(); track comment.taskCommentId) {
+    <article class="message" [class.message--busy]="busyCommentId() === comment.taskCommentId">
+      <span class="message-avatar" role="img" [attr.aria-label]="comment.userFullName">
+        <span aria-hidden="true">{{ initials(comment.userFullName) }}</span>
+      </span>
+
+      <div class="message-body">
+        <p class="message-meta">
+          <span class="message-author">{{ comment.userFullName }}</span>
+          <!-- No timezone argument: the value carries no offset, so any conversion would shift it. -->
+          <span>{{ comment.createdDate | date:'dd MMM yyyy HH:mm' }}</span>
+
+          <!-- Only on your own. The server refuses anyone else's regardless. -->
+          @if (canDelete(comment)) {
+            <button
+              class="message-delete"
+              type="button"
+              [attr.aria-label]="'Yorumu sil'"
+              [disabled]="busyCommentId() !== null"
+              (click)="deleteComment(comment)">
+              <mat-icon aria-hidden="true">delete_outline</mat-icon>
+            </button>
+          }
+        </p>
+
+        <p class="message-text">{{ comment.content }}</p>
+
+        <!-- The files posted with this message, under it rather than in a section of their own. -->
+        @for (attachment of comment.attachments; track attachment.taskAttachmentId) {
+          <div class="file" [class.file--busy]="busyAttachmentId() === attachment.taskAttachmentId">
+            <mat-icon class="file-icon" aria-hidden="true">attach_file</mat-icon>
+            <span class="file-name">{{ attachment.fileName }}</span>
+            <span class="file-size">{{ formatSize(attachment.sizeBytes) }}</span>
+
+            <button
+              class="file-action"
+              type="button"
+              [disabled]="busyAttachmentId() !== null"
+              (click)="download(attachment)">İndir</button>
+
+            <button
+              class="file-action file-action--destructive"
+              type="button"
+              [disabled]="busyAttachmentId() !== null"
+              (click)="removeAttachment(attachment)">Sil</button>
+          </div>
+        }
+      </div>
+    </article>
+  }
+
+  <!-- Files attached to the task itself, from before a file could belong to a message. -->
+  @for (attachment of looseAttachments(); track attachment.taskAttachmentId) {
+    <article class="message">
+      <span class="message-avatar" role="img" [attr.aria-label]="attachment.uploadedByFullName">
+        <span aria-hidden="true">{{ initials(attachment.uploadedByFullName) }}</span>
+      </span>
+
+      <div class="message-body">
+        <p class="message-meta">
+          <span class="message-author">{{ attachment.uploadedByFullName }}</span>
+          <span>{{ attachment.createdDate | date:'dd MMM yyyy HH:mm' }}</span>
+        </p>
+
+        <div class="file" [class.file--busy]="busyAttachmentId() === attachment.taskAttachmentId">
+          <mat-icon class="file-icon" aria-hidden="true">attach_file</mat-icon>
+          <span class="file-name">{{ attachment.fileName }}</span>
+          <span class="file-size">{{ formatSize(attachment.sizeBytes) }}</span>
+
+          <button
+            class="file-action"
+            type="button"
+            [disabled]="busyAttachmentId() !== null"
+            (click)="download(attachment)">İndir</button>
+
+          <button
+            class="file-action file-action--destructive"
+            type="button"
+            [disabled]="busyAttachmentId() !== null"
+            (click)="removeAttachment(attachment)">Sil</button>
+        </div>
+      </div>
+    </article>
+  }
+</div>
+
+<form class="composer" (submit)="$event.preventDefault(); submit()">
+  <label class="composer-hidden-label" for="task-comment">Yorum yaz</label>
+
+  <div class="composer-row">
+    <!-- Enter sends. Shift+Enter is a newline: Angular names that event shift.enter, so the binding
+         below never sees it and the textarea behaves normally. -->
+    <textarea
+      id="task-comment"
+      class="composer-input"
+      rows="2"
+      placeholder="Yorum yaz…"
+      [attr.maxlength]="maxLength"
+      [disabled]="saving()"
+      [value]="text()"
+      (keydown.enter)="onEnterKey($event)"
+      (input)="onInput($any($event.target).value)"></textarea>
+
+    <label class="composer-attach" for="task-attachment" [attr.title]="'Dosya ekle'">
+      <mat-icon aria-hidden="true">attach_file</mat-icon>
+      <span class="composer-hidden-label">Dosya ekle</span>
+    </label>
+    <!-- Hidden and driven by the label; the accept list is a convenience only, because the server
+         is what decides which files it takes. -->
+    <input
+      id="task-attachment"
+      type="file"
+      hidden
+      #fileInput
+      accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.docx,.xlsx,.pptx,.txt,.csv,.md,.zip"
+      [disabled]="saving()"
+      (change)="onFilePicked(fileInput)" />
+
+    <button class="composer-send" type="submit" [disabled]="!canSubmit()">
+      {{ saving() ? 'Gönderiliyor…' : 'Gönder' }}
+    </button>
+  </div>
+
+  @if (pendingFile(); as file) {
+    <div class="composer-file">
+      <mat-icon class="file-icon" aria-hidden="true">attach_file</mat-icon>
+      <span class="file-name">{{ file.name }}</span>
+      <span class="file-size">{{ formatSize(file.size) }}</span>
+      <button class="file-action" type="button" [disabled]="saving()" (click)="clearFile()">
+        Kaldır
+      </button>
+    </div>
+  }
+
+  @if (failed()) {
+    <p class="composer-error" role="alert">Yorum eklenemedi.</p>
+  }
+
+  @if (actionError(); as message) {
+    <p class="composer-error" role="alert">{{ message }}</p>
+  }
+</form>

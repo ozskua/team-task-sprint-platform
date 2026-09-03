@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
+using SprintFlow.Web.Server.Common.Enums;
+
 namespace SprintFlow.Web.Server.DTOs.Tasks;
 
 public class CreateTaskRequestDto
@@ -12,6 +14,9 @@ public class CreateTaskRequestDto
 
     [MaxLength(2000)]
     public string? Description { get; set; }
+
+    // Omitted means Normal, so an older client that does not send it still creates a valid task.
+    public TaskPriority Priority { get; set; } = TaskPriority.Normal;
 
     public int? ColumnId { get; set; }
 

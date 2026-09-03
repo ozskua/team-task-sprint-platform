@@ -38,7 +38,7 @@ try
 
     builder.Services.AddCachingServices(builder.Configuration);
 
-    builder.Services.AddApplicationServices();
+    builder.Services.AddApplicationServices(builder.Configuration);
 
     var app = builder.Build();
 

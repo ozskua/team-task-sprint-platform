@@ -1,0 +1,265 @@
+/*
+  The thread takes the height it is given and scrolls inside it; the composer keeps its own size at
+  the bottom. `min-height: 0` is what lets the scroll area actually shrink inside a flex column.
+*/
+:host {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+}
+
+.thread {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.thread-empty {
+    margin: 0;
+    font-size: 0.875rem;
+    font-style: italic;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.message {
+    display: flex;
+    gap: 10px;
+}
+
+.message--busy {
+    opacity: 0.55;
+}
+
+/* The same circle the card and the board show, so the person is recognisable everywhere. */
+.message-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border: 2px solid var(--app-primary);
+    border-radius: 50%;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--mat-sys-on-surface);
+}
+
+.message-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.message-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 2px;
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.message-author {
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+/* Pushed to the far end of the line, so it never sits between the name and the date. */
+.message-delete {
+    display: grid;
+    place-items: center;
+    margin-left: auto;
+    padding: 2px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--mat-sys-on-surface-variant);
+    cursor: pointer;
+}
+
+.message-delete:hover:not(:disabled) {
+    color: var(--app-attention-ink);
+}
+
+.message-delete:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.message-delete mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    line-height: 18px;
+}
+
+.message-text {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--mat-sys-on-surface);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* --- A file, under the message it came with --- */
+
+.file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 5px 8px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+}
+
+.file--busy {
+    opacity: 0.55;
+}
+
+.file-icon {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    line-height: 18px;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/* A long filename wraps instead of widening the card. */
+.file-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface);
+    overflow-wrap: anywhere;
+}
+
+.file-size {
+    flex: 0 0 auto;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.file-action {
+    flex: 0 0 auto;
+    padding: 2px 8px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    font: inherit;
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface);
+    cursor: pointer;
+}
+
+.file-action:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.file-action--destructive {
+    color: var(--app-attention-ink);
+}
+
+/* --- Writing the next message --- */
+
+.composer {
+    flex: 0 0 auto;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--app-border);
+}
+
+.composer-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.composer-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface);
+    resize: vertical;
+}
+
+.composer-input:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 1px;
+}
+
+.composer-attach {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-surface-card);
+    color: var(--mat-sys-on-surface-variant);
+    cursor: pointer;
+}
+
+.composer-attach:hover {
+    color: var(--mat-sys-on-surface);
+}
+
+.composer-send {
+    flex: 0 0 auto;
+    height: 36px;
+    padding: 0 16px;
+    border: none;
+    border-radius: var(--app-radius-control);
+    background-color: var(--app-primary-action);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--app-on-primary-action);
+    cursor: pointer;
+}
+
+.composer-send:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.composer-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 5px 8px;
+    border: 1px dashed var(--app-border-card);
+    border-radius: var(--app-radius-control);
+}
+
+.composer-error {
+    margin: 8px 0 0;
+    font-size: 0.8125rem;
+    color: var(--app-attention-ink);
+}
+
+.composer-hidden-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}

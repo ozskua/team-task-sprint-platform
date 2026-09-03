@@ -1,124 +1,131 @@
-.task-detail-title {
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 1.125rem;
 }
 
-.task-detail-facts {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 8px 20px;
-    margin: 0;
-    min-width: 320px;
-}
-
-.task-detail-facts dt {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--mat-sys-on-surface-variant);
-    align-self: center;
-}
-
-.task-detail-facts dd {
-    margin: 0;
-    font-size: 0.875rem;
-    color: var(--mat-sys-on-surface);
+.card-title-text {
     overflow-wrap: anywhere;
 }
 
-.assignee-line {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* The same circle the card shows, so the person is recognisable in both places. */
-.assignee-avatar {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 26px;
-    height: 26px;
-    border: 2px solid var(--app-primary);
-    border-radius: 50%;
-    background-color: var(--app-surface-card);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: var(--mat-sys-on-surface);
-}
-
-.task-detail-description {
-    margin: 20px 0 0;
-    padding-top: 16px;
-    border-top: 1px solid var(--app-border);
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    color: var(--mat-sys-on-surface);
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-}
-
-.task-detail-muted {
-    margin: 20px 0 0;
-    font-size: 0.875rem;
-    font-style: italic;
-    color: var(--mat-sys-on-surface-variant);
-}
-
-.task-detail-facts .task-detail-muted {
-    margin: 0;
-}
-
-.task-detail-destructive {
-    margin-right: auto;
-    color: var(--app-attention-ink);
-}
-
-.task-detail-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+.card-title-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 1rem;
 }
 
 /*
-  The same green and red as the card badge. The column's name is written out beside it, so the dot
-  repeats something already said in words rather than carrying the meaning by itself.
+  The content itself never scrolls: it is a fixed frame, and the thread inside it takes what is
+  left. Without this the whole card would lengthen with every comment.
 */
-.task-detail-dot {
-    display: inline-block;
+.card-content {
+    display: flex;
+    overflow: hidden;
+    max-height: none;
+    height: 100%;
+    padding-top: 4px;
+}
+
+.card-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 20px;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.card-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Takes whatever the description leaves, and scrolls inside itself. */
+.thread-host {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.card-side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    overflow-y: auto;
+    padding-left: 20px;
+    border-left: 1px solid var(--app-border);
+}
+
+.summary {
     flex: 0 0 auto;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+    padding-bottom: 12px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--app-border);
 }
 
-.task-detail-dot--completed {
-    background-color: var(--app-status-done);
-}
-
-.task-detail-dot--cancelled {
-    background-color: var(--app-status-overdue);
-}
-
-.task-detail-move {
+.row-head {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 1px solid var(--app-border);
+    gap: 4px;
 }
 
-.task-detail-move-label {
-    font-size: 0.75rem;
+.label {
+    display: block;
+    margin: 0 0 6px;
+    font-size: 0.6875rem;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--mat-sys-on-surface-variant);
 }
 
-.task-detail-select {
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 8px 10px;
+.row-head .label {
+    margin-bottom: 0;
+}
+
+.row-head + .control,
+.row-head + p,
+.row-head + span {
+    margin-top: 6px;
+}
+
+/* One pencil, one Kaydet, one Vazgeç — the same small control everywhere. */
+.pencil {
+    display: inline-grid;
+    place-items: center;
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    font: inherit;
+    font-size: 0.75rem;
+    color: var(--app-primary);
+    cursor: pointer;
+}
+
+.pencil:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.pencil mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+    line-height: 16px;
+}
+
+.row-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.control {
+    width: 100%;
+    padding: 6px 8px;
     border: 1px solid var(--app-border-card);
     border-radius: var(--app-radius-control);
     background-color: var(--app-surface-card);
@@ -127,13 +134,143 @@
     color: var(--mat-sys-on-surface);
 }
 
-.task-detail-select:focus-visible {
+.control:focus-visible {
     outline: 2px solid var(--app-primary-action);
     outline-offset: 1px;
 }
 
-.task-detail-error {
+textarea.control {
+    resize: vertical;
+}
+
+.description {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--mat-sys-on-surface);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.created {
     margin: 10px 0 0;
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.muted {
+    margin: 0;
+    font-size: 0.875rem;
+    font-style: italic;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.value {
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface);
+    overflow-wrap: anywhere;
+}
+
+.error {
+    margin: 0;
     font-size: 0.8125rem;
     color: var(--app-attention-ink);
+}
+
+.fact {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.person {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface);
+}
+
+/* The same circle the card shows, so the person is recognisable in both places. */
+.avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border: 2px solid var(--app-primary);
+    border-radius: 50%;
+    font-size: 0.6875rem;
+    font-weight: 700;
+}
+
+/* The same four tints the kanban card uses, so a level looks the same in both places. */
+.priority {
+    align-self: flex-start;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.priority--0 {
+    border: 1px dashed var(--app-border-card);
+    padding: 1px 7px;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.priority--1 {
+    background-color: var(--app-status-todo);
+}
+
+.priority--2 {
+    background-color: var(--app-status-progress);
+}
+
+.priority--3 {
+    background-color: var(--app-status-overdue);
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+}
+
+/*
+  The column's name is written out beside it, so the dot repeats something already said in words
+  rather than carrying the meaning by itself.
+*/
+.dot {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.dot--completed {
+    background-color: var(--app-status-done);
+}
+
+.dot--cancelled {
+    background-color: var(--app-status-overdue);
+}
+
+.destructive {
+    margin-right: auto;
+    color: var(--app-attention-ink);
+}
+
+/* Stacked on a narrow window; the left column keeps its order. */
+@media (max-width: 760px) {
+    .card-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .card-side {
+        padding-left: 0;
+        border-left: 0;
+    }
 }

@@ -24,6 +24,7 @@ import { OutcomeLane } from './outcome-lane/outcome-lane';
 import { SprintDetail } from './sprint-detail/sprint-detail';
 import { SprintList } from './sprint-list/sprint-list';
 import { TaskCard } from './task-card/task-card';
+import { TaskComments } from './task-comments/task-comments';
 import { WorkflowColumnComponent } from './workflow-column/workflow-column';
 /**
  * One board, in two views: the kanban and the backlog. Both are loaded by both shells at their own
@@ -49,6 +50,7 @@ import { WorkflowColumnComponent } from './workflow-column/workflow-column';
     WorkflowColumnComponent,
     OutcomeLane,
     TaskCard,
+    TaskComments,
     TaskFormDialog,
     TaskDetailDialog,
     ColumnFormDialog,

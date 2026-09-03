@@ -135,8 +135,22 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Everything that is not signing in. <c>UserRepository</c> is registered above and serves both.
     /// </summary>
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplicationServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
+        services.Configure<AttachmentOptions>(configuration.GetSection(AttachmentOptions.SectionName));
+
+        // A missing folder path stops start-up, like a missing JWT key or Redis address: uploads
+        // would otherwise fail one at a time, long after the mistake was made.
+        if (string.IsNullOrWhiteSpace(configuration[$"{AttachmentOptions.SectionName}:RootPath"]))
+        {
+            throw new InvalidOperationException(
+                $"'{AttachmentOptions.SectionName}:RootPath' is not configured. "
+                + "Set it in appsettings.Development.json locally — an absolute path to a folder outside "
+                + "this repository, where task attachments are stored. The folder is created if missing.");
+        }
+
         // Repositories: one per area of the schema rather than one per table.
         services.AddScoped<BoardRepository>();   // areas, boards, teams, columns
         services.AddScoped<TaskRepository>();    // tasks and their assignments
@@ -150,6 +164,10 @@ public static class ServiceCollectionExtensions
 
         // Singleton: it resolves the configured timezone once and then only reads the clock.
         services.AddSingleton<IApplicationClock, ApplicationClock>();
+
+        // Singleton for the same reason: it resolves the attachment folder once and then only
+        // reads and writes files in it.
+        services.AddSingleton<AttachmentStorage>();
 
         return services;
     }

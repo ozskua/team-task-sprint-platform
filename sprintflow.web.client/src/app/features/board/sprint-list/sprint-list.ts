@@ -3,9 +3,16 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { Sprint } from '../../../core/models/sprint-models';
+import { Sprint, SprintTask } from '../../../core/models/sprint-models';
 import { SprintService } from '../../../core/services/sprint.service';
+import { TaskTableRow } from '../../../shared/task-table/task-table';
 import { SprintFormDialog, SprintFormResult } from '../dialogs/sprint-form-dialog/sprint-form-dialog';
+
+/** What is known about one sprint's tasks, once someone has opened it. */
+interface TaskState {
+  readonly status: 'loading' | 'ready' | 'failed';
+  readonly rows: readonly TaskTableRow[];
+}
 
 /**
  * One board's sprints: what they are called, when they run, and how they stand.
@@ -13,7 +20,9 @@ import { SprintFormDialog, SprintFormResult } from '../dialogs/sprint-form-dialo
  * Sprints on a board form a single timeline, so this is a sequence rather than a set — it is
  * ordered by date and never by name or by when it was created.
  *
- * Opening one from here scopes the kanban to it; the sprint's own page is a click further on.
+ * Each row opens on its own to reveal that sprint's tasks, the same way the global overview does.
+ * Nothing is fetched until a row is opened, and what has been fetched is kept for the rest of the
+ * visit. Working *in* a sprint is a different intent, so it keeps its own control: the scoped kanban.
  */
 @Component({
   selector: 'app-sprint-list',
@@ -38,6 +47,12 @@ export class SprintList {
   /** A local, generic message. The server's own wording is never shown. */
   protected readonly actionError = signal<string | null>(null);
 
+  /** Which rows are open. Several may be at once — each is its own disclosure. */
+  private readonly expanded = signal<ReadonlySet<number>>(new Set());
+
+  /** Tasks per sprint, kept once loaded so collapsing and reopening costs no request. */
+  private readonly tasksBySprint = signal<ReadonlyMap<number, TaskState>>(new Map());
+
   protected readonly skeletonRows = [0, 1, 2];
 
   constructor() {
@@ -48,6 +63,53 @@ export class SprintList {
 
   protected dismissError(): void {
     this.actionError.set(null);
+  }
+
+  protected isExpanded(sprintId: number): boolean {
+    return this.expanded().has(sprintId);
+  }
+
+  protected taskStateOf(sprintId: number): TaskState | undefined {
+    return this.tasksBySprint().get(sprintId);
+  }
+
+  /**
+   * Opens or closes one row. Closing keeps whatever was loaded, so opening it again is instant and
+   * makes no second request.
+   */
+  protected toggle(sprintId: number): void {
+    const open = new Set(this.expanded());
+
+    if (open.delete(sprintId)) {
+      this.expanded.set(open);
+
+      return;
+    }
+
+    open.add(sprintId);
+    this.expanded.set(open);
+
+    // Already fetched, or already being fetched: nothing to do.
+    if (this.tasksBySprint().has(sprintId)) {
+      return;
+    }
+
+    this.setTaskState(sprintId, { status: 'loading', rows: [] });
+
+    this.sprintService.tasks(sprintId)
+      // Explicit DestroyRef: this runs from a click, outside the constructor's injection context.
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (tasks: readonly SprintTask[]) =>
+          this.setTaskState(sprintId, { status: 'ready', rows: tasks }),
+        error: () => this.setTaskState(sprintId, { status: 'failed', rows: [] })
+      });
+  }
+
+  private setTaskState(sprintId: number, state: TaskState): void {
+    const next = new Map(this.tasksBySprint());
+    next.set(sprintId, state);
+    this.tasksBySprint.set(next);
   }
 
   /** '' in the member shell and '/admin' in the other, so one component serves both. */
@@ -92,6 +154,11 @@ export class SprintList {
     this.boardId.set(boardId);
     this.loading.set(true);
     this.failed.set(false);
+
+    // Dropped on every load: a re-read after creating a sprint should not leave rows open over
+    // tasks fetched before it, and another board's sprint ids mean nothing here.
+    this.expanded.set(new Set());
+    this.tasksBySprint.set(new Map());
 
     this.sprintService.list(boardId)
       .pipe(takeUntilDestroyed(this.destroyRef))

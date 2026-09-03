@@ -63,7 +63,7 @@ public class AuthService
         // Admin access is tied to UserId, never to the e-mail or the role name.
         var isAdmin = user.UserId == authOptions.AdminUserId;
 
-        return new LoginResponseDto(tokenService.CreateToken(user), user.FullName, isAdmin);
+        return new LoginResponseDto(user.UserId, tokenService.CreateToken(user), user.FullName, isAdmin);
     }
 
     /// <summary>The company directory. No password, hash or token is exposed.</summary>

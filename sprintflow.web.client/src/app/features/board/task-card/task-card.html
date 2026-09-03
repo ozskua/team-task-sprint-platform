@@ -1,6 +1,14 @@
 <article class="task-card" [class.task-card--moving]="moving()" (click)="onCardClick($event)">
   <!-- The title stays a button so the card is reachable and openable from the keyboard; the click
        handler above only adds the rest of the card as a target for the mouse. -->
+  <!--
+    Priority, above the title. A four-step scale using the status tints the theme already defines,
+    with the word itself alongside — so the level is legible without relying on the colour.
+  -->
+  <span class="task-card-priority" [class]="'task-card-priority--' + task().priority">
+    {{ priorityLabel() }}
+  </span>
+
   <button class="task-card-open" type="button" (click)="open.emit(task())">
     <span class="task-card-title">{{ task().title }}</span>
   </button>

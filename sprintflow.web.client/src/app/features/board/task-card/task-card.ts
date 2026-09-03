@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 import { BoardTask } from '../../../core/models/board-detail-models';
 import { initialsOf } from '../../../shared/initials';
+import { taskPriorityLabel } from '../task-priority';
 
 /** Which outcome a card is in, or nothing at all for the columns that are still in progress. */
 export type TaskOutcome = 'Completed' | 'Cancelled';
@@ -39,6 +40,8 @@ export class TaskCard {
 
   protected readonly outcomeIcon = computed(() =>
     this.outcome() === 'Completed' ? 'check' : 'close');
+
+  protected readonly priorityLabel = computed(() => taskPriorityLabel(this.task().priority));
 
   /**
    * The card itself opens the task. Anything the user could have meant instead — the menu button,

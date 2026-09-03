@@ -205,6 +205,94 @@ namespace SprintFlow.Web.Server.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskAttachment", b =>
+                {
+                    b.Property<int>("TaskAttachmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskAttachmentId"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StoredName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("TaskCommentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UploadedByUserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TaskAttachmentId");
+
+                    b.HasIndex("StoredName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TaskAttachments_StoredName");
+
+                    b.HasIndex("TaskCommentId");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("UploadedByUserId");
+
+                    b.ToTable("TaskAttachments", (string)null);
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskComment", b =>
+                {
+                    b.Property<int>("TaskCommentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskCommentId"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TaskCommentId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("TaskId", "CreatedDate");
+
+                    b.ToTable("TaskComments", (string)null);
+                });
+
             modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskItem", b =>
                 {
                     b.Property<int>("TaskId")
@@ -230,6 +318,11 @@ namespace SprintFlow.Web.Server.Migrations
 
                     b.Property<int>("Position")
                         .HasColumnType("int");
+
+                    b.Property<int>("Priority")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
 
                     b.Property<int?>("SprintId")
                         .HasColumnType("int");
@@ -531,6 +624,51 @@ namespace SprintFlow.Web.Server.Migrations
                     b.Navigation("CreatedByUser");
                 });
 
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskAttachment", b =>
+                {
+                    b.HasOne("SprintFlow.Web.Server.Models.TaskComment", "Comment")
+                        .WithMany("Attachments")
+                        .HasForeignKey("TaskCommentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SprintFlow.Web.Server.Models.TaskItem", "Task")
+                        .WithMany("Attachments")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SprintFlow.Web.Server.Models.User", "UploadedByUser")
+                        .WithMany()
+                        .HasForeignKey("UploadedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("Task");
+
+                    b.Navigation("UploadedByUser");
+                });
+
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskComment", b =>
+                {
+                    b.HasOne("SprintFlow.Web.Server.Models.TaskItem", "Task")
+                        .WithMany("Comments")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SprintFlow.Web.Server.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskItem", b =>
                 {
                     b.HasOne("SprintFlow.Web.Server.Models.Board", "Board")
@@ -655,8 +793,17 @@ namespace SprintFlow.Web.Server.Migrations
                     b.Navigation("Tasks");
                 });
 
+            modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskComment", b =>
+                {
+                    b.Navigation("Attachments");
+                });
+
             modelBuilder.Entity("SprintFlow.Web.Server.Models.TaskItem", b =>
                 {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Comments");
+
                     b.Navigation("Participants");
                 });
 

@@ -2,9 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
+import { TaskPriority } from '../../../../core/models/board-detail-models';
 import { UserListItem } from '../../../../core/models/user-models';
 import { UserService } from '../../../../core/services/user.service';
 import { initialsOf } from '../../../../shared/initials';
+import { DEFAULT_TASK_PRIORITY, TASK_PRIORITIES, taskPriorityLabel } from '../../task-priority';
 
 export interface TaskFormDialogData {
   readonly heading: string;
@@ -14,6 +16,9 @@ export interface TaskFormDialogData {
   readonly title?: string;
   readonly description?: string | null;
 
+  /** Absent when creating, which is what makes a new task Normal. */
+  readonly priority?: TaskPriority;
+
   /** Who the task is assigned to today. `null` — the default for a new task — is unassigned. */
   readonly assigneeUserId?: number | null;
 }
@@ -22,6 +27,7 @@ export interface TaskFormDialogData {
 export interface TaskFormDialogResult {
   readonly title: string;
   readonly description?: string;
+  readonly priority: TaskPriority;
 
   /** `null` means unassigned. */
   readonly assigneeUserId: number | null;
@@ -48,6 +54,9 @@ export class TaskFormDialog {
 
   protected readonly title = signal(this.data.title ?? '');
   protected readonly description = signal(this.data.description ?? '');
+
+  protected readonly priority = signal<TaskPriority>(this.data.priority ?? DEFAULT_TASK_PRIORITY);
+  protected readonly priorities = TASK_PRIORITIES;
 
   /** Unassigned unless the task already has someone. */
   protected readonly assigneeUserId = signal<number | null>(this.data.assigneeUserId ?? null);
@@ -93,6 +102,14 @@ export class TaskFormDialog {
     this.description.set(value);
   }
 
+  protected priorityLabel(priority: TaskPriority): string {
+    return taskPriorityLabel(priority);
+  }
+
+  protected onPriorityChange(value: string): void {
+    this.priority.set(Number(value) as TaskPriority);
+  }
+
   protected onAssigneeChange(value: string): void {
     // The empty option is Unassigned, which is a real choice rather than "nothing selected".
     this.assigneeUserId.set(value === '' ? null : Number(value));
@@ -112,6 +129,7 @@ export class TaskFormDialog {
       title,
       // Sent as nothing at all rather than an empty string, which is how the server stores it.
       description: description.length === 0 ? undefined : description,
+      priority: this.priority(),
       assigneeUserId: this.assigneeUserId()
     });
   }

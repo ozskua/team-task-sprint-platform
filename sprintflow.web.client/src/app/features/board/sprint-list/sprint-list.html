@@ -36,23 +36,67 @@
     <ul class="sprint-list">
       @for (sprint of sprints(); track sprint.sprintId) {
         <li class="sprint-row">
-          <div class="sprint-row-main">
-            <!-- Opening a sprint means working in it, so the name goes to the scoped kanban. -->
-            <a class="sprint-name" [routerLink]="boardPath()" [queryParams]="{ sprint: sprint.sprintId }">
-              {{ sprint.name }}
+          <div class="sprint-row-line">
+            <!--
+              The whole row is the disclosure: clicking a sprint shows its tasks beneath it. Each
+              row opens on its own, so several may be open at once. The chevron is inside the button
+              rather than beside it, so there is one control and one thing to announce.
+            -->
+            <button
+              class="sprint-row-toggle"
+              type="button"
+              [attr.aria-expanded]="isExpanded(sprint.sprintId)"
+              [attr.aria-label]="'Tasks in ' + sprint.name"
+              (click)="toggle(sprint.sprintId)">
+              <mat-icon class="sprint-row-chevron" aria-hidden="true">
+                {{ isExpanded(sprint.sprintId) ? 'expand_more' : 'chevron_right' }}
+              </mat-icon>
+
+              <span class="sprint-name">{{ sprint.name }}</span>
+
+              <!-- The arrow reads "up to, not including": the end day is not part of the sprint. -->
+              <span class="sprint-dates">{{ sprint.startDate }} → {{ sprint.endDate }}</span>
+
+              <span class="sprint-status" [class]="'sprint-status--' + sprint.status">{{ sprint.status }}</span>
+
+              <span class="sprint-count">{{ sprint.taskCount }} task{{ sprint.taskCount === 1 ? '' : 's' }}</span>
+            </button>
+
+            <!-- Working in the sprint is a different intent from looking at it, so it keeps its own
+                 control: the kanban, scoped to this sprint. -->
+            <a class="sprint-open" [routerLink]="boardPath()" [queryParams]="{ sprint: sprint.sprintId }">
+              Open
             </a>
-
-            <!-- The arrow reads "up to, not including": the end day is not part of the sprint. -->
-            <span class="sprint-dates">{{ sprint.startDate }} → {{ sprint.endDate }}</span>
-          </div>
-
-          <div class="sprint-row-meta">
-            <span class="sprint-status" [class]="'sprint-status--' + sprint.status">{{ sprint.status }}</span>
-
-            <span class="sprint-count">{{ sprint.taskCount }} task{{ sprint.taskCount === 1 ? '' : 's' }}</span>
 
             <a class="sprint-detail-link" [routerLink]="['./', sprint.sprintId]">Details</a>
           </div>
+
+          @if (isExpanded(sprint.sprintId)) {
+            <div class="sprint-row-tasks">
+              @if (taskStateOf(sprint.sprintId); as state) {
+                @switch (state.status) {
+                  @case ('loading') {
+                    <p class="sprint-row-message">Loading tasks…</p>
+                  }
+                  @case ('failed') {
+                    <p class="sprint-row-message">Tasks could not be loaded.</p>
+                  }
+                  @default {
+                    @if (state.rows.length === 0) {
+                      <p class="sprint-row-message">
+                        No tasks in this sprint yet. Put work into it from this board's Backlog.
+                      </p>
+                    } @else {
+                      <!-- The same table the Backlog draws, read-only here. -->
+                      <app-task-table
+                        [rows]="state.rows"
+                        [caption]="'Tasks in ' + sprint.name" />
+                    }
+                  }
+                }
+              }
+            </div>
+          }
         </li>
       }
     </ul>

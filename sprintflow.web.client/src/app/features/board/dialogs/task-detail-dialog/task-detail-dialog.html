@@ -1,102 +1,263 @@
-@if (task(); as task) {
-  <h2 class="task-detail-title" mat-dialog-title>{{ task.title }}</h2>
-
+@if (loading()) {
   <mat-dialog-content>
-    <!-- Three separate facts, deliberately not run together: who wrote it, when, and who owes it.
-         The first two describe the past, the third describes who is answerable now. -->
-    <dl class="task-detail-facts">
-      <dt>Status</dt>
-      <dd>
-        <!-- The column's own name. Completed and Cancelled are two separate statuses, whatever
-             they look like sharing a lane on the board. -->
-        @if (currentColumn(); as column) {
-          <span class="task-detail-status">
-            @if (outcomeOf(column); as outcome) {
-              <span
-                class="task-detail-dot"
-                [class.task-detail-dot--completed]="outcome === 'Completed'"
-                [class.task-detail-dot--cancelled]="outcome === 'Cancelled'"
-                aria-hidden="true"></span>
-            }
-            {{ column.name }}
-          </span>
-        } @else {
-          <span class="task-detail-muted">Unknown</span>
-        }
-      </dd>
-
-      <dt>Created by</dt>
-      <dd>{{ task.createdByFullName }}</dd>
-
-      <dt>Created</dt>
-      <!-- No timezone argument: the value carries no offset, so any conversion would shift the day. -->
-      <dd>{{ task.createdDate | date:'dd MMM yyyy' }}</dd>
-
-      <dt>Assigned to</dt>
-      <dd>
-        @if (task.assignee; as assignee) {
-          <span class="assignee-line">
-            <span class="assignee-avatar" role="img" [attr.aria-label]="'Assigned to ' + assignee.fullName">
-              <span aria-hidden="true">{{ initials(assignee.fullName) }}</span>
-            </span>
-            <span>{{ assignee.fullName }}</span>
-          </span>
-        } @else {
-          <span class="task-detail-muted">Unassigned</span>
-        }
-      </dd>
-    </dl>
-
-    @if (task.description) {
-      <p class="task-detail-description">{{ task.description }}</p>
-    } @else {
-      <p class="task-detail-muted">No description.</p>
-    }
-
-    <!--
-      Every column of this board, so the task can be moved without hunting for the right lane. Uses
-      the same move endpoint a drag does; the server decides where in the column it lands.
-    -->
-    <div class="task-detail-move">
-      <label class="task-detail-move-label" for="task-status">Move to</label>
-
-      <!-- Marked on the options rather than bound on the select: the options are rendered in the
-           same pass, so a value set on the select has nothing to match yet and the field would
-           open showing the wrong status. -->
-      <select
-        id="task-status"
-        class="task-detail-select"
-        [disabled]="changingStatus()"
-        (change)="onStatusChange($any($event.target).value)">
-        @for (column of columns(); track column.workflowColumnId) {
-          <option
-            [value]="column.workflowColumnId"
-            [selected]="column.workflowColumnId === task.taskColumnId">
-            {{ column.name }}
-          </option>
-        }
-      </select>
-    </div>
-
-    @if (statusFailed()) {
-      <p class="task-detail-error" role="alert">This task could not be moved.</p>
-    }
+    <p class="muted">Görev yükleniyor…</p>
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
-    <button class="task-detail-destructive" mat-button type="button" (click)="requestDelete()">
-      Delete
-    </button>
-    <button mat-button type="button" (click)="requestEdit()">Edit</button>
-    <button mat-button type="button" mat-dialog-close>Close</button>
+    <button mat-button type="button" mat-dialog-close>Kapat</button>
   </mat-dialog-actions>
-} @else {
-  <!-- The task went away while the dialog was open — deleted in another tab, most likely. -->
+} @else if (failed() || task() === null) {
   <mat-dialog-content>
-    <p class="task-detail-muted">This task is no longer on the board.</p>
+    <!-- Deleted in another tab, most likely. -->
+    <p class="muted">Bu görev artık bulunamıyor.</p>
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
-    <button mat-button type="button" mat-dialog-close>Close</button>
+    <button mat-button type="button" mat-dialog-close>Kapat</button>
+  </mat-dialog-actions>
+} @else if (task(); as task) {
+  <!-- Outside the scrolling content, so the title stays put however long the thread gets. -->
+  <h2 class="card-title" mat-dialog-title>
+    @if (isEditing('title')) {
+      <input
+        class="control card-title-input"
+        type="text"
+        cdkFocusInitial
+        [attr.maxlength]="titleMaxLength"
+        [value]="draftText()"
+        (input)="onDraftText($any($event.target).value)" />
+      <button class="pencil" type="button" [disabled]="saving()" (click)="saveTitle()">Kaydet</button>
+      <button class="pencil" type="button" [disabled]="saving()" (click)="cancelEdit()">Vazgeç</button>
+    } @else {
+      <span class="card-title-text">{{ task.title }}</span>
+      <button class="pencil" type="button" aria-label="Başlığı düzenle" (click)="startEdit('title')">
+        <mat-icon aria-hidden="true">edit</mat-icon>
+      </button>
+    }
+  </h2>
+
+  <mat-dialog-content class="card-content">
+    <div class="card-layout">
+
+      <div class="card-main">
+        <section class="summary">
+          <div class="row-head">
+            <h3 class="label">Açıklama</h3>
+            @if (!isEditing('description')) {
+              <button
+                class="pencil"
+                type="button"
+                aria-label="Açıklamayı düzenle"
+                (click)="startEdit('description')">
+                <mat-icon aria-hidden="true">edit</mat-icon>
+              </button>
+            }
+          </div>
+
+          @if (isEditing('description')) {
+            <textarea
+              class="control"
+              rows="3"
+              cdkFocusInitial
+              [attr.maxlength]="descriptionMaxLength"
+              [value]="draftText()"
+              (input)="onDraftText($any($event.target).value)"></textarea>
+            <div class="row-actions">
+              <button class="pencil" type="button" [disabled]="saving()" (click)="saveDescription()">
+                Kaydet
+              </button>
+              <button class="pencil" type="button" [disabled]="saving()" (click)="cancelEdit()">
+                Vazgeç
+              </button>
+            </div>
+          } @else if (task.description) {
+            <p class="description">{{ task.description }}</p>
+          } @else {
+            <p class="muted">Açıklama yok.</p>
+          }
+
+          <!-- The task's own date. Generated by the database and never edited, so it is read out
+               rather than offered as a field. No timezone argument: the value carries no offset,
+               so any conversion would shift the day. -->
+          <p class="created">Oluşturulma: {{ task.createdDate | date:'dd MMM yyyy HH:mm' }}</p>
+        </section>
+
+        <h3 class="label">Yorumlar ({{ task.comments.length }})</h3>
+
+        <!-- Comments and files in one thread, with its own scroll area. -->
+        <app-task-comments
+          class="thread-host"
+          [taskId]="task.taskId"
+          [comments]="task.comments"
+          [looseAttachments]="task.attachments"
+          (commentAdded)="onCommentAdded($event)"
+          (commentDeleted)="onCommentDeleted($event)"
+          (attachmentDeleted)="onAttachmentDeleted($event)" />
+      </div>
+
+      <aside class="card-side">
+        <div class="fact">
+          <div class="row-head">
+            <span class="label">Atanan</span>
+            @if (!isEditing('assignee')) {
+              <button
+                class="pencil"
+                type="button"
+                aria-label="Atanan kişiyi değiştir"
+                (click)="startEdit('assignee')">
+                <mat-icon aria-hidden="true">edit</mat-icon>
+              </button>
+            }
+          </div>
+
+          @if (isEditing('assignee')) {
+            <!-- Marked on the options rather than bound on the select: the options render in the
+                 same pass, so a value set on the select has nothing to match yet. -->
+            <select class="control" (change)="onDraftAssignee($any($event.target).value)">
+              <option value="" [selected]="draftAssignee() === null">Atanmamış</option>
+              @for (user of assignableUsers(); track user.userId) {
+                <option [value]="user.userId" [selected]="user.userId === draftAssignee()">
+                  {{ user.fullName }}
+                </option>
+              }
+            </select>
+            <div class="row-actions">
+              <button class="pencil" type="button" [disabled]="saving()" (click)="saveAssignee()">
+                Kaydet
+              </button>
+              <button class="pencil" type="button" [disabled]="saving()" (click)="cancelEdit()">
+                Vazgeç
+              </button>
+            </div>
+          } @else if (task.assignee; as assignee) {
+            <span class="person">
+              <span class="avatar" role="img" [attr.aria-label]="'Atanan ' + assignee.fullName">
+                <span aria-hidden="true">{{ initials(assignee.fullName) }}</span>
+              </span>
+              <span>{{ assignee.fullName }}</span>
+            </span>
+          } @else {
+            <span class="muted">Atanmamış</span>
+          }
+        </div>
+
+        <!-- Whoever wrote the task down. Not editable: the creator is recorded, never reassigned. -->
+        <div class="fact">
+          <span class="label">Raporlayan</span>
+          <span class="value">{{ task.createdByFullName }}</span>
+        </div>
+
+        <div class="fact">
+          <div class="row-head">
+            <span class="label">Önem derecesi</span>
+            @if (!isEditing('priority')) {
+              <button
+                class="pencil"
+                type="button"
+                aria-label="Önem derecesini değiştir"
+                (click)="startEdit('priority')">
+                <mat-icon aria-hidden="true">edit</mat-icon>
+              </button>
+            }
+          </div>
+
+          @if (isEditing('priority')) {
+            <select class="control" (change)="onDraftPriority($any($event.target).value)">
+              @for (option of priorities; track option) {
+                <option [value]="option" [selected]="option === draftPriority()">
+                  {{ priorityLabel(option) }}
+                </option>
+              }
+            </select>
+            <div class="row-actions">
+              <button class="pencil" type="button" [disabled]="saving()" (click)="savePriority()">
+                Kaydet
+              </button>
+              <button class="pencil" type="button" [disabled]="saving()" (click)="cancelEdit()">
+                Vazgeç
+              </button>
+            </div>
+          } @else {
+            <span class="priority" [class]="'priority--' + task.priority">
+              {{ priorityLabel(task.priority) }}
+            </span>
+          }
+        </div>
+
+        <div class="fact">
+          <div class="row-head">
+            <span class="label">Durum</span>
+            @if (!isEditing('status')) {
+              <button
+                class="pencil"
+                type="button"
+                aria-label="Durumu değiştir"
+                (click)="startEdit('status')">
+                <mat-icon aria-hidden="true">edit</mat-icon>
+              </button>
+            }
+          </div>
+
+          @if (isEditing('status')) {
+            <!-- Every column of this board, so the task can be moved without hunting for a lane. -->
+            <select class="control" (change)="onDraftColumn($any($event.target).value)">
+              @for (column of columns(); track column.workflowColumnId) {
+                <option
+                  [value]="column.workflowColumnId"
+                  [selected]="column.workflowColumnId === draftColumnId()">
+                  {{ column.name }}
+                </option>
+              }
+            </select>
+            <div class="row-actions">
+              <button class="pencil" type="button" [disabled]="saving()" (click)="saveStatus()">
+                Kaydet
+              </button>
+              <button class="pencil" type="button" [disabled]="saving()" (click)="cancelEdit()">
+                Vazgeç
+              </button>
+            </div>
+          } @else {
+            <!-- Completed and Cancelled are two separate statuses, whatever they look like sharing
+                 a lane on the board — so the dot marks which one it is. -->
+            <span class="status">
+              @if (currentOutcome(); as outcome) {
+                <span
+                  class="dot"
+                  [class.dot--completed]="outcome === 'Completed'"
+                  [class.dot--cancelled]="outcome === 'Cancelled'"
+                  aria-hidden="true"></span>
+              }
+              {{ task.columnName }}
+            </span>
+          }
+        </div>
+
+        <!-- Read-only: a task cannot leave its board, and its sprint is set from the backlog. -->
+        <div class="fact">
+          <span class="label">Pano</span>
+          <span class="value">{{ task.boardName }}</span>
+        </div>
+
+        <div class="fact">
+          <span class="label">Sprint</span>
+          @if (task.sprintName) {
+            <span class="value">{{ task.sprintName }}</span>
+          } @else {
+            <span class="muted">Sprint dışında</span>
+          }
+        </div>
+
+        @if (saveFailed()) {
+          <p class="error" role="alert">Bu değişiklik kaydedilemedi.</p>
+        }
+      </aside>
+
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button class="destructive" mat-button type="button" (click)="requestDelete()">Sil</button>
+    <button mat-button type="button" mat-dialog-close>Kapat</button>
   </mat-dialog-actions>
 }

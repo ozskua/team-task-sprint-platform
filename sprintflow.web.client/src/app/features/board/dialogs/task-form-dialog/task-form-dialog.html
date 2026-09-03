@@ -29,6 +29,22 @@
         (input)="onDescriptionInput($any($event.target).value)"></textarea>
     </div>
 
+    <!-- Marked on the options for the same reason the assignee select is: a value bound on the
+         select has nothing to match during the first render. -->
+    <div class="task-form-field">
+      <label class="task-form-label" for="task-priority">Önem derecesi</label>
+      <select
+        id="task-priority"
+        class="task-form-input"
+        (change)="onPriorityChange($any($event.target).value)">
+        @for (option of priorities; track option) {
+          <option [value]="option" [selected]="option === priority()">
+            {{ priorityLabel(option) }}
+          </option>
+        }
+      </select>
+    </div>
+
     <!-- One person, or nobody. A task never has two. -->
     <div class="task-form-field">
       <label class="task-form-label" for="task-assignee">Assignee</label>

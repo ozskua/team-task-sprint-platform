@@ -46,10 +46,6 @@
 }
 
 .sprint-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
     padding: 14px 16px;
     border: 1px solid var(--app-border-card);
     border-radius: var(--app-radius-card);
@@ -61,34 +57,76 @@
     background-color: var(--app-skeleton);
 }
 
-.sprint-row-main {
+.sprint-row-line {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    gap: 16px;
+}
+
+/* The row itself is the disclosure, so the button fills it and carries every fact on the line. */
+.sprint-row-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1 1 auto;
     min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sprint-row-toggle:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+.sprint-row-chevron {
+    flex: 0 0 auto;
+    color: var(--mat-sys-on-surface-variant);
 }
 
 .sprint-name {
+    flex: 1 1 auto;
+    min-width: 0;
     font-size: 0.9375rem;
     font-weight: 600;
     color: var(--mat-sys-on-surface);
+    overflow-wrap: anywhere;
+}
+
+.sprint-open {
+    flex: 0 0 auto;
+    font-size: 0.8125rem;
+    color: var(--app-primary);
     text-decoration: none;
 }
 
-.sprint-name:hover {
+.sprint-open:hover {
     text-decoration: underline;
+}
+
+/* The tasks, once the row is open. Indented to the chevron so it reads as belonging to the row. */
+.sprint-row-tasks {
+    margin-top: 12px;
+    padding-top: 12px;
+    padding-left: 36px;
+    border-top: 1px solid var(--app-border);
+}
+
+.sprint-row-message {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
 }
 
 .sprint-dates {
     font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
     color: var(--mat-sys-on-surface-variant);
-}
-
-.sprint-row-meta {
-    display: flex;
-    align-items: center;
-    gap: 16px;
 }
 
 /* Tinted by state, so the timeline reads at a glance rather than by comparing dates. */
@@ -174,8 +212,12 @@
 }
 
 @media (max-width: 767.98px) {
-    .sprint-row {
-        flex-direction: column;
-        align-items: flex-start;
+    .sprint-row-toggle {
+        flex-wrap: wrap;
+        gap: 8px 12px;
+    }
+
+    .sprint-row-tasks {
+        padding-left: 0;
     }
 }

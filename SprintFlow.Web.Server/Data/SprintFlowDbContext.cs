@@ -34,6 +34,10 @@ public class SprintFlowDbContext : DbContext
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
 
+    public DbSet<TaskComment> TaskComments => Set<TaskComment>();
+
+    public DbSet<TaskAttachment> TaskAttachments => Set<TaskAttachment>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

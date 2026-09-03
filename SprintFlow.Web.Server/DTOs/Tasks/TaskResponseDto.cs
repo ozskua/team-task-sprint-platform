@@ -1,3 +1,5 @@
+using SprintFlow.Web.Server.Common.Enums;
+
 namespace SprintFlow.Web.Server.DTOs.Tasks;
 
 public record TaskResponseDto(
@@ -7,6 +9,7 @@ public record TaskResponseDto(
     int BoardId,
     int TaskColumnId,
     int Position,
+    TaskPriority Priority,
     int CreatedByUserId,
     string CreatedByFullName,
     DateTime CreatedDate,

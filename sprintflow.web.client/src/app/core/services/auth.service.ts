@@ -26,12 +26,22 @@ export class AuthService {
 
   readonly fullName = computed(() => this.sessionState()?.fullName ?? '');
 
+  /**
+   * Who is signed in, or `undefined` for a session stored before the server sent it.
+   *
+   * Read only to recognise the caller's own rows — which comment offers a delete control, for one.
+   * It is never an authorization decision: the server checks the author again on every write, and
+   * `undefined` simply hides the control rather than assuming anything.
+   */
+  readonly userId = computed(() => this.sessionState()?.userId);
+
   login(request: LoginRequest): Observable<AuthSession> {
     return this.http
       .post<LoginResponse>(`${environment.apiBaseUrl}/auth/login`, request)
       .pipe(
         // Fields are picked one by one, so new backend fields cannot reach storage unnoticed.
         map(response => ({
+          userId: response.userId,
           token: response.token,
           fullName: response.fullName,
           isAdmin: response.isAdmin

@@ -67,6 +67,7 @@ export class BoardActions {
       confirmLabel: 'Save',
       title: task.title,
       description: task.description,
+      priority: task.priority,
       assigneeUserId: task.assignee?.userId ?? null
     }).pipe(
       switchMap(result => this.boardDetail.updateTask(taskId, result)),
@@ -95,26 +96,25 @@ export class BoardActions {
       switchMap(() => this.boardDetail.reload(boardId)));
   }
 
-  /** The full task, and whatever the user asked for on the way out of it. */
+  /**
+   * The full task. Everything editable is edited inside it now, so the only thing it can ask the
+   * page for on the way out is the deletion, which needs a confirmation this dialog does not own.
+   */
   openTaskDetail(boardId: number, taskId: number): Observable<unknown> {
     return this.dialog
       .open<TaskDetailDialog, TaskDetailDialogData, TaskDetailDialogResult>(TaskDetailDialog, {
         data: { taskId },
         autoFocus: 'dialog',
-        width: '520px'
+        // Wide and tall enough to fill the board, and capped so it still fits a small window. The
+        // height is fixed on purpose: the thread inside scrolls rather than the card growing.
+        width: '1100px',
+        maxWidth: '95vw',
+        height: '80vh'
       })
       .afterClosed()
-      .pipe(switchMap(result => {
-        if (result === 'edit') {
-          return this.editTask(boardId, taskId);
-        }
-
-        if (result === 'delete') {
-          return this.deleteTask(boardId, taskId);
-        }
-
-        return EMPTY;
-      }));
+      .pipe(switchMap(result => result === 'delete'
+        ? this.deleteTask(boardId, taskId)
+        : EMPTY));
   }
 
   // --- The board itself ---------------------------------------------------

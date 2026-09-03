@@ -37,6 +37,39 @@
 }
 
 /*
+  A four-step scale, so the tints have to differ from each other rather than only from nothing:
+  Önceliksiz is outlined and unfilled, then the theme's grey, amber and red status tints. The word
+  is always there, so nobody has to read the colour.
+*/
+.task-card-priority {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.task-card-priority--0 {
+    border: 1px dashed var(--app-border-card);
+    padding: 1px 7px;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.task-card-priority--1 {
+    background-color: var(--app-status-todo);
+}
+
+.task-card-priority--2 {
+    background-color: var(--app-status-progress);
+}
+
+.task-card-priority--3 {
+    background-color: var(--app-status-overdue);
+}
+
+/*
   Wraps rather than widens. `overflow-wrap: anywhere` handles a single unbroken word — a URL, say —
   which would otherwise set the card's minimum width and push the lane over its neighbour.
 */

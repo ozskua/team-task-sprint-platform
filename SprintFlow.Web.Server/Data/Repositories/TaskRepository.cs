@@ -243,4 +243,85 @@ public class TaskRepository
 
     public void RemoveRange(IEnumerable<TaskParticipant> participants)
         => context.TaskParticipants.RemoveRange(participants);
+
+    // ---- Task card ----
+
+    // Everything the card shows, in one query.
+    public Task<TaskItem?> GetDetailAsync(int taskId, CancellationToken cancellationToken)
+        => context.TaskItems
+            .AsNoTracking()
+            .Include(t => t.Board)
+            .Include(t => t.Column)
+            .Include(t => t.Sprint)
+            .Include(t => t.CreatedByUser)
+            .Include(t => t.Participants).ThenInclude(p => p.User)
+            .Include(t => t.Comments).ThenInclude(c => c.User)
+            .Include(t => t.Comments).ThenInclude(c => c.Attachments).ThenInclude(a => a.UploadedByUser)
+            .Include(t => t.Attachments).ThenInclude(a => a.UploadedByUser)
+            .FirstOrDefaultAsync(t => t.TaskId == taskId, cancellationToken);
+
+    public Task<bool> ExistsAsync(int taskId, CancellationToken cancellationToken)
+        => context.TaskItems.AnyAsync(t => t.TaskId == taskId, cancellationToken);
+
+    public void AddComment(TaskComment comment) => context.TaskComments.Add(comment);
+
+    // Tracked, and without the author: this one is read to be deleted, not to be shown.
+    public Task<TaskComment?> GetCommentForUpdateAsync(int commentId, CancellationToken cancellationToken)
+        => context.TaskComments
+            .FirstOrDefaultAsync(c => c.TaskCommentId == commentId, cancellationToken);
+
+    public void Remove(TaskComment comment) => context.TaskComments.Remove(comment);
+
+    /// <summary>Whether this comment exists and belongs to this task — what an upload has to know.</summary>
+    public Task<bool> CommentExistsOnTaskAsync(
+        int commentId,
+        int taskId,
+        CancellationToken cancellationToken)
+        => context.TaskComments.AnyAsync(
+            c => c.TaskCommentId == commentId && c.TaskId == taskId,
+            cancellationToken);
+
+    // Tracked, because deleting a comment deletes these rows too: the FK is Restrict, so nothing
+    // removes them on our behalf.
+    public Task<List<TaskAttachment>> GetCommentAttachmentsForUpdateAsync(
+        int commentId,
+        CancellationToken cancellationToken)
+        => context.TaskAttachments
+            .Where(a => a.TaskCommentId == commentId)
+            .ToListAsync(cancellationToken);
+
+    public void RemoveRange(IEnumerable<TaskAttachment> attachments)
+        => context.TaskAttachments.RemoveRange(attachments);
+
+    // Re-read so the response carries the author's name and the database-generated timestamp.
+    public Task<TaskComment?> GetCommentAsync(int commentId, CancellationToken cancellationToken)
+        => context.TaskComments
+            .AsNoTracking()
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.TaskCommentId == commentId, cancellationToken);
+
+    public void AddAttachment(TaskAttachment attachment) => context.TaskAttachments.Add(attachment);
+
+    public Task<TaskAttachment?> GetAttachmentAsync(int attachmentId, CancellationToken cancellationToken)
+        => context.TaskAttachments
+            .AsNoTracking()
+            .Include(a => a.UploadedByUser)
+            .FirstOrDefaultAsync(a => a.TaskAttachmentId == attachmentId, cancellationToken);
+
+    // Tracked, and without the uploader: this one is read to be deleted, not to be shown.
+    public Task<TaskAttachment?> GetAttachmentForUpdateAsync(
+        int attachmentId,
+        CancellationToken cancellationToken)
+        => context.TaskAttachments
+            .FirstOrDefaultAsync(a => a.TaskAttachmentId == attachmentId, cancellationToken);
+
+    public void Remove(TaskAttachment attachment) => context.TaskAttachments.Remove(attachment);
+
+    // Read before a task is deleted: the rows cascade, but the files on disk do not.
+    public Task<List<string>> GetAttachmentNamesAsync(int taskId, CancellationToken cancellationToken)
+        => context.TaskAttachments
+            .AsNoTracking()
+            .Where(a => a.TaskId == taskId)
+            .Select(a => a.StoredName)
+            .ToListAsync(cancellationToken);
 }
