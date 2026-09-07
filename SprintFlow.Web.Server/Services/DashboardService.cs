@@ -16,15 +16,18 @@ public class DashboardService
     private readonly TaskRepository taskRepository;
     private readonly UserRepository userRepository;
     private readonly BoardRepository boardRepository;
+    private readonly IAdminDashboardCache dashboardCache;
 
     public DashboardService(
         TaskRepository taskRepository,
         UserRepository userRepository,
-        BoardRepository boardRepository)
+        BoardRepository boardRepository,
+        IAdminDashboardCache dashboardCache)
     {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.boardRepository = boardRepository;
+        this.dashboardCache = dashboardCache;
     }
 
     /// <summary>
@@ -55,20 +58,60 @@ public class DashboardService
     /// </summary>
     public async Task<AdminDashboardResponseDto> GetSystemAsync(CancellationToken cancellationToken)
     {
+        // The figures are cached and refreshed on a timer, so they are usually served without
+        // touching the database. A miss - including Redis being unreachable - computes them.
+        var counts = await dashboardCache.GetAsync(cancellationToken);
+
+        if (counts is null)
+        {
+            counts = await GetSystemCountsAsync(cancellationToken);
+
+            await dashboardCache.SetAsync(counts, cancellationToken);
+        }
+
+        // The task list is deliberately not cached: it is the page's live detail rather than a
+        // figure, and it is what the table below the cards draws.
         var tasks = await taskRepository.GetAllWithDetailsAsync(cancellationToken);
+
+        return new AdminDashboardResponseDto(
+            counts,
+            tasks.Select(task => task.ToAdminDashboardTaskDto()).ToList());
+    }
+
+    /// <summary>
+    /// The six system-wide figures, counted by the database.
+    /// </summary>
+    /// <remarks>
+    /// Three queries, none of which loads a task row: one grouped count over the tasks joined to
+    /// their columns, and a scalar count each for users and boards. This is the only place the
+    /// figures are worked out — a dashboard request that misses the cache and the refresher that
+    /// fills it both come through here, so the two can never disagree.
+    /// </remarks>
+    public async Task<AdminDashboardCountsDto> GetSystemCountsAsync(CancellationToken cancellationToken)
+    {
+        var byKind = await taskRepository.CountByColumnKindAsync(cancellationToken);
         var totalUsers = await userRepository.CountAsync(cancellationToken);
         var totalBoards = await boardRepository.CountAsync(cancellationToken);
 
-        return new AdminDashboardResponseDto(
-            new AdminDashboardCountsDto(
-                CountKind(tasks, SystemColumnKind.ToDo),
-                CountCustom(tasks),
-                CountKind(tasks, SystemColumnKind.Completed),
-                CountKind(tasks, SystemColumnKind.Cancelled),
-                totalUsers,
-                totalBoards),
-            tasks.Select(task => task.ToAdminDashboardTaskDto()).ToList());
+        return new AdminDashboardCountsDto(
+            CountFor(byKind, SystemColumnKind.ToDo),
+            // A custom column is one with no system kind — Review, Testing, anything a board added.
+            CountFor(byKind, null),
+            CountFor(byKind, SystemColumnKind.Completed),
+            CountFor(byKind, SystemColumnKind.Cancelled),
+            totalUsers,
+            totalBoards);
     }
+
+    /// <summary>
+    /// One kind's count, or zero when the database returned no row for it.
+    /// </summary>
+    /// <remarks>
+    /// Each kind is asked for by name, so a kind added to the enum later is counted into none of
+    /// the four rather than being folded silently into one of them.
+    /// </remarks>
+    private static int CountFor(IReadOnlyList<TaskColumnKindCount> counts, SystemColumnKind? kind)
+        => counts.FirstOrDefault(count => count.SystemKind == kind)?.Count ?? 0;
 
     /// <summary>
     /// The four buckets. Every column falls into exactly one, so they always add up to the total.

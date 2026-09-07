@@ -160,6 +160,25 @@ public class TaskRepository
             .ThenByDescending(t => t.TaskId)
             .ToListAsync(cancellationToken);
 
+    /// <summary>
+    /// How many tasks sit behind each column kind, across every board.
+    /// </summary>
+    /// <remarks>
+    /// Grouped by the database, so the whole system's totals cost one query returning at most a
+    /// handful of rows — unlike <see cref="GetAllWithDetailsAsync"/>, which loads every task with
+    /// its board, area, column, creator and assignee because the caller draws them.
+    /// <para>
+    /// A kind with no tasks is simply absent from the result; the caller reads a missing kind as
+    /// zero rather than expecting a row for it.
+    /// </para>
+    /// </remarks>
+    public async Task<IReadOnlyList<TaskColumnKindCount>> CountByColumnKindAsync(
+        CancellationToken cancellationToken)
+        => await context.TaskItems
+            .GroupBy(task => task.Column.SystemKind)
+            .Select(group => new TaskColumnKindCount(group.Key, group.Count()))
+            .ToListAsync(cancellationToken);
+
     public void Add(TaskItem task) => context.TaskItems.Add(task);
 
     // The participation rows go with it, by cascade. Nothing here deletes them one by one, and

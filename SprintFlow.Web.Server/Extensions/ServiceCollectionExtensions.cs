@@ -148,6 +148,12 @@ public static class ServiceCollectionExtensions
         // Singleton: it holds no per-request state and depends only on singletons — the same reason
         // IApplicationClock is one.
         services.AddSingleton<IBoardSummaryCache, BoardSummaryCache>();
+        services.AddSingleton<IAdminDashboardCache, AdminDashboardCache>();
+
+        // Registered here rather than with the feature services because its only job is to keep the
+        // cache above warm. Unlike the board summary, nothing invalidates that entry — this timer is
+        // the only thing that writes it.
+        services.AddHostedService<AdminDashboardRefreshService>();
 
         return services;
     }
