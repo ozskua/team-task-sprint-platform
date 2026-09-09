@@ -38,6 +38,8 @@ public class SprintFlowDbContext : DbContext
 
     public DbSet<TaskAttachment> TaskAttachments => Set<TaskAttachment>();
 
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

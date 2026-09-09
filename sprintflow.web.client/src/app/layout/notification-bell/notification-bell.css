@@ -1,0 +1,106 @@
+/*
+  The menu's contents are declared in this template, so they carry this component's scoping
+  attribute and these rules still reach them after the CDK moves them into the overlay. The overlay
+  panel itself is Material's own element and is not reachable from here — which is why the width
+  below is set on the header rather than on the panel. Same arrangement as the user menu.
+*/
+
+.bell-trigger {
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/*
+  Gives the whole panel its width, since the panel element cannot be styled from here. 248px plus
+  this row's own 16px padding on each side is exactly the 280px Material caps a menu panel at — ask
+  for more and the panel stays 280px while the content overflows it sideways.
+*/
+.bell-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 248px;
+    padding: 12px 16px;
+    cursor: default;
+}
+
+.bell-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+/* A text action rather than a button: it is secondary to the list it sits above. */
+.bell-mark-all {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 0.75rem;
+    color: var(--app-primary-action);
+    cursor: pointer;
+}
+
+.bell-mark-all:disabled {
+    color: var(--mat-sys-on-surface-variant);
+    cursor: default;
+}
+
+.bell-divider {
+    height: 1px;
+    background-color: var(--app-border);
+}
+
+/* Loading, empty and failed all read as one quiet line in the panel's place. */
+.bell-state {
+    margin: 0;
+    padding: 16px;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.bell-state--error {
+    color: var(--app-attention-ink);
+}
+
+/*
+  Three lines in a menu item, which is taller than the row height Material assumes, so both the
+  height and the line-height are released here.
+*/
+.bell-item {
+    height: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    line-height: normal;
+}
+
+/* The unread marker: a bar on the leading edge, plus the faintest tint behind the row. */
+.bell-item--unread {
+    border-left: 3px solid var(--app-primary);
+    background-color: var(--app-surface-muted);
+}
+
+.bell-item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    /* The same 248px the header asks for, so a long title wraps rather than widening the row. */
+    max-width: 248px;
+    white-space: normal;
+}
+
+.bell-item-text {
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface);
+}
+
+.bell-item-task {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.bell-item-date {
+    font-size: 0.6875rem;
+    color: var(--mat-sys-on-surface-variant);
+}

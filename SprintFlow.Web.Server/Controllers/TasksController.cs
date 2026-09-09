@@ -57,7 +57,11 @@ public class TasksController : ControllerBase
         [FromBody] UpdateTaskRequestDto request,
         CancellationToken cancellationToken)
     {
-        var (outcome, task) = await taskService.UpdateAsync(taskId, request, cancellationToken);
+        var (outcome, task) = await taskService.UpdateAsync(
+            taskId,
+            request,
+            User.GetAuthenticatedUserId(),
+            cancellationToken);
 
         return outcome switch
         {
@@ -98,7 +102,11 @@ public class TasksController : ControllerBase
         [FromBody] MoveTaskRequestDto request,
         CancellationToken cancellationToken)
     {
-        var (outcome, columns) = await taskService.MoveAsync(taskId, request, cancellationToken);
+        var (outcome, columns) = await taskService.MoveAsync(
+            taskId,
+            request,
+            User.GetAuthenticatedUserId(),
+            cancellationToken);
 
         return outcome switch
         {

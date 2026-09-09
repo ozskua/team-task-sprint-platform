@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using SprintFlow.Web.Server.Authentication;
 using SprintFlow.Web.Server.Options;
 using SprintFlow.Web.Server.Data.Repositories;
+using SprintFlow.Web.Server.Messaging;
 using SprintFlow.Web.Server.Services;
 using StackExchange.Redis;
 
@@ -159,6 +160,41 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
+    /// RabbitMQ: the connection, the publisher and the consumer that turns events into
+    /// notifications. Like Redis, the broker runs in Docker for development and the application
+    /// itself is not containerised.
+    /// </summary>
+    public static IServiceCollection AddMessagingServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<RabbitMqOptions>(configuration.GetSection(RabbitMqOptions.SectionName));
+
+        // A missing host stops start-up, like a missing JWT key or Redis address. The broker being
+        // *unreachable* is a different matter, handled where it is used - so RabbitMQ can start
+        // after the application, and the application runs without it.
+        if (string.IsNullOrWhiteSpace(configuration[$"{RabbitMqOptions.SectionName}:Host"]))
+        {
+            throw new InvalidOperationException(
+                $"'{RabbitMqOptions.SectionName}:Host' is not configured. "
+                + "Set it in appsettings.Development.json locally — '127.0.0.1' matches the RabbitMQ service in docker-compose.yml. "
+                + "Use the literal address rather than 'localhost': that name resolves to ::1 first, which nothing is listening on.");
+        }
+
+        // Singletons: one connection for the whole application, and one publisher holding one
+        // channel on it. Opening a connection per notification is the classic misuse of this
+        // client — see RabbitMqConnection.
+        services.AddSingleton<RabbitMqConnection>();
+        services.AddSingleton<NotificationEventPublisher>();
+
+        // Registered here rather than with the feature services because its only job is to drain
+        // the queue this publisher fills.
+        services.AddHostedService<NotificationConsumer>();
+
+        return services;
+    }
+
+    /// <summary>
     /// Everything that is not signing in. <c>UserRepository</c> is registered above and serves both.
     /// </summary>
     public static IServiceCollection AddApplicationServices(
@@ -181,12 +217,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<BoardRepository>();   // areas, boards, teams, columns
         services.AddScoped<TaskRepository>();    // tasks and their assignments
         services.AddScoped<SprintRepository>();
+        services.AddScoped<NotificationRepository>();
 
         services.AddScoped<BoardService>();
         services.AddScoped<WorkflowColumnService>();
         services.AddScoped<TaskService>();
         services.AddScoped<SprintService>();
         services.AddScoped<DashboardService>();
+        services.AddScoped<NotificationService>();
 
         // Singleton: it resolves the configured timezone once and then only reads the clock.
         services.AddSingleton<IApplicationClock, ApplicationClock>();

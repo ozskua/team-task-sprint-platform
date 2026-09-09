@@ -1,12 +1,12 @@
 # Development infrastructure for SprintFlow.
 #
 # The application itself is NOT containerised: it runs as a normal Windows .NET process, against
-# SQL Server installed natively on Windows. Only Redis runs here, because Redis has no official
-# Windows build and a container is the reproducible way to get one.
+# SQL Server installed natively on Windows. Redis and RabbitMQ run here, because neither has an
+# official Windows build and a container is the reproducible way to get one.
 #
-#   docker compose up -d     start Redis
-#   docker compose ps        check it is running
-#   docker compose down      stop it, keeping the data volume
+#   docker compose up -d     start Redis and RabbitMQ
+#   docker compose ps        check they are running
+#   docker compose down      stop them, keeping the data volumes
 #
 # There is deliberately no Dockerfile: nothing in this repository is built into an image.
 
@@ -21,5 +21,32 @@ services:
       - sprintflow-redis-data:/data
     restart: unless-stopped
 
+  rabbitmq:
+    # -management ships the HTTP management UI in the same image, so there is no second container
+    # to run just to look at a queue.
+    image: rabbitmq:4-management-alpine
+    container_name: sprintflow-rabbitmq
+    ports:
+      # Loopback only, exactly like Redis: the broker is reachable from this machine and nowhere
+      # else, and that binding — not a password — is what keeps it private.
+      - "127.0.0.1:5672:5672"    # AMQP, what the application connects to
+      - "127.0.0.1:15672:15672"  # management UI, http://localhost:15672
+    environment:
+      # No credential is committed here. The defaults are RabbitMQ's own well-known development
+      # account, and anyone who wants a real one sets these two variables in their shell or in a
+      # .env file beside this one — the application reads its own copy from
+      # appsettings.Development.json, which is git-ignored.
+      RABBITMQ_DEFAULT_USER: "${SPRINTFLOW_RABBITMQ_USER:-guest}"
+      RABBITMQ_DEFAULT_PASS: "${SPRINTFLOW_RABBITMQ_PASS:-guest}"
+      # RabbitMQ refuses the guest account from anywhere but the loopback interface, and a
+      # published Docker port makes the connection arrive from the bridge gateway instead — so
+      # without this, guest is rejected. Safe here only because the port above is bound to
+      # 127.0.0.1; on a shared or exposed broker, set the two variables above instead.
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit loopback_users []"
+    volumes:
+      - sprintflow-rabbitmq-data:/var/lib/rabbitmq
+    restart: unless-stopped
+
 volumes:
   sprintflow-redis-data:
+  sprintflow-rabbitmq-data:

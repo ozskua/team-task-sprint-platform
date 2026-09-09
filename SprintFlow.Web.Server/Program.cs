@@ -39,6 +39,8 @@ try
 
     builder.Services.AddCachingServices(builder.Configuration);
 
+    builder.Services.AddMessagingServices(builder.Configuration);
+
     builder.Services.AddApplicationServices(builder.Configuration);
 
     // In this process, not a container: SignalR is a library inside the application, and the hub is
@@ -70,6 +72,7 @@ try
 
     // Before the SPA fallback, which would otherwise answer the hub's own requests with index.html.
     app.MapHub<BoardHub>("/hubs/board");
+    app.MapHub<NotificationHub>("/hubs/notifications");
 
     app.MapFallbackToFile("/index.html");
 

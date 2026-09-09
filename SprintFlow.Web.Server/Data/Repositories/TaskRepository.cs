@@ -205,6 +205,27 @@ public class TaskRepository
             .ThenBy(u => u.LastName)
             .ToListAsync(cancellationToken);
 
+    /// <summary>
+    /// The same members as <see cref="GetBoardMembersAsync"/>, as ids and nothing else.
+    /// </summary>
+    /// <remarks>
+    /// Notifications need who to write a row for, not who to show, so no user row is loaded. The one
+    /// difference in the rule is deliberate: a deactivated account cannot sign in and would never
+    /// read what it was sent, so it is left out here. The displayed member list keeps showing them,
+    /// because they did the work the board remembers.
+    /// </remarks>
+    public async Task<IReadOnlyList<int>> GetBoardMemberIdsAsync(
+        int boardId,
+        CancellationToken cancellationToken)
+        => await context.TaskParticipants
+            .AsNoTracking()
+            .Where(p => p.Task.BoardId == boardId && p.User.IsActive)
+            // Distinct because one user may hold several tasks on a board and is still one member —
+            // which is also what stops a second notification reaching the same person.
+            .Select(p => p.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyDictionary<int, IReadOnlyList<User>>> GetMembersByBoardAsync(
         CancellationToken cancellationToken)
     {

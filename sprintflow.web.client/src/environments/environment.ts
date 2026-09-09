@@ -5,5 +5,9 @@ export const environment = {
 
   // Not under /api: it is a hub, not a REST resource. Relative for the same reason as above — the
   // dev server proxies /hubs, and production serves it from the same origin.
-  boardHubUrl: '/hubs/board'
+  boardHubUrl: '/hubs/board',
+
+  // A second hub rather than a second use of the first: the board hub's connection only exists
+  // while a board is open, and a notification has to reach the header from anywhere in the app.
+  notificationHubUrl: '/hubs/notifications'
 };

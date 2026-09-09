@@ -1,0 +1,62 @@
+<!--
+  The badge is on the button rather than on the icon, so it sits at the corner of the whole control
+  and is not clipped by the icon's own box. It is hidden at zero: an empty badge would still draw a
+  dot and say there is something to read.
+-->
+<button
+  class="bell-trigger"
+  mat-icon-button
+  type="button"
+  [matMenuTriggerFor]="menu"
+  [matBadge]="unreadCount()"
+  [matBadgeHidden]="unreadCount() === 0"
+  matBadgeColor="warn"
+  matBadgeSize="small"
+  [attr.aria-label]="unreadCount() === 0
+    ? 'Bildirimler'
+    : 'Bildirimler, ' + unreadCount() + ' okunmamış'"
+  (menuOpened)="onOpened()">
+  <mat-icon>notifications</mat-icon>
+</button>
+
+<mat-menu #menu="matMenu" class="bell-panel">
+  <!--
+    A plain div, deliberately not a mat-menu-item: it is a heading, not an action, so it must not be
+    focusable and must not sit in the arrow-key order. The button inside it is.
+  -->
+  <div class="bell-header">
+    <span class="bell-title">Bildirimler</span>
+
+    <button
+      class="bell-mark-all"
+      type="button"
+      [disabled]="unreadCount() === 0"
+      (click)="$event.stopPropagation(); markAllRead()">Tümünü okundu işaretle</button>
+  </div>
+
+  <div class="bell-divider" role="separator"></div>
+
+  @if (loading()) {
+    <p class="bell-state">Yükleniyor…</p>
+  } @else if (loadFailed()) {
+    <p class="bell-state bell-state--error" role="alert">Bildirimler yüklenemedi.</p>
+  } @else if (loadedOnce() && notifications().length === 0) {
+    <p class="bell-state">Henüz bildiriminiz yok.</p>
+  }
+
+  @for (notification of notifications(); track notification.notificationId) {
+    <button
+      class="bell-item"
+      mat-menu-item
+      type="button"
+      [class.bell-item--unread]="!notification.isRead"
+      (click)="open(notification)">
+      <span class="bell-item-body">
+        <span class="bell-item-text">{{ text(notification) }}</span>
+        <span class="bell-item-task">{{ notification.taskTitle }}</span>
+        <!-- No timezone argument: the value carries no offset, so any conversion would shift it. -->
+        <span class="bell-item-date">{{ notification.createdDate | date:'dd MMM yyyy HH:mm' }}</span>
+      </span>
+    </button>
+  }
+</mat-menu>

@@ -5,6 +5,7 @@ using SprintFlow.Web.Server.DTOs.Columns;
 using SprintFlow.Web.Server.DTOs.Tasks;
 using SprintFlow.Web.Server.Hubs;
 using SprintFlow.Web.Server.Mappings;
+using SprintFlow.Web.Server.Messaging;
 using SprintFlow.Web.Server.Models;
 
 namespace SprintFlow.Web.Server.Services;
@@ -18,6 +19,7 @@ public class TaskService
     private readonly IBoardSummaryCache summaryCache;
     private readonly AttachmentStorage attachmentStorage;
     private readonly IHubContext<BoardHub> boardHub;
+    private readonly NotificationEventPublisher notificationPublisher;
 
     public TaskService(
         TaskRepository taskRepository,
@@ -26,7 +28,8 @@ public class TaskService
         SprintRepository sprintRepository,
         IBoardSummaryCache summaryCache,
         AttachmentStorage attachmentStorage,
-        IHubContext<BoardHub> boardHub)
+        IHubContext<BoardHub> boardHub,
+        NotificationEventPublisher notificationPublisher)
     {
         this.taskRepository = taskRepository;
         this.boardRepository = boardRepository;
@@ -35,6 +38,59 @@ public class TaskService
         this.summaryCache = summaryCache;
         this.attachmentStorage = attachmentStorage;
         this.boardHub = boardHub;
+        this.notificationPublisher = notificationPublisher;
+    }
+
+    /// <summary>
+    /// Announces that something worth a notification happened, to the people it happened to.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Always called <b>after</b> the change is committed, so nobody is told about work that then
+    /// failed to save. The cost of that order is the other way round: a broker that cannot be
+    /// reached loses the event while the change stands. That is deliberate for this version —
+    /// publishing swallows the failure rather than failing a request that already succeeded — and
+    /// it is the dual-write limitation recorded in the roadmap.
+    /// </para>
+    /// <para>
+    /// The recipients are resolved here, at the moment of the change, and travel inside the event.
+    /// The consumer never asks who the team is; by the time it runs, the answer could already be
+    /// different.
+    /// </para>
+    /// </remarks>
+    private Task PublishNotificationAsync(
+        NotificationType type,
+        int taskId,
+        int actorUserId,
+        IReadOnlyList<int> recipientUserIds,
+        CancellationToken cancellationToken)
+        => notificationPublisher.PublishAsync(
+            new NotificationEvent(
+                Guid.NewGuid(),
+                type,
+                taskId,
+                actorUserId,
+                recipientUserIds,
+                DateTime.UtcNow),
+            cancellationToken);
+
+    /// <summary>
+    /// Everyone on the task's board except whoever acted.
+    /// </summary>
+    /// <remarks>
+    /// "Team" is not re-invented: it is the membership rule already in the project — anyone holding
+    /// a task on this board. The query returns each member once and leaves out deactivated
+    /// accounts, so no duplicate and no unreadable recipient can reach the event, and removing the
+    /// actor here is what stops anyone being told about their own action.
+    /// </remarks>
+    private async Task<IReadOnlyList<int>> TeamExceptActorAsync(
+        int boardId,
+        int actorUserId,
+        CancellationToken cancellationToken)
+    {
+        var memberIds = await taskRepository.GetBoardMemberIdsAsync(boardId, cancellationToken);
+
+        return memberIds.Where(memberId => memberId != actorUserId).ToList();
     }
 
     /// <summary>
@@ -144,14 +200,32 @@ public class TaskService
 
         await NotifyBoardChangedAsync(boardId, "taskCreated", cancellationToken);
 
+        // Outside the lock and after the commit, like everything else here: the task exists before
+        // anyone is told about it. Creating a task already assigned to yourself tells you nothing,
+        // so the actor is never his own recipient.
+        if (request.AssigneeUserId is int assignee && assignee != createdByUserId)
+        {
+            await PublishNotificationAsync(
+                NotificationType.TaskAssigned,
+                taskId.Value,
+                createdByUserId,
+                [assignee],
+                cancellationToken);
+        }
+
         // Read back outside the lock: the row is committed by now, and holding the board while
         // assembling a response would make every other request on it wait for no reason.
         return (outcome, await ReadBackAsync(taskId.Value, cancellationToken));
     }
 
+    /// <param name="actorUserId">
+    /// Who is editing, from their token. Needed because nobody is told about their own action, so
+    /// an assignment has to know who made it.
+    /// </param>
     public async Task<(UpdateTaskOutcome Outcome, TaskResponseDto? Task)> UpdateAsync(
         int taskId,
         UpdateTaskRequestDto request,
+        int actorUserId,
         CancellationToken cancellationToken)
     {
         var boardId = await taskRepository.GetBoardIdAsync(taskId, cancellationToken);
@@ -163,7 +237,7 @@ public class TaskService
 
         // Under the board's write lock. Replacing an assignee is a delete followed by an insert on
         // a uniquely-indexed column, so two edits arriving together must not interleave.
-        var outcome = await boardRepository.RunBoardOrderingAsync(
+        var (outcome, assigneeChanged) = await boardRepository.RunBoardOrderingAsync(
             boardId.Value,
             async token =>
             {
@@ -171,26 +245,29 @@ public class TaskService
 
                 if (task is null)
                 {
-                    return UpdateTaskOutcome.TaskNotFound;
+                    return (UpdateTaskOutcome.TaskNotFound, false);
                 }
 
                 if (!await IsAssignableAsync(request.AssigneeUserId, token))
                 {
-                    return UpdateTaskOutcome.AssigneeUnavailable;
+                    return (UpdateTaskOutcome.AssigneeUnavailable, false);
                 }
 
                 task.Title = request.Title.Trim();
                 task.Description = Normalise(request.Description);
                 task.Priority = request.Priority;
 
-                await ReplaceAssigneeAsync(taskId, request.AssigneeUserId, token);
+                // Whether the assignment actually moved, decided inside the lock against the rows
+                // as they were. An edit that renames a task and leaves its assignee alone must not
+                // tell that person they have been given it again.
+                var changed = await ReplaceAssigneeAsync(taskId, request.AssigneeUserId, token);
 
                 // The creator, the column and the position are deliberately untouched: editing what
                 // a task says is not the same operation as moving it, and ownership is never
                 // editable. One save covers the text and the assignment together.
                 await taskRepository.SaveChangesAsync(token);
 
-                return UpdateTaskOutcome.Updated;
+                return (UpdateTaskOutcome.Updated, changed);
             },
             cancellationToken);
 
@@ -206,6 +283,18 @@ public class TaskService
         // The cards do show all four, though, so the other clients are told even though the cache
         // keeps its entry.
         await NotifyBoardChangedAsync(boardId.Value, "taskUpdated", cancellationToken);
+
+        // Only when the assignment moved, only to somebody, and never to the person who moved it.
+        // Unassigning also changes it, and there is nobody to tell — which the null check says.
+        if (assigneeChanged && request.AssigneeUserId is int assignee && assignee != actorUserId)
+        {
+            await PublishNotificationAsync(
+                NotificationType.TaskAssigned,
+                taskId,
+                actorUserId,
+                [assignee],
+                cancellationToken);
+        }
 
         return (outcome, await ReadBackAsync(taskId, cancellationToken));
     }
@@ -223,7 +312,12 @@ public class TaskService
     /// first and adding after is what makes "replace" a single idea rather than two operations a
     /// caller could get half-way through.
     /// </summary>
-    private async Task ReplaceAssigneeAsync(
+    /// <returns>
+    /// Whether the assignment actually moved. Already recognised here, because the early return
+    /// below is precisely the "nothing changed" case; the caller uses it to decide whether anyone
+    /// needs telling.
+    /// </returns>
+    private async Task<bool> ReplaceAssigneeAsync(
         int taskId,
         int? assigneeUserId,
         CancellationToken cancellationToken)
@@ -234,7 +328,13 @@ public class TaskService
         // that did not change the assignment.
         if (assigneeUserId is int wanted && existing.Count == 1 && existing[0].UserId == wanted)
         {
-            return;
+            return false;
+        }
+
+        // Unassigned before and unassigned after: nothing to write, and nothing happened.
+        if (assigneeUserId is null && existing.Count == 0)
+        {
+            return false;
         }
 
         if (existing.Count > 0)
@@ -246,6 +346,8 @@ public class TaskService
         {
             taskRepository.Add(new TaskParticipant { TaskId = taskId, UserId = assignee });
         }
+
+        return true;
     }
 
     public async Task<(AssignSprintOutcome Outcome, TaskResponseDto? Task)> AssignSprintAsync(
@@ -355,9 +457,14 @@ public class TaskService
         return deleted;
     }
 
+    /// <param name="actorUserId">
+    /// Who is moving it, from their token. Needed because the team is told when a task is finished
+    /// or cancelled, and the person who did it is not told about their own action.
+    /// </param>
     public async Task<(MoveTaskOutcome Outcome, IReadOnlyList<WorkflowColumnResponseDto>? Columns)> MoveAsync(
         int taskId,
         MoveTaskRequestDto request,
+        int actorUserId,
         CancellationToken cancellationToken)
     {
         // Read without the lock only to learn which board to lock. The target column names the
@@ -443,6 +550,32 @@ public class TaskService
 
         await NotifyBoardChangedAsync(targetColumn.BoardId, "taskMoved", cancellationToken);
 
+        // Two ids mean two columns, so the task genuinely left one for another — a drag that only
+        // reorders a column returns one id and is not news to anybody. Of the destinations, only
+        // the two system columns say something happened to the work rather than to the board.
+        if (affectedColumnIds.Count == 2)
+        {
+            var type = targetColumn.SystemKind switch
+            {
+                SystemColumnKind.Completed => NotificationType.TaskCompleted,
+                SystemColumnKind.Cancelled => NotificationType.TaskCancelled,
+
+                // To Do, and every custom column: a task moving through the board is its ordinary
+                // progress, and announcing each step would be noise.
+                _ => (NotificationType?)null
+            };
+
+            if (type is NotificationType announced)
+            {
+                await PublishNotificationAsync(
+                    announced,
+                    taskId,
+                    actorUserId,
+                    await TeamExceptActorAsync(targetColumn.BoardId, actorUserId, cancellationToken),
+                    cancellationToken);
+            }
+        }
+
         // Read back outside the lock: the move is committed, and assembling a response is not
         // ordering work. Reported through the same sprint the caller was looking at, so the columns
         // that come back are the columns they can see rather than the whole board's.
@@ -468,7 +601,11 @@ public class TaskService
         int userId,
         CancellationToken cancellationToken)
     {
-        if (!await taskRepository.ExistsAsync(taskId, cancellationToken))
+        // The board is read rather than mere existence, because the team that will be told about
+        // this comment is the board's. One query answers both questions.
+        var boardId = await taskRepository.GetBoardIdAsync(taskId, cancellationToken);
+
+        if (boardId is null)
         {
             return null;
         }
@@ -486,6 +623,15 @@ public class TaskService
         taskRepository.AddComment(comment);
 
         await taskRepository.SaveChangesAsync(cancellationToken);
+
+        // After the commit, and to the whole team rather than to the assignee alone: a comment is
+        // addressed to whoever is working on this board, and the author is left out below.
+        await PublishNotificationAsync(
+            NotificationType.TaskCommented,
+            taskId,
+            userId,
+            await TeamExceptActorAsync(boardId.Value, userId, cancellationToken),
+            cancellationToken);
 
         var saved = await taskRepository.GetCommentAsync(comment.TaskCommentId, cancellationToken)
             ?? throw new InvalidOperationException(

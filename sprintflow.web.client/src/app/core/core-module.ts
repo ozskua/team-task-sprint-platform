@@ -10,6 +10,8 @@ import { BoardRealtimeService } from './services/board-realtime.service';
 import { BoardSummaryService } from './services/board-summary.service';
 import { DashboardService } from './services/dashboard.service';
 import { InvitationService } from './services/invitation.service';
+import { NotificationRealtimeService } from './services/notification-realtime.service';
+import { NotificationService } from './services/notification.service';
 import { SprintService } from './services/sprint.service';
 import { TeamService } from './services/team.service';
 import { TokenStorage } from './services/token-storage';
@@ -37,6 +39,10 @@ import { UserService } from './services/user.service';
     TeamService,
     DashboardService,
     AdminDashboardService,
+    // Singletons for the same reason as the board's pair: the header's badge and the panel it opens
+    // must show the same thing, whichever shell is on screen.
+    NotificationService,
+    NotificationRealtimeService,
     // Class-based rather than functional: AppModule imports HttpClientModule, which has no
     // withInterceptors equivalent. `multi` appends to the chain instead of replacing it.
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
