@@ -1,34 +1,26 @@
-using Microsoft.AspNetCore.SignalR;
-using SprintFlow.Web.Server.Common.Enums;
 using SprintFlow.Web.Server.Data.Repositories;
 using SprintFlow.Web.Server.DTOs.Notifications;
-using SprintFlow.Web.Server.Hubs;
 using SprintFlow.Web.Server.Mappings;
-using SprintFlow.Web.Server.Models;
 
 namespace SprintFlow.Web.Server.Services;
 
 /// <summary>
-/// Writing notifications down and reading them back. Nothing here decides who receives one.
+/// Reading a user's notifications back. This application no longer writes them.
 /// </summary>
 /// <remarks>
-/// This is the seam the broker was added around. <c>TaskService</c> works out the recipients and
-/// publishes an event; <c>NotificationConsumer</c> takes it off the queue and calls
-/// <see cref="CreateManyAsync"/>, which does exactly what the direct call did before RabbitMQ
-/// existed. Nothing in this class knows a broker is involved — it has no queue, exchange or
-/// connection, and no message-bus abstraction was introduced around it.
+/// Writing moved out with the consumer: the notification service takes the event off the queue and
+/// inserts the rows, and the realtime service tells the recipients. What is left here is the read
+/// side the bell's API needs — the queries that join a notification to its actor and its task,
+/// which is why the rich entity and the schema stay in this application (see the roadmap on
+/// database ownership).
 /// </remarks>
 public class NotificationService
 {
     private readonly NotificationRepository notificationRepository;
-    private readonly IHubContext<NotificationHub> notificationHub;
 
-    public NotificationService(
-        NotificationRepository notificationRepository,
-        IHubContext<NotificationHub> notificationHub)
+    public NotificationService(NotificationRepository notificationRepository)
     {
         this.notificationRepository = notificationRepository;
-        this.notificationHub = notificationHub;
     }
 
     // --- Reading ------------------------------------------------------------
@@ -76,51 +68,4 @@ public class NotificationService
 
     public Task MarkAllReadAsync(int userId, CancellationToken cancellationToken)
         => notificationRepository.MarkAllReadAsync(userId, cancellationToken);
-
-    // --- Writing ------------------------------------------------------------
-
-    /// <summary>
-    /// Writes one notification per recipient and tells each of them, in one save and one send.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Called by <c>NotificationConsumer</c> for each event taken off the queue. The recipients are
-    /// taken as given: they were worked out where the change happened, at the moment it happened,
-    /// and the actor was already removed there. Recalculating them here would describe the team as
-    /// it is now rather than as it was when the thing happened.
-    /// </para>
-    /// <para>
-    /// <c>CreatedDate</c> is intentionally not set; the database default supplies it, as everywhere
-    /// else. The SignalR event carries no payload for the same reason the board's does not — the
-    /// client re-reads over REST, which stays the source of truth. It is sent only after the rows
-    /// are committed, so a client that reacts immediately finds them there.
-    /// </para>
-    /// </remarks>
-    public async Task CreateManyAsync(
-        IReadOnlyList<int> recipientIds,
-        int taskId,
-        NotificationType type,
-        int actorUserId,
-        CancellationToken cancellationToken)
-    {
-        // A board whose only member is the person acting, or an unassigned task nobody else holds.
-        if (recipientIds.Count == 0)
-        {
-            return;
-        }
-
-        notificationRepository.AddRange(recipientIds.Select(recipientId => new Notification
-        {
-            RecipientUserId = recipientId,
-            ActorUserId = actorUserId,
-            TaskId = taskId,
-            Type = type
-        }));
-
-        await notificationRepository.SaveChangesAsync(cancellationToken);
-
-        await notificationHub.Clients
-            .Users(recipientIds.Select(recipientId => recipientId.ToString()).ToList())
-            .SendAsync("notificationReceived", cancellationToken);
-    }
 }

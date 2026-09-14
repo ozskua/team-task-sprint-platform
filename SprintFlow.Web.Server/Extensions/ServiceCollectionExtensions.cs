@@ -181,15 +181,16 @@ public static class ServiceCollectionExtensions
                 + "Use the literal address rather than 'localhost': that name resolves to ::1 first, which nothing is listening on.");
         }
 
-        // Singletons: one connection for the whole application, and one publisher holding one
-        // channel on it. Opening a connection per notification is the classic misuse of this
-        // client — see RabbitMqConnection.
+        // Singletons: one connection for the whole application, and one publisher each holding one
+        // channel on it. Opening a connection per message is the classic misuse of this client —
+        // see RabbitMqConnection.
         services.AddSingleton<RabbitMqConnection>();
         services.AddSingleton<NotificationEventPublisher>();
+        services.AddSingleton<BoardEventPublisher>();
 
-        // Registered here rather than with the feature services because its only job is to drain
-        // the queue this publisher fills.
-        services.AddHostedService<NotificationConsumer>();
+        // No consumer is registered here any more. This application publishes and nothing else:
+        // the notification service drains sprintflow.notifications and the realtime service drains
+        // sprintflow.realtime, each in its own process.
 
         return services;
     }

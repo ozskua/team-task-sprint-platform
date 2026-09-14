@@ -1,9 +1,7 @@
-using Microsoft.AspNetCore.SignalR;
 using SprintFlow.Web.Server.Common.Enums;
 using SprintFlow.Web.Server.Data.Repositories;
 using SprintFlow.Web.Server.DTOs.Columns;
 using SprintFlow.Web.Server.DTOs.Tasks;
-using SprintFlow.Web.Server.Hubs;
 using SprintFlow.Web.Server.Mappings;
 using SprintFlow.Web.Server.Messaging;
 using SprintFlow.Web.Server.Models;
@@ -18,7 +16,7 @@ public class TaskService
     private readonly SprintRepository sprintRepository;
     private readonly IBoardSummaryCache summaryCache;
     private readonly AttachmentStorage attachmentStorage;
-    private readonly IHubContext<BoardHub> boardHub;
+    private readonly BoardEventPublisher boardPublisher;
     private readonly NotificationEventPublisher notificationPublisher;
 
     public TaskService(
@@ -28,7 +26,7 @@ public class TaskService
         SprintRepository sprintRepository,
         IBoardSummaryCache summaryCache,
         AttachmentStorage attachmentStorage,
-        IHubContext<BoardHub> boardHub,
+        BoardEventPublisher boardPublisher,
         NotificationEventPublisher notificationPublisher)
     {
         this.taskRepository = taskRepository;
@@ -37,7 +35,7 @@ public class TaskService
         this.sprintRepository = sprintRepository;
         this.summaryCache = summaryCache;
         this.attachmentStorage = attachmentStorage;
-        this.boardHub = boardHub;
+        this.boardPublisher = boardPublisher;
         this.notificationPublisher = notificationPublisher;
     }
 
@@ -101,11 +99,14 @@ public class TaskService
     /// reports counts, while the board shows a task's title, priority and assignee. An edit changes
     /// what is on screen without changing a single figure the summary holds, so it publishes here
     /// and still, correctly, does not drop the cache entry.
+    /// <para>
+    /// The hub itself now lives in the realtime service, so this announces over the broker instead
+    /// of calling <c>IHubContext</c> directly. The five call sites, the reason strings and what the
+    /// browser finally receives are all unchanged — only the path between them is.
+    /// </para>
     /// </remarks>
     private Task NotifyBoardChangedAsync(int boardId, string reason, CancellationToken cancellationToken)
-        => boardHub.Clients
-            .Group(BoardHub.GroupFor(boardId))
-            .SendAsync("boardChanged", new { boardId, reason }, cancellationToken);
+        => boardPublisher.PublishAsync(boardId, reason, cancellationToken);
 
     public async Task<(CreateTaskOutcome Outcome, TaskResponseDto? Task)> CreateAsync(
         int boardId,
