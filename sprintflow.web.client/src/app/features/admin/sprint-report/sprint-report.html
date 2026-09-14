@@ -1,0 +1,192 @@
+<div class="report">
+
+  <section class="report-section">
+    <h2 class="section-title">Across all sprints</h2>
+
+    <div class="metric-grid metric-grid--four">
+      <app-metric-card label="Sprints" [value]="totals().sprints" [loading]="loading()" />
+      <app-metric-card label="Tasks" [value]="totals().tasks" [loading]="loading()" />
+      <app-metric-card label="Completed" [value]="totals().completed" [loading]="loading()" />
+      <app-metric-card label="Cancelled" [value]="totals().cancelled" [loading]="loading()" />
+    </div>
+  </section>
+
+  <section class="report-section">
+    <h2 class="section-title">Sprints</h2>
+
+    <div class="panel">
+      <div class="report-scroll">
+        <table class="report-table">
+          <caption class="visually-hidden">
+            Every sprint with its completed, cancelled and ongoing task counts.
+          </caption>
+
+          <thead>
+            <tr>
+              <th scope="col">Sprint</th>
+              <th scope="col" class="report-col-board">Board</th>
+              <th scope="col" class="report-col-dates">Dates</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="report-col-number">Total</th>
+              <th scope="col" class="report-col-outcome">Completed</th>
+              <th scope="col" class="report-col-outcome">Cancelled</th>
+              <th scope="col" class="report-col-outcome">Ongoing</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @if (loading()) {
+              @for (row of skeletonRows; track row) {
+                <tr><td colspan="8"><span class="report-skeleton" aria-hidden="true"></span></td></tr>
+              }
+            } @else if (failed()) {
+              <tr>
+                <td colspan="8" class="report-message">
+                  <span class="report-message-title">The report could not be loaded</span>
+                  <span class="report-message-hint">Please refresh the page to try again.</span>
+                </td>
+              </tr>
+            } @else if (rows().length === 0) {
+              <tr>
+                <td colspan="8" class="report-message">
+                  <span class="report-message-title">No sprints yet</span>
+                  <span class="report-message-hint">
+                    Open a board's Sprint tab to create the first one.
+                  </span>
+                </td>
+              </tr>
+            } @else {
+              @for (row of rows(); track row.sprintId) {
+                <tr class="report-row">
+                  <th scope="row" class="report-name-cell">
+                    <!--
+                      The sprint name is the disclosure: it opens the row to show what was in it.
+                      Each row opens on its own, so several may be open at once.
+                    -->
+                    <button
+                      class="report-toggle"
+                      type="button"
+                      [attr.aria-expanded]="isExpanded(row.sprintId)"
+                      [attr.aria-controls]="'sprint-tasks-' + row.sprintId"
+                      (click)="toggle(row.sprintId)">
+                      <mat-icon class="report-chevron" aria-hidden="true">
+                        {{ isExpanded(row.sprintId) ? 'expand_more' : 'chevron_right' }}
+                      </mat-icon>
+                      <span>{{ row.name }}</span>
+                    </button>
+                  </th>
+
+                  <td class="report-col-board">
+                    <span class="report-board">{{ row.boardName }}</span>
+                    <!-- Board names are not unique; the area is what tells two of them apart. -->
+                    <span class="report-area">{{ row.areaName }}</span>
+                  </td>
+
+                  <!-- "up to, not including" — the end day is not part of the sprint. -->
+                  <td class="report-col-dates">{{ row.startDate }} → {{ row.endDate }}</td>
+
+                  <td>
+                    <span class="status-chip" [class]="'status-chip--' + row.status">
+                      {{ row.status }}
+                    </span>
+                  </td>
+
+                  <td class="report-col-number">{{ row.totalTasks }}</td>
+
+                  <!-- The share is bracketed rather than set beside the count: "3 100%" reads as one
+                       number, both on screen and to a screen reader. -->
+                  <td class="report-col-outcome">
+                    <span class="report-figure">{{ row.completedCount }}</span>
+                    <span class="report-percent">({{ row.completedPercent }}%)</span>
+                    <span class="report-track" aria-hidden="true">
+                      <span class="report-fill" [style.width.%]="row.completedPercent"></span>
+                    </span>
+                  </td>
+
+                  <td class="report-col-outcome">
+                    <span class="report-figure">{{ row.cancelledCount }}</span>
+                    <span class="report-percent">({{ row.cancelledPercent }}%)</span>
+                  </td>
+
+                  <td class="report-col-outcome">
+                    <span class="report-figure">{{ row.ongoingCount }}</span>
+                    <span class="report-percent">({{ row.ongoingPercent }}%)</span>
+                  </td>
+                </tr>
+
+                @if (isExpanded(row.sprintId)) {
+                  <tr class="report-detail-row">
+                    <td colspan="8" [attr.id]="'sprint-tasks-' + row.sprintId">
+                      @if (taskStateOf(row.sprintId); as state) {
+                        @switch (state.status) {
+                          @case ('loading') {
+                            <p class="report-detail-message">Loading tasks…</p>
+                          }
+                          @case ('failed') {
+                            <p class="report-detail-message">Tasks could not be loaded.</p>
+                          }
+                          @default {
+                            @if (row.totalTasks === 0) {
+                              <p class="report-detail-message">
+                                No tasks in this sprint yet. Put work into it from the board's Backlog.
+                              </p>
+                            } @else {
+                              <div class="report-groups">
+                                <!-- The same table the Backlog draws, read-only here and split into
+                                     the three groups the figures above are counted from. -->
+                                @if (state.completed.length > 0) {
+                                  <section class="report-group">
+                                    <h3 class="report-group-title">
+                                      Completed · {{ state.completed.length }}
+                                    </h3>
+                                    <app-task-table
+                                      [rows]="state.completed"
+                                      [caption]="'Completed tasks in ' + row.name" />
+                                  </section>
+                                }
+
+                                @if (state.cancelled.length > 0) {
+                                  <section class="report-group">
+                                    <h3 class="report-group-title">
+                                      Cancelled · {{ state.cancelled.length }}
+                                    </h3>
+                                    <app-task-table
+                                      [rows]="state.cancelled"
+                                      [caption]="'Cancelled tasks in ' + row.name" />
+                                  </section>
+                                }
+
+                                @if (state.ongoing.length > 0) {
+                                  <section class="report-group">
+                                    <h3 class="report-group-title">
+                                      Ongoing · {{ state.ongoing.length }}
+                                    </h3>
+                                    <app-task-table
+                                      [rows]="state.ongoing"
+                                      [caption]="'Ongoing tasks in ' + row.name" />
+                                  </section>
+                                }
+                              </div>
+
+                              <!-- Managing a sprint happens on its board, never here. -->
+                              <a
+                                class="report-detail-link"
+                                [routerLink]="boardSprintsPath(row.boardId)">
+                                Open {{ row.boardName }}'s sprints
+                              </a>
+                            }
+                          }
+                        }
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</div>

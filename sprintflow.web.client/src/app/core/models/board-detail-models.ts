@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Shapes returned by the board endpoints. Every field comes from the API — the client fills in
  * none of them, and in particular never works out a position or a team membership itself.
  */
@@ -12,19 +12,15 @@ export type SystemColumnKind = 'ToDo' | 'Completed' | 'Cancelled';
  */
 export type TaskPriority = 0 | 1 | 2 | 3;
 
-/**
- * The one person responsible for a task. Absent when the task is unassigned.
- *
- * Deliberately not the same thing as the creator: one wrote the task down, the other has to do it.
- */
+/** The one person responsible for a task. Not the creator: one wrote it down, the other does it. */
 export interface TaskAssignee {
   readonly userId: number;
   readonly fullName: string;
 }
 
 /**
- * A member of the board's team. The server computes this from task participation; there is no
- * membership table and the client must not try to derive it a second way.
+ * A member of the board's team. Computed by the server from task participation — there is no
+ * membership table, and the client must not derive it a second way.
  */
 export interface TeamMember {
   readonly userId: number;
@@ -35,7 +31,6 @@ export interface BoardTask {
   readonly taskId: number;
   readonly title: string;
 
-  /** `null` when nothing was written — not an empty string. */
   readonly description: string | null;
 
   readonly boardId: number;
@@ -53,13 +48,12 @@ export interface BoardTask {
   /** ISO date-time without an offset, exactly as the server stored it. */
   readonly createdDate: string;
 
-  /** `null` when nobody is responsible for it yet. */
   readonly assignee: TaskAssignee | null;
 
-  /** The sprint this task is in, or `null`. Always a sprint of this task's board. */
+  /** Always a sprint of this task's own board. */
   readonly sprintId: number | null;
 
-  /** That sprint's name, or `null` — carried so a card can label itself without a lookup. */
+  /** Carried so a card can label itself without a lookup. */
   readonly sprintName: string | null;
 }
 
@@ -87,24 +81,20 @@ export interface BoardDetail {
   readonly createdDate: string;
 
   /**
-   * Computed by the server from participation. An empty list is a normal, correct state.
-   *
-   * Always the whole board's members, even when the page is scoped to a sprint — who is on the
-   * team is not a question about one stretch of days.
+   * Computed by the server from participation; an empty list is normal. Always the whole board's
+   * members, even when the page is scoped to a sprint.
    */
   readonly teamMembers: readonly TeamMember[];
 
   /**
-   * The sprint the tasks below were filtered to, or `null` when the whole board is showing.
-   *
-   * Note this is the server's shape, with an exclusive `endDate`. Only the board page reads it, and
-   * only to name the sprint; anything rendering dates should go through `SprintService`.
+   * The sprint the tasks below were filtered to, or `null` for the whole board. The server's shape,
+   * with an exclusive `endDate` — anything rendering dates should go through `SprintService`.
    */
   readonly selectedSprint: BoardSelectedSprint | null;
 
   /**
-   * Already in board order: To Do, custom columns, Completed, Cancelled. The set of columns never
-   * depends on the selected sprint — only which tasks sit in them does.
+   * Already in board order: To Do, custom columns, Completed, Cancelled. The set never depends on
+   * the selected sprint — only which tasks sit in them does.
    */
   readonly columns: readonly BoardColumn[];
 }
@@ -118,8 +108,8 @@ export interface BoardSelectedSprint {
 }
 
 /**
- * The only things a client may supply when creating a task. No creator and no position: the
- * server takes the first from the token and works out the second itself.
+ * The only things a client may supply. No creator and no position: the server takes the first from
+ * the token and works out the second itself.
  */
 export interface CreateTaskRequest {
   readonly title: string;
@@ -131,13 +121,11 @@ export interface CreateTaskRequest {
   /** Left out for the board-level "New Task" action, which starts the task in To Do. */
   readonly columnId?: number;
 
-  /** `null` or omitted creates the task unassigned. */
   readonly assigneeUserId?: number | null;
 
   /**
-   * The sprint to create the task in — normally the one the board is scoped to, so a task added
-   * while looking at a sprint belongs to it instead of seeming to vanish. Omitted on an unscoped
-   * board.
+   * Normally the sprint the board is scoped to, so a task added while looking at one belongs to it
+   * rather than seeming to vanish. Omitted on an unscoped board.
    */
   readonly sprintId?: number | null;
 }
@@ -147,8 +135,8 @@ export interface UpdateTaskRequest {
   readonly description?: string;
 
   /**
-   * Always sent. The server writes whatever arrives, and omitting it would silently reset the task
-   * to Normal — an update carries the whole task, not just what changed.
+   * Always sent: the server writes whatever arrives, so omitting it would silently reset the task
+   * to Normal. An update carries the whole task, not just what changed.
    */
   readonly priority: TaskPriority;
 
@@ -160,20 +148,19 @@ export interface UpdateTaskRequest {
 export interface TaskComment {
   readonly taskCommentId: number;
 
-  /** Who wrote it. Compared with the session's own id to decide whether to offer a delete. */
+  /** Compared with the session's own id to decide whether to offer a delete. */
   readonly userId: number;
 
   readonly userFullName: string;
   readonly content: string;
   readonly createdDate: string;
 
-  /** The files posted with this comment, drawn underneath it in the thread. */
   readonly attachments: readonly TaskAttachment[];
 }
 
 /**
- * One attached file, as metadata. The bytes live on the server and are fetched by id — the name
- * the file has on disk is deliberately not part of this.
+ * One attached file, as metadata. The bytes are fetched by id, and the name the file has on disk is
+ * deliberately not part of this.
  */
 export interface TaskAttachment {
   readonly taskAttachmentId: number;
@@ -199,7 +186,6 @@ export interface TaskDetail {
   readonly createdByUserId: number;
   readonly createdByFullName: string;
 
-  /** The task's date. Generated by the database and never edited. */
   readonly createdDate: string;
 
   readonly assignee: TaskAssignee | null;
@@ -207,10 +193,7 @@ export interface TaskDetail {
   readonly sprintName: string | null;
   readonly comments: readonly TaskComment[];
 
-  /**
-   * Only the files that belong to no comment. Everything else hangs off the comment it was posted
-   * with, so the thread draws each file once.
-   */
+  /** Only the files belonging to no comment, so the thread draws each file exactly once. */
   readonly attachments: readonly TaskAttachment[];
 }
 
@@ -224,11 +207,9 @@ export interface MoveTaskRequest {
   readonly targetIndex: number;
 
   /**
-   * The sprint the board was scoped to, or omitted for the whole board.
-   *
-   * Not where the task is going — a move never changes a task's sprint. It tells the server what
-   * `targetIndex` was counted against: on a scoped board the user only sees some of a column's
-   * cards, so "third" means the third visible one. The server translates.
+   * The sprint the board was scoped to, or omitted for the whole board. Not where the task is
+   * going — a move never changes a task's sprint. It says what `targetIndex` was counted against:
+   * on a scoped board "third" means the third *visible* card, and the server translates.
    */
   readonly sprintId?: number | null;
 }

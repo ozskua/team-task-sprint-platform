@@ -24,8 +24,10 @@ public static class StartupValidationExtensions
         if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.Length < 32)
         {
             throw new InvalidOperationException(
-                "Configuration 'Jwt:Key' is missing or shorter than 32 characters. " +
-                "Set it in appsettings.Development.json locally, or as an environment variable in production.");
+                "Configuration 'Jwt:Key' is missing or shorter than 32 characters. It is deliberately "
+                + "absent from every committed file: set it with 'dotnet user-secrets set \"Jwt:Key\" "
+                + "<value> --project SprintFlow.Web.Server', or as the environment variable Jwt__Key. "
+                + "The realtime service must be given the same value.");
         }
 
         if (string.IsNullOrWhiteSpace(jwt.Issuer) || string.IsNullOrWhiteSpace(jwt.Audience))

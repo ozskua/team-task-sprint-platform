@@ -14,7 +14,9 @@ export const ADMIN_NAVIGATION: readonly NavItem[] = [
   { label: 'Teams', path: '/admin/teams' },
   // Below Teams: a sprint belongs to a board, and a board is what a team is, so the two read
   // together. The page surveys every board's sprints; creating one stays on the board itself.
-  { label: 'Sprints', path: '/admin/sprints' }
+  { label: 'Sprints', path: '/admin/sprints' },
+  // Admin only, so it appears here and deliberately not in USER_NAVIGATION.
+  { label: 'Sprint Report', path: '/admin/sprint-report' }
 ];
 
 /**

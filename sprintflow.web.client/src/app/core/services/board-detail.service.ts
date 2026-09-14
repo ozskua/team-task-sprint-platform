@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+﻿import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, switchMap, tap } from 'rxjs';
 
@@ -20,12 +20,10 @@ import {
 } from '../models/board-detail-models';
 
 /**
- * Owns the board currently on screen. The signal exists so a create, a move or a rename shows up
- * without a reload — the same approach AreaService uses for the Area list.
+ * Owns the board currently on screen, so a create, a move or a rename shows up without a reload.
  *
- * Everything written into the signal comes from a server response. The two exceptions are the
- * optimistic helpers, which apply a drag immediately and hand back the previous state so the
- * caller can put it back if the request fails.
+ * Everything written into the signal comes from a server response, except the optimistic helpers,
+ * which apply a drag immediately and hand back the previous state so a failed request can undo it.
  */
 @Injectable()
 export class BoardDetailService {
@@ -36,22 +34,18 @@ export class BoardDetailService {
   readonly board = this.boardState.asReadonly();
 
   /**
-   * The sprint the loaded state is actually showing, or `null` when it is showing none.
+   * The sprint the loaded state is actually showing, or `null`.
    *
-   * Taken from the **response**, not from what was asked for: the kanban usually names no sprint
-   * and lets the server pick the one running today, so the request says nothing about which sprint
-   * is on screen. Creating a task and dragging a card both read this, and both would be wrong if it
-   * echoed the request instead of the answer.
+   * Taken from the **response**, not the request: the kanban usually names no sprint and lets the
+   * server pick the one running today. Creating a task and dragging a card both read this.
    */
   private readonly scopeState = signal<number | null>(null);
 
   readonly scope = this.scopeState.asReadonly();
 
   /**
-   * Whether the loaded state is the board's complete inventory rather than one sprint's tasks.
-   *
-   * Remembered because a re-read after a write has to happen in the same mode: reloading the
-   * backlog as a kanban would empty it down to the active sprint.
+   * Whether the loaded state is the board's whole inventory rather than one sprint's tasks.
+   * Remembered because a re-read after a write must happen in the same mode.
    */
   private readonly allTasksState = signal(false);
 
@@ -60,13 +54,10 @@ export class BoardDetailService {
   }
 
   /**
-   * Loads the board for the kanban: one sprint's tasks.
+   * Loads the board for the kanban: one sprint's tasks. Naming none lets the server use whichever
+   * sprint is running today, and a board with none comes back with its columns and no cards.
    *
-   * Naming a sprint shows that one. Naming none lets the server use whichever sprint is running
-   * today — and if none is, the board comes back with its columns and no cards, which is the
-   * honest state of a board with nothing in progress.
-   *
-   * Either way the columns are the same. The sprint is a filter over one kanban, never a second one.
+   * Either way the columns are the same: the sprint is a filter over one kanban, never a second one.
    */
   load(boardId: number, sprintId?: number | null): Observable<BoardDetail> {
     const options = sprintId == null
@@ -79,10 +70,8 @@ export class BoardDetailService {
   }
 
   /**
-   * Loads the board for the backlog: every task, whatever sprint it is in or is not.
-   *
-   * Asked for explicitly rather than by leaving the sprint out, because leaving it out now means
-   * "whatever is running today" — the backlog has to say it wants the whole inventory.
+   * Loads the board for the backlog: every task, in a sprint or not. Asked for explicitly, because
+   * leaving the sprint out now means "whatever is running today".
    */
   loadAllTasks(boardId: number): Observable<BoardDetail> {
     return this.http
@@ -93,11 +82,8 @@ export class BoardDetailService {
   }
 
   /**
-   * Re-reads the board the same way it was read before.
-   *
-   * What every write does after it succeeds. The mode has to be carried over: reloading the backlog
-   * as a kanban would cut it down to one sprint, and reloading a kanban as the backlog would fill
-   * it with tasks the user had filtered out.
+   * Re-reads the board the same way it was read before — what every write does once it succeeds.
+   * The mode must carry over, or the backlog comes back cut down to one sprint and back again.
    */
   reload(boardId: number): Observable<BoardDetail> {
     return this.allTasksState()
@@ -164,18 +150,14 @@ export class BoardDetailService {
   }
 
   /**
-   * The same move, followed by a re-read of the whole board.
-   *
-   * For the callers that pick a status from a list rather than dragging a card: there is nothing on
-   * screen to roll back, and reloading is the only way to be sure the positions in every other
-   * column match what the server decided.
+   * The same move followed by a re-read, for callers that pick a status from a list rather than
+   * dragging: there is nothing on screen to roll back, and only a reload proves the other columns.
    */
   moveTaskAndReload(
     boardId: number,
     taskId: number,
     request: MoveTaskRequest): Observable<BoardDetail> {
-    // Reloaded the same way the page was read, so it comes back showing what it was showing before.
-    // The backlog is the main caller here, and it must not come back as a kanban.
+    // Reloaded the same way the page was read: the backlog must not come back as a kanban.
     return this.moveTask(taskId, request)
       .pipe(switchMap(() => this.reload(boardId)));
   }
@@ -193,7 +175,7 @@ export class BoardDetailService {
   // --- The task card ------------------------------------------------------
   //
   // Read on its own rather than from the board signal: the card carries comments and attachments,
-  // which the board's own response has no reason to load for every card on screen.
+  // which the board has no reason to load for every card on screen.
 
   taskDetail(taskId: number): Observable<TaskDetail> {
     return this.http.get<TaskDetail>(`${environment.apiBaseUrl}/tasks/${taskId}`);
@@ -210,10 +192,8 @@ export class BoardDetailService {
   }
 
   /**
-   * Sent as multipart form data under the field name the server binds, `file`.
-   *
-   * `commentId` names the comment the file was posted with, so the thread can draw it under that
-   * message. Left out for a file attached to the task on its own.
+   * Multipart form data under the field name the server binds, `file`. `commentId` names the comment
+   * the file was posted with; left out for a file attached to the task on its own.
    */
   uploadAttachment(taskId: number, file: File, commentId?: number): Observable<TaskAttachment> {
     const form = new FormData();
@@ -227,10 +207,7 @@ export class BoardDetailService {
       `${environment.apiBaseUrl}/tasks/${taskId}/attachments`, form);
   }
 
-  /**
-   * Fetched rather than linked: every API call carries a bearer token, and a plain anchor would
-   * send none — the download would come back 401.
-   */
+  /** Fetched rather than linked: a plain anchor sends no bearer token and would come back 401. */
   downloadAttachment(taskId: number, attachmentId: number): Observable<Blob> {
     return this.http.get(
       `${environment.apiBaseUrl}/tasks/${taskId}/attachments/${attachmentId}`,
@@ -248,10 +225,7 @@ export class BoardDetailService {
     return this.http.put(`${this.baseUrl}/${boardId}`, request);
   }
 
-  /**
-   * Deletes the board and everything under it. Nothing is patched locally afterwards — the caller
-   * navigates away, because the page this state describes no longer exists.
-   */
+  /** Deletes the board and everything under it. The caller navigates away rather than patching. */
   deleteBoard(boardId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${boardId}`);
   }
@@ -284,10 +258,7 @@ export class BoardDetailService {
 
   // --- Optimistic helpers -------------------------------------------------
 
-  /**
-   * Shows the move straight away and returns the state as it was, so a failed request can put the
-   * card back exactly where the user picked it up from.
-   */
+  /** Shows the move at once and returns the previous state, so a failure can put the card back. */
   applyTaskMove(taskId: number, targetColumnId: number, targetIndex: number): BoardDetail | null {
     const previous = this.boardState();
 
@@ -322,10 +293,7 @@ export class BoardDetailService {
     return previous;
   }
 
-  /**
-   * Shows a custom-column reorder straight away. The system columns are not moved here either —
-   * they keep the places the server pins them to.
-   */
+  /** Shows a custom-column reorder at once. System columns keep the places the server pins them to. */
   applyColumnReorder(orderedCustomIds: readonly number[]): BoardDetail | null {
     const previous = this.boardState();
 
@@ -382,8 +350,8 @@ export class BoardDetailService {
   }
 
   private insertColumn(created: BoardColumn): void {
-    // Placed before Completed, which is where the server puts it. Positions are taken from the
-    // rebuilt order rather than invented, so the two cannot drift apart.
+    // Before Completed, where the server puts it. Positions come from the rebuilt order rather
+    // than being invented, so the two cannot drift apart.
     this.mutate(board => {
       const head = board.columns.filter(column => column.systemKind === null || column.systemKind === 'ToDo');
       const tail = board.columns.filter(

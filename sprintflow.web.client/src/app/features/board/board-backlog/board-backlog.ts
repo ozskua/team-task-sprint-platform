@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -23,14 +23,11 @@ interface BacklogRow {
 }
 
 /**
- * Every task on one board, as a list.
+ * Every task on one board, as a list. Same board, same endpoint and same actions as the kanban —
+ * only the shape differs. A kanban answers "what is the state of the work"; this answers "where is
+ * that one task".
  *
- * The same board, the same endpoint and the same actions as the kanban — only the shape is
- * different. A kanban answers "what is the state of the work"; this answers "where is that one
- * task", which is a question a wall of columns is bad at.
- *
- * Completed and Cancelled are two ordinary rows' worth of status here. Sharing a lane is a drawing
- * decision on the kanban and has no meaning in a list.
+ * Completed and Cancelled are ordinary statuses here: sharing a lane is a kanban drawing decision.
  */
 @Component({
   selector: 'app-board-backlog',
@@ -68,10 +65,7 @@ export class BoardBacklog {
   /** Every status a task can be given, in the board's own column order. */
   protected readonly columns = computed<readonly BoardColumn[]>(() => this.board()?.columns ?? []);
 
-  /**
-   * Flattened in column order, then by position within the column — so the list reads the way the
-   * board does. The endpoint is board-scoped, so nothing from another board can appear here.
-   */
+  /** Flattened in column order, then by position, so the list reads the way the board does. */
   protected readonly rows = computed<readonly BacklogRow[]>(() =>
     this.columns()
       .slice()
@@ -81,10 +75,7 @@ export class BoardBacklog {
         .sort((left, right) => left.position - right.position)
         .map(task => ({ task, column }))));
 
-  /**
-   * The rows as the shared table takes them. The board's own model keeps the task and the column it
-   * sits in side by side; the table wants one flat row, so the two are folded together here.
-   */
+  /** The board's model keeps task and column side by side; the shared table wants one flat row. */
   protected readonly taskRows = computed<readonly TaskTableRow[]>(() =>
     this.rows().map(({ task, column }) => ({
       taskId: task.taskId,
@@ -159,11 +150,9 @@ export class BoardBacklog {
   }
 
   /**
-   * Puts a task into a sprint, or takes it out when "No sprint" is chosen.
-   *
-   * Not optimistic, for the same reason the status selector is not: there is nothing following a
-   * pointer, so waiting for the server is both simpler and more truthful. The response carries the
-   * task as it now stands and the service swaps it into the local copy, so no reload is needed.
+   * Puts a task into a sprint, or takes it out. Not optimistic, like the status selector: nothing
+   * follows a pointer here, so waiting for the server is simpler and more truthful. The response
+   * carries the task as it now stands, so no reload is needed.
    */
   protected onSprintChange(task: BoardTask, value: string): void {
     // '' is the "No sprint" option; anything else is an id.
@@ -186,7 +175,7 @@ export class BoardBacklog {
         error: () => {
           this.setAssigningSprint(task.taskId, false);
           // The select still shows what the user picked, so the board is re-read to put the real
-          // value back rather than leaving the row describing something that did not happen.
+          // value back.
           this.reload();
           this.actionError.set('That task could not be moved to that sprint.');
         }
@@ -226,9 +215,8 @@ export class BoardBacklog {
   }
 
   /**
-   * The row's status selector. Nothing is shown optimistically: there is no card following a
-   * pointer here, so waiting for the server and re-reading is both simpler and more truthful than
-   * guessing where the task landed.
+   * The row's status selector. Nothing is optimistic: no card follows a pointer here, so waiting and
+   * re-reading beats guessing where the task landed.
    */
   protected onStatusChange(task: BoardTask, value: string): void {
     const targetColumnId = Number(value);
@@ -261,8 +249,8 @@ export class BoardBacklog {
         next: () => this.setMoving(task.taskId, false),
         error: () => {
           this.setMoving(task.taskId, false);
-          // The select still shows the status the user picked, so the reload below puts the real
-          // one back rather than leaving the row describing something that did not happen.
+          // The select still shows the status the user picked, so the reload puts the real one
+          // back.
           this.reload();
           this.actionError.set('That task could not be moved.');
         }

@@ -1,4 +1,6 @@
+using SprintFlow.Web.Server.Common;
 using SprintFlow.Web.Server.Common.Enums;
+using SprintFlow.Web.Server.DTOs.AdminSprintReport;
 using SprintFlow.Web.Server.DTOs.Sprints;
 using SprintFlow.Web.Server.Models;
 
@@ -72,6 +74,35 @@ public static class SprintMappings
             task.Participants.Select(participant => participant.User.FullName).FirstOrDefault(),
             task.CreatedByUser.FullName,
             task.CreatedDate);
+
+    /// <summary>
+    /// A row of the admin sprint report. Requires the same includes as the system-wide list.
+    /// </summary>
+    /// <remarks>
+    /// The outcome is passed in for the same reason the task count is: it comes from a second query,
+    /// and working out what it means is the service's job.
+    /// </remarks>
+    public static SprintReportRowDto ToReportRowDto(
+        this Sprint sprint,
+        SprintStatus status,
+        SprintTaskOutcome outcome)
+        => new(
+            sprint.SprintId,
+            sprint.BoardId,
+            sprint.Board.Name,
+            sprint.Board.AreaId,
+            sprint.Board.Area.Name,
+            sprint.Name,
+            sprint.StartDate,
+            sprint.EndDate,
+            status.ToString(),
+            outcome.Total,
+            outcome.CompletedCount,
+            outcome.CompletedPercent,
+            outcome.CancelledCount,
+            outcome.CancelledPercent,
+            outcome.OngoingCount,
+            outcome.OngoingPercent);
 
     /// <summary>Requires <c>Include(s =&gt; s.Board)</c> and <c>Include(s =&gt; s.CreatedByUser)</c>.</summary>
     public static SprintDetailResponseDto ToDetailResponseDto(

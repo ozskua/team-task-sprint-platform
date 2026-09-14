@@ -4,8 +4,8 @@ using SprintFlow.Web.Server.Models;
 namespace SprintFlow.Web.Server.Data;
 
 /// <summary>
-/// EF Core context for SprintFlow. Only the two tables authentication needs exist so far; the
-/// remaining tables arrive with their own features.
+/// EF Core context for SprintFlow. This application owns the schema and every migration; the
+/// notification service writes the Notifications table through a narrow model of its own.
 /// </summary>
 public class SprintFlowDbContext : DbContext
 {

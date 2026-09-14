@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using SprintFlow.Web.Server.Authentication;
@@ -18,10 +18,10 @@ public static class ServiceCollectionExtensions
     // Namespaces every key this application stores in Redis.
     private const string RedisInstanceName = "sprintflow:";
 
-    // Applied to connecting AND to running a command. The client does not abort when it cannot
-    // connect - it queues the command and waits - so a stopped Redis failed on the command timeout,
-    // not the connect one: two five-second waits per summary was where ~11s came from. Half a
-    // second is ~1000x what a local Redis needs, and giving up early is only a cache miss.
+    // Applied to connecting AND to running a command: the client queues a command rather than
+    // aborting, so a stopped Redis failed on the command timeout, not the connect one — two
+    // five-second waits per summary. Half a second is far more than a local Redis needs, and giving
+    // up early is only a cache miss.
     private const int RedisTimeoutMilliseconds = 500;
 
     /// <summary>
@@ -37,16 +37,13 @@ public static class ServiceCollectionExtensions
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<InvitationOptions>(configuration.GetSection(InvitationOptions.SectionName));
 
-        // Stateless and thread-safe: one instance each.
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
 
-        // Scoped, because they sit on top of the scoped DbContext.
         services.AddScoped<UserRepository>();
         services.AddScoped<AuthService>();
 
-        // Registration lives here rather than with the feature services: an invitation exists only
-        // to create an account, so it belongs with the rest of signing in.
+        // An invitation exists only to create an account, so it belongs with signing in.
         services.AddScoped<InvitationRepository>();
         services.AddScoped<InvitationService>();
 
@@ -80,10 +77,8 @@ public static class ServiceCollectionExtensions
                 {
                     OnMessageReceived = context =>
                     {
-                        // A WebSocket handshake cannot carry an Authorization header, so the SignalR
-                        // client sends the token in the query string instead. Read only for the hub
-                        // paths: everything else keeps taking the header and nothing about how the
-                        // REST endpoints authenticate changes.
+                        // A WebSocket handshake cannot carry an Authorization header, so the client
+                        // sends the token in the query string. Hub paths only.
                         var accessToken = context.Request.Query["access_token"];
 
                         if (!string.IsNullOrEmpty(accessToken)
@@ -126,34 +121,27 @@ public static class ServiceCollectionExtensions
         services.AddStackExchangeRedisCache(options =>
         {
             // Parsed rather than assigned to options.Configuration: the address belongs in
-            // configuration, but how the client behaves belongs here. The connection string lives in
-            // the git-ignored appsettings.Development.json, so timeouts written there would be lost.
+            // configuration, but how the client behaves belongs here.
             var redis = ConfigurationOptions.Parse(connectionString);
 
             redis.ConnectTimeout = RedisTimeoutMilliseconds;
 
-            // The one that actually bounds a request when Redis is stopped. AsyncTimeout is what
-            // the cache's own Get/Set run under; SyncTimeout is set to match so the two cannot
-            // drift apart, since AsyncTimeout takes its default from it.
+            // AsyncTimeout is what the cache's Get/Set run under and is what actually bounds a
+            // request when Redis is stopped. SyncTimeout matches so the two cannot drift apart.
             redis.SyncTimeout = RedisTimeoutMilliseconds;
             redis.AsyncTimeout = RedisTimeoutMilliseconds;
 
             options.ConfigurationOptions = redis;
 
-            // Prefixes every key this application writes, so a Redis instance shared with anything
-            // else stays legible and nothing can collide. Cache keys themselves are built by the
-            // classes that own them.
+            // Prefixes every key, so a shared Redis instance stays legible and nothing collides.
             options.InstanceName = RedisInstanceName;
         });
 
-        // Singleton: it holds no per-request state and depends only on singletons — the same reason
-        // IApplicationClock is one.
         services.AddSingleton<IBoardSummaryCache, BoardSummaryCache>();
         services.AddSingleton<IAdminDashboardCache, AdminDashboardCache>();
 
-        // Registered here rather than with the feature services because its only job is to keep the
-        // cache above warm. Unlike the board summary, nothing invalidates that entry — this timer is
-        // the only thing that writes it.
+        // Its only job is to keep the cache above warm: nothing invalidates that entry, so this
+        // timer is the only thing that writes it.
         services.AddHostedService<AdminDashboardRefreshService>();
 
         return services;
@@ -181,16 +169,14 @@ public static class ServiceCollectionExtensions
                 + "Use the literal address rather than 'localhost': that name resolves to ::1 first, which nothing is listening on.");
         }
 
-        // Singletons: one connection for the whole application, and one publisher each holding one
-        // channel on it. Opening a connection per message is the classic misuse of this client —
-        // see RabbitMqConnection.
+        // Singletons: one connection for the application, one channel per publisher. Opening a
+        // connection per message is the classic misuse of this client — see RabbitMqConnection.
         services.AddSingleton<RabbitMqConnection>();
         services.AddSingleton<NotificationEventPublisher>();
         services.AddSingleton<BoardEventPublisher>();
 
-        // No consumer is registered here any more. This application publishes and nothing else:
-        // the notification service drains sprintflow.notifications and the realtime service drains
-        // sprintflow.realtime, each in its own process.
+        // No consumer here: this application publishes and nothing else. The notification and
+        // realtime services drain their own queues, each in its own process.
 
         return services;
     }
@@ -214,7 +200,6 @@ public static class ServiceCollectionExtensions
                 + "this repository, where task attachments are stored. The folder is created if missing.");
         }
 
-        // Repositories: one per area of the schema rather than one per table.
         services.AddScoped<BoardRepository>();   // areas, boards, teams, columns
         services.AddScoped<TaskRepository>();    // tasks and their assignments
         services.AddScoped<SprintRepository>();
@@ -227,11 +212,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<DashboardService>();
         services.AddScoped<NotificationService>();
 
-        // Singleton: it resolves the configured timezone once and then only reads the clock.
         services.AddSingleton<IApplicationClock, ApplicationClock>();
 
-        // Singleton for the same reason: it resolves the attachment folder once and then only
-        // reads and writes files in it.
         services.AddSingleton<AttachmentStorage>();
 
         return services;

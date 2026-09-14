@@ -1,4 +1,4 @@
-import {
+﻿import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -22,15 +22,12 @@ const ATTACHMENT_REFUSED =
   + 'eklenebilir.';
 
 /**
- * The task's thread: every comment, the files posted with each one, and the box for writing the
- * next message.
+ * The task's thread: every comment, the files posted with each one, and the box for the next
+ * message. One section rather than two, because a file is almost always about something someone
+ * said — `looseAttachments` exists only for files uploaded before comments could carry them.
  *
- * One section rather than two, because a file is almost always about something someone said. A file
- * uploaded before comments could carry them has no message of its own and is shown on its own line,
- * which is the only reason `looseAttachments` exists.
- *
- * The list is passed in — the card already loaded it — and every change is emitted back, because
- * the card owns the task. Nothing here re-reads the task.
+ * The list is passed in and every change is emitted back: the card owns the task, and nothing here
+ * re-reads it.
  */
 @Component({
   selector: 'app-task-comments',
@@ -71,10 +68,8 @@ export class TaskComments {
   protected readonly canSubmit = computed(() => !this.saving() && this.text().trim().length > 0);
 
   /**
-   * Who is signed in.
-   *
-   * A session stored before the server sent the id has none, so no delete control is offered rather
-   * than all of them — and the server refuses another author's comment either way.
+   * Who is signed in. A session stored before the server sent the id has none, so no delete control
+   * is offered rather than all of them — and the server refuses another author's comment anyway.
    */
   private readonly ownUserId = this.auth.userId;
 
@@ -102,10 +97,8 @@ export class TaskComments {
   }
 
   /**
-   * Enter sends; Shift+Enter is a newline.
-   *
-   * Angular builds the modifier into the event name, so `keydown.enter` never fires for
-   * `shift.enter` — the textarea keeps its default behaviour, and no modifier check is needed here.
+   * Enter sends; Shift+Enter is a newline. Angular builds the modifier into the event name, so
+   * `keydown.enter` never fires for `shift.enter` and no modifier check is needed here.
    */
   protected onEnterKey(event: Event): void {
     event.preventDefault();
@@ -128,16 +121,14 @@ export class TaskComments {
   }
 
   /**
-   * One message, however many requests it takes.
-   *
-   * The comment is written first, then the file is attached to it. If the file fails the comment is
-   * kept — it was said, and discarding it to report a failed upload would lose more than it
-   * explains — and the failure is reported against the file alone.
+   * One message, however many requests it takes: the comment is written first, then the file is
+   * attached to it. If the file fails the comment is kept — it was said — and the failure is
+   * reported against the file alone.
    */
   protected submit(): void {
     const content = this.text().trim();
 
-    // Whitespace alone is not a comment. The server rejects it too; stopping here saves a round trip.
+    // Whitespace alone is not a comment. The server rejects it too; this saves a round trip.
     if (content.length === 0 || this.saving()) {
       return;
     }
@@ -229,10 +220,7 @@ export class TaskComments {
       });
   }
 
-  /**
-   * Fetched as a blob and handed to the browser, because the request needs its bearer token and a
-   * plain link would carry none.
-   */
+  /** Fetched as a blob: the request needs its bearer token and a plain link would carry none. */
   protected download(attachment: TaskAttachment): void {
     if (this.busyAttachmentId() !== null) {
       return;

@@ -30,6 +30,14 @@ const routes: Routes = [
         path: 'sprints',
         loadChildren: () => import('../features/sprints/sprints-module').then(m => m.SprintsModule)
       },
+      // Admin-only by living here: the whole /admin branch is behind authGuard and adminGuard, and
+      // the endpoint behind it checks the caller's id as well.
+      {
+        path: 'sprint-report',
+        loadChildren: () =>
+          import('../features/admin/sprint-report/sprint-report-module')
+            .then(m => m.SprintReportModule)
+      },
       // The same feature module the user shell loads. A board looks and behaves identically in
       // both; only the URL differs, because each shell owns its own prefix.
       //

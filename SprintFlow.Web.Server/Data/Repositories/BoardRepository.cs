@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SprintFlow.Web.Server.Common.Enums;
 using SprintFlow.Web.Server.Models;
 
@@ -51,7 +51,7 @@ public class BoardRepository
     {
         context.Boards.Add(board);
 
-        // One save for the board, its team and its columns. EF wraps a single save in a
+        // One save for the board, its team and its columns: EF wraps a single save in a
         // transaction, so a board can never exist without them.
         await context.SaveChangesAsync(cancellationToken);
 
@@ -94,12 +94,12 @@ public class BoardRepository
         => context.Boards
             .AsNoTracking()
             .Include(b => b.CreatedByUser)
-            // The filter is repeated on every chain because EF refuses a repeated navigation that
-            // is filtered differently. One predicate, three answers: all tasks (backlog), one
-            // sprint's tasks (kanban), or none when no sprint is running.
+            // Repeated on every chain because EF refuses a repeated navigation filtered
+            // differently. One predicate, three answers: all tasks (backlog), one sprint's tasks
+            // (kanban), or none when no sprint is running.
             //
-            // Only tasks are filtered — never the columns. A sprint with nothing in Testing still
-            // has a Testing column, and that is what keeps one kanban per board.
+            // Only tasks are filtered, never the columns: a sprint with nothing in Testing still has
+            // a Testing column, and that is what keeps one kanban per board.
             .Include(b => b.WorkflowColumns)
                 .ThenInclude(c => c.Tasks.Where(t => allTasks || (sprintId != null && t.SprintId == sprintId)))
                     .ThenInclude(t => t.CreatedByUser)
@@ -166,8 +166,8 @@ public class BoardRepository
         int boardId,
         CancellationToken cancellationToken)
         => context.WorkflowColumns
-            // Tracked: the caller rewrites Position on these instances. Ties broken by id so the
-            // order is deterministic between a create and the renumber that follows it.
+            // Tracked: the caller rewrites Position on these instances. Ties broken by id so a
+            // create and the renumber that follows it agree.
             .Where(c => c.BoardId == boardId)
             .OrderBy(c => c.Position)
             .ThenBy(c => c.WorkflowColumnId)

@@ -1,5 +1,7 @@
+﻿using SprintFlow.Web.Server.Common;
 using SprintFlow.Web.Server.Common.Enums;
 using SprintFlow.Web.Server.Data.Repositories;
+using SprintFlow.Web.Server.DTOs.AdminSprintReport;
 using SprintFlow.Web.Server.DTOs.Sprints;
 using SprintFlow.Web.Server.Mappings;
 using SprintFlow.Web.Server.Models;
@@ -11,16 +13,13 @@ namespace SprintFlow.Web.Server.Services;
 /// of them may cover the same day.
 /// </summary>
 /// <remarks>
-/// That rule cannot be a database constraint. A unique index compares values for equality, and two
-/// overlapping intervals are not equal — <c>[01 Sep, 15 Sep)</c> and <c>[10 Sep, 20 Sep)</c> are
-/// different pairs. A CHECK constraint cannot help either, because it only sees the row being
-/// written and the rule is about the other rows. SQL Server has no interval-exclusion constraint.
+/// That rule cannot be a database constraint: a unique index compares values for equality and two
+/// overlapping intervals are not equal, while a CHECK constraint only sees the row being written.
+/// SQL Server has no interval-exclusion constraint.
 /// <para>
-/// So it is enforced the way the project already enforces every other rule that depends on reading
-/// rows before writing one: inside <c>RunBoardOrderingAsync</c>, which holds an exclusive lock on
-/// the board's row. Two requests creating overlapping sprints on one board are serialised by it, and
-/// the second one's check sees the first one's committed row. The scope of the rule is the board,
-/// and the board's row is the lock, so the two match exactly.
+/// So it is enforced the way every other read-before-write rule here is: inside
+/// <c>RunBoardOrderingAsync</c>, which holds an exclusive lock on the board's row. The scope of the
+/// rule is the board and the board's row is the lock, so the two match exactly.
 /// </para>
 /// </remarks>
 public class SprintService
@@ -56,10 +55,8 @@ public class SprintService
             return (CreateSprintOutcome.BoardNotFound, null);
         }
 
-        // Checked before the lock is taken: it reads nothing but the request, so holding the board
-        // to decide it would make every other request on that board wait for no reason. The database
-        // refuses it too — CK_Sprints_EndAfterStart — so this check is what makes it a clear 400
-        // rather than the constraint being the thing that reports it.
+        // Checked before the lock: it reads nothing but the request. The database refuses it too
+        // (CK_Sprints_EndAfterStart); this check is what makes it a clear 400.
         if (request.EndDate <= request.StartDate)
         {
             return (CreateSprintOutcome.EndNotAfterStart, null);
@@ -69,8 +66,8 @@ public class SprintService
             boardId,
             async token =>
             {
-                // Read inside the lock. Asked before it was held, the answer could already be stale
-                // by the time the insert ran — which is the whole failure this guards against.
+                // Read inside the lock: asked before it was held, the answer could be stale by the
+                // time the insert ran.
                 if (await sprintRepository.OverlapsAsync(
                         boardId, request.StartDate, request.EndDate, token))
                 {
@@ -81,17 +78,12 @@ public class SprintService
                 {
                     BoardId = boardId,
 
-                    // Stored without surrounding whitespace. A name that is only whitespace never
-                    // reaches here — [Required] rejects it.
                     Name = request.Name.Trim(),
 
-                    // Whole days, straight through. There is no time component to strip: the
-                    // property is a DateOnly and the column is a date.
                     StartDate = request.StartDate,
                     EndDate = request.EndDate,
 
-                    // From the caller's token. The request DTO has no property for it, so nothing a
-                    // client sends can influence this.
+                    // From the caller's token; no request DTO property can influence it.
                     CreatedByUserId = createdByUserId
 
                     // CreatedDate is intentionally not set; the database default supplies it.
@@ -110,12 +102,10 @@ public class SprintService
             return (outcome, null);
         }
 
-        // The board has one more sprint, counted by the summary as active, upcoming or archived
-        // depending on where today falls in it.
         await summaryCache.RemoveAsync(boardId, cancellationToken);
 
-        // Read back outside the lock: the row is committed by now, and assembling a response is not
-        // work the board needs to be held for.
+        // Read back outside the lock: the row is committed, and assembling a response is not work
+        // the board needs to be held for.
         return (outcome, await ReadBackAsync(sprintId.Value, cancellationToken));
     }
 
@@ -133,8 +123,8 @@ public class SprintService
         // One grouped query for the whole list rather than a count per sprint.
         var taskCounts = await taskRepository.CountByBoardSprintAsync(boardId, cancellationToken);
 
-        // Read once, so every row in one response is judged against the same day. Asking for it per
-        // sprint could straddle midnight and report two sprints inconsistently.
+        // Read once, so every row in one response is judged against the same day — asking per
+        // sprint could straddle midnight.
         var today = clock.Today();
 
         return sprints
@@ -150,8 +140,8 @@ public class SprintService
     {
         var sprints = await sprintRepository.GetAllWithBoardAsync(cancellationToken);
 
-        // One grouped query for every sprint's task count rather than one count per sprint, so the
-        // page costs two round trips whatever the number of boards.
+        // One grouped query for every sprint's count, so the page costs two round trips whatever
+        // the number of boards.
         var taskCounts = await taskRepository.CountBySprintAsync(cancellationToken);
 
         // Read once, so every row in one response is judged against the same day.
@@ -164,6 +154,62 @@ public class SprintService
                 taskCounts.GetValueOrDefault(sprint.SprintId)))
             .ToList();
     }
+
+    /// <summary>
+    /// Every sprint in the system with its outcome: how much was completed, how much was cancelled
+    /// and how much is still open. Read by the admin sprint report.
+    /// </summary>
+    /// <remarks>
+    /// Two round trips whatever the number of sprints — the sprints with their board and area, then
+    /// one grouped query for the whole breakdown. No task row is loaded.
+    /// </remarks>
+    public async Task<IReadOnlyList<SprintReportRowDto>> GetReportAsync(
+        CancellationToken cancellationToken)
+    {
+        var sprints = await sprintRepository.GetAllWithBoardAsync(cancellationToken);
+
+        var counts = await taskRepository.CountBySprintAndColumnKindAsync(cancellationToken);
+
+        var bySprint = counts
+            .GroupBy(row => row.SprintId)
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<SprintColumnKindCount>)[.. group]);
+
+        // Read once, so every row in one response is judged against the same day.
+        var today = clock.Today();
+
+        return sprints
+            // Newest first: the report is read to see how the most recent sprints went. The
+            // repository orders by area and board for the sprint list that shares it, so the order
+            // is changed here rather than there.
+            .OrderByDescending(sprint => sprint.StartDate)
+            .ThenByDescending(sprint => sprint.SprintId)
+            .Select(sprint => sprint.ToReportRowDto(
+                StatusOf(sprint, today),
+                // Absent means none, not missing: a sprint nobody has put a task into yet.
+                OutcomeOf(bySprint.GetValueOrDefault(sprint.SprintId, []))))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Splits one sprint's counts into completed, cancelled and still open.
+    /// </summary>
+    /// <remarks>
+    /// The column is what says which of the three a task is; the task itself carries no status. This
+    /// is the same rule the dashboard and the board summary count by. Ongoing is taken as the
+    /// remainder rather than as "To Do plus custom" so the three always add up to the sprint's own
+    /// total — a column kind added later is still open work and lands there by construction.
+    /// </remarks>
+    private static SprintTaskOutcome OutcomeOf(IReadOnlyList<SprintColumnKindCount> rows)
+    {
+        var total = rows.Sum(row => row.Count);
+        var completed = CountKind(rows, SystemColumnKind.Completed);
+        var cancelled = CountKind(rows, SystemColumnKind.Cancelled);
+
+        return SprintTaskOutcome.From(completed, cancelled, total - completed - cancelled);
+    }
+
+    private static int CountKind(IReadOnlyList<SprintColumnKindCount> rows, SystemColumnKind kind)
+        => rows.Where(row => row.SystemKind == kind).Sum(row => row.Count);
 
     public async Task<SprintDetailResponseDto?> GetAsync(int sprintId, CancellationToken cancellationToken)
     {
@@ -202,8 +248,7 @@ public class SprintService
     {
         var sprint = await sprintRepository.GetDetailAsync(sprintId, cancellationToken);
 
-        // Belonging to another board is refused exactly as not existing is: a caller scoping this
-        // board has no business naming a sprint from a different one.
+        // Belonging to another board is refused exactly as not existing is.
         if (sprint is null || sprint.BoardId != boardId)
         {
             return null;
@@ -227,8 +272,7 @@ public class SprintService
             return null;
         }
 
-        // Active by definition — it was selected by containing today — so the status is not
-        // re-derived from a second reading of the clock.
+        // Active by definition: it was selected by containing today.
         return sprint.ToResponseDto(
             SprintStatus.Active,
             await taskRepository.CountInSprintAsync(sprint.SprintId, cancellationToken));
@@ -236,8 +280,7 @@ public class SprintService
 
     /// <summary>
     /// Where a sprint sits relative to today. Worked out on every read rather than stored: a sprint
-    /// becomes archived because the calendar moved, and nothing in this project runs on a schedule
-    /// to notice that.
+    /// becomes archived because the calendar moved, and nothing here runs on a schedule to notice.
     /// </summary>
     /// <remarks>
     /// The end day is excluded, so a sprint is already archived on its own <c>EndDate</c> — the last
@@ -262,7 +305,7 @@ public class SprintService
         var saved = await sprintRepository.GetDetailAsync(sprintId, cancellationToken)
             ?? throw new InvalidOperationException($"Sprint {sprintId} was saved but could not be read back.");
 
-        // Newly created, so it holds no tasks yet. Counting would be a round trip to be told zero.
+        // Newly created, so it holds no tasks: counting would be a round trip to be told zero.
         return saved.ToResponseDto(StatusOf(saved, clock.Today()), 0);
     }
 }

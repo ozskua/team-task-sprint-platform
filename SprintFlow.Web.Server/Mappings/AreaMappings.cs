@@ -19,7 +19,7 @@ public static class AreaMappings
             area.CreatedByUser.FullName,
             area.CreatedDate,
             area.Boards
-                .OrderBy(board => board.BoardId) // Oldest first, so the automatic board leads.
+                .OrderBy(board => board.BoardId) // Oldest first.
                 .Select(board => board.ToResponseDto())
                 .ToList());
 }

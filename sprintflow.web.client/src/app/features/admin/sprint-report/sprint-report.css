@@ -1,0 +1,274 @@
+.report {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+}
+
+.report-section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.metric-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.metric-grid--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* There is no global stylesheet, so the card surface is declared where it is used. */
+.panel {
+    border: 1px solid var(--app-border-card);
+    border-radius: var(--app-radius-card);
+    background-color: var(--app-surface-card);
+    box-shadow: var(--app-shadow-card);
+    overflow: hidden;
+}
+
+/* ---- Table ----------------------------------------------------------------- */
+
+/*
+  One scroll surface with the header stuck to its top, exactly as the dashboard's task table does
+  it. The table keeps its normal display so header and body cells go on sharing column widths.
+*/
+.report-scroll {
+    max-height: 620px;
+    overflow: auto;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+/* Sticky on the cells, not the row, and opaque — or the rows scroll visibly through the header. */
+.report-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--app-border-card);
+    background-color: var(--app-surface-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.report-table td,
+.report-table tbody th {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--app-border-card);
+    vertical-align: middle;
+    text-align: left;
+    font-weight: 400;
+    color: var(--mat-sys-on-surface);
+}
+
+.report-table tbody tr:last-child td,
+.report-table tbody tr:last-child th { border-bottom: 0; }
+
+.report-row:hover td,
+.report-row:hover th { background-color: var(--app-surface-hover); }
+
+.report-col-number,
+.report-col-outcome { white-space: nowrap; }
+
+.report-col-dates { white-space: nowrap; color: var(--mat-sys-on-surface-variant); }
+
+/* ---- The disclosure -------------------------------------------------------- */
+
+.report-name-cell { min-width: 180px; }
+
+.report-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    color: var(--mat-sys-on-surface);
+    cursor: pointer;
+}
+
+.report-toggle:hover { color: var(--app-primary-action); }
+
+.report-toggle:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.report-chevron {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+}
+
+/* ---- Board and area -------------------------------------------------------- */
+
+.report-board { display: block; overflow-wrap: anywhere; }
+
+.report-area {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface-variant);
+    overflow-wrap: anywhere;
+}
+
+/* ---- Figures --------------------------------------------------------------- */
+
+.report-figure { font-weight: 600; }
+
+.report-percent {
+    margin-left: 6px;
+    font-size: 0.8125rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+/* One bar, on completion only: it is the figure the report is read for, and a bar in every column
+   would be three competing marks per row. */
+.report-track {
+    display: block;
+    width: 72px;
+    height: 4px;
+    margin-top: 6px;
+    border-radius: 999px;
+    background-color: var(--app-surface-muted);
+    overflow: hidden;
+}
+
+.report-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background-color: var(--app-primary-action);
+}
+
+/* ---- Status chip ----------------------------------------------------------- */
+
+/* The same pill the Sprints page draws, so a status is recognisable in both places. */
+.status-chip {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background-color: rgba(148, 163, 184, 0.16);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.status-chip--Active {
+    background-color: rgba(37, 99, 235, 0.16);
+    color: #93b4fd;
+}
+
+/* ---- Expanded tasks -------------------------------------------------------- */
+
+.report-detail-row td { background-color: var(--app-surface-muted); }
+
+.report-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.report-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.report-group-title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.report-detail-message {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.report-detail-link {
+    display: inline-block;
+    margin-top: 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--app-primary-action);
+}
+
+.report-detail-link:hover { text-decoration: underline; }
+
+/* ---- States ---------------------------------------------------------------- */
+
+.report-skeleton {
+    display: block;
+    height: 16px;
+    border-radius: 6px;
+    background-color: var(--app-skeleton);
+}
+
+.report-message {
+    padding: 56px 16px;
+    text-align: center;
+}
+
+.report-message-title {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+}
+
+.report-message-hint {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 1023.98px) {
+    .metric-grid--four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767.98px) {
+    .metric-grid--four { grid-template-columns: minmax(0, 1fr); }
+
+    .report-col-board,
+    .report-col-dates { display: none; }
+}

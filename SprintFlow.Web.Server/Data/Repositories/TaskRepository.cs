@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SprintFlow.Web.Server.Models;
 
 namespace SprintFlow.Web.Server.Data.Repositories;
@@ -36,8 +36,7 @@ public class TaskRepository
         => context.TaskItems
             // Tracked on purpose: the caller rewrites Position on these instances.
             .Where(t => t.TaskColumnId == columnId)
-            // Ties broken by id, so two tasks that briefly share a position still order the same
-            // way every time they are read.
+            // Ties broken by id, so a shared position still orders the same way every read.
             .OrderBy(t => t.Position)
             .ThenBy(t => t.TaskId)
             .ToListAsync(cancellationToken);
@@ -89,6 +88,29 @@ public class TaskRepository
     public Task<int> CountInSprintAsync(int sprintId, CancellationToken cancellationToken)
         => context.TaskItems.CountAsync(t => t.SprintId == sprintId, cancellationToken);
 
+    /// <summary>
+    /// Every sprint's task count, split by the kind of column the tasks sit in.
+    /// </summary>
+    /// <remarks>
+    /// One grouped query for the whole system, like <see cref="CountByColumnKindAsync"/> — the sprint
+    /// report needs both dimensions at once, and asking per sprint would be a query per row. No task
+    /// row is loaded; the database returns at most four rows per sprint. A combination with no tasks
+    /// is simply absent, and the caller reads a missing one as zero.
+    /// </remarks>
+    public async Task<IReadOnlyList<SprintColumnKindCount>> CountBySprintAndColumnKindAsync(
+        CancellationToken cancellationToken)
+        => await context.TaskItems
+            .AsNoTracking()
+            // Tasks in no sprint are excluded rather than grouped under a null key: this is a report
+            // about sprints, and "not in any sprint" is not one of them.
+            .Where(t => t.SprintId != null)
+            .GroupBy(t => new { SprintId = t.SprintId!.Value, t.Column.SystemKind })
+            .Select(group => new SprintColumnKindCount(
+                group.Key.SprintId,
+                group.Key.SystemKind,
+                group.Count()))
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyList<TaskItem>> GetBoardTasksForSummaryAsync(
         int boardId,
         CancellationToken cancellationToken)
@@ -109,10 +131,9 @@ public class TaskRepository
             // Cancelled — the task itself carries no status.
             .Include(t => t.Column)
             .Include(t => t.CreatedByUser)
-            // Zero or one — the task's assignee, guaranteed by the unique index on TaskId.
             .Include(t => t.Participants)
                 .ThenInclude(p => p.User)
-            // The order the board itself reads in, so the list and the kanban agree.
+            // The order the kanban reads in, so the list and the board agree.
             .OrderBy(t => t.Column.Position)
             .ThenBy(t => t.Position)
             .ThenBy(t => t.TaskId)
@@ -123,16 +144,12 @@ public class TaskRepository
         CancellationToken cancellationToken)
         => await context.TaskItems
             .AsNoTracking()
-            // Assignment, not authorship. The participation row is the only thing consulted, so a
-            // task this user wrote but does not hold is not theirs and does not appear.
+            // Assignment, not authorship: a task this user wrote but does not hold is not theirs.
             .Where(t => t.Participants.Any(p => p.UserId == userId))
             .Include(t => t.Board)
                 .ThenInclude(b => b.Area)
-            // The column is what says whether a task is To Do, in a custom column, Completed or
-            // Cancelled — the task itself carries no status.
             .Include(t => t.Column)
-            // Grouped the way the page reads: areas together, boards alphabetical inside them, and
-            // within a board the same order as the kanban. Ties broken by id so it never varies.
+            // Areas together, boards alphabetical inside them, kanban order within a board.
             .OrderBy(t => t.Board.Area.Name)
             .ThenBy(t => t.Board.Name)
             .ThenBy(t => t.Column.Position)
@@ -146,16 +163,13 @@ public class TaskRepository
             .AsNoTracking()
             .Include(t => t.Board)
                 .ThenInclude(b => b.Area)
-            // The column is what says whether a task is To Do, in a custom column, Completed or
-            // Cancelled — the task itself carries no status.
             .Include(t => t.Column)
             .Include(t => t.CreatedByUser)
-            // Zero or one — the task's assignee, guaranteed by the unique index on TaskId, so this
-            // collection cannot fan the result set out.
+            // Zero or one, by the unique index on TaskId, so this cannot fan the result set out.
             .Include(t => t.Participants)
                 .ThenInclude(p => p.User)
-            // Newest first: across every board, when a task was created is the only ordering a
-            // reader can follow. Ties broken by id so the list never varies between loads.
+            // Newest first: across every board, creation time is the only ordering a reader can
+            // follow. Ties broken by id so the list never varies between loads.
             .OrderByDescending(t => t.CreatedDate)
             .ThenByDescending(t => t.TaskId)
             .ToListAsync(cancellationToken);
@@ -165,12 +179,7 @@ public class TaskRepository
     /// </summary>
     /// <remarks>
     /// Grouped by the database, so the whole system's totals cost one query returning at most a
-    /// handful of rows — unlike <see cref="GetAllWithDetailsAsync"/>, which loads every task with
-    /// its board, area, column, creator and assignee because the caller draws them.
-    /// <para>
-    /// A kind with no tasks is simply absent from the result; the caller reads a missing kind as
-    /// zero rather than expecting a row for it.
-    /// </para>
+    /// handful of rows. A kind with no tasks is absent from the result and read as zero.
     /// </remarks>
     public async Task<IReadOnlyList<TaskColumnKindCount>> CountByColumnKindAsync(
         CancellationToken cancellationToken)
@@ -181,8 +190,8 @@ public class TaskRepository
 
     public void Add(TaskItem task) => context.TaskItems.Add(task);
 
-    // The participation rows go with it, by cascade. Nothing here deletes them one by one, and
-    // nothing has to tidy up team membership afterwards — it is derived from those rows.
+    // The participation rows go with it by cascade, and team membership is derived from those rows,
+    // so nothing has to be tidied up afterwards.
     public void Remove(TaskItem task) => context.TaskItems.Remove(task);
 
     public Task SaveChangesAsync(CancellationToken cancellationToken)

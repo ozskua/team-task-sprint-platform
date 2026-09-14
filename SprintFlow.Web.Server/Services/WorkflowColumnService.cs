@@ -1,4 +1,4 @@
-using SprintFlow.Web.Server.Common.Enums;
+﻿using SprintFlow.Web.Server.Common.Enums;
 using SprintFlow.Web.Server.Data.Repositories;
 using SprintFlow.Web.Server.DTOs.Columns;
 using SprintFlow.Web.Server.Mappings;
@@ -30,8 +30,7 @@ public class WorkflowColumnService
             return null;
         }
 
-        // Under the board's lock: the existing columns are read and renumbered here, so a second
-        // request must not be reading them at the same time.
+        // Under the board's lock: the existing columns are read and renumbered here.
         return await boardRepository.RunBoardOrderingAsync<WorkflowColumnResponseDto?>(
             boardId,
             async token =>
@@ -42,11 +41,9 @@ public class WorkflowColumnService
                 {
                     BoardId = boardId,
 
-                    // Stored without surrounding whitespace. A name that is only whitespace never
-                    // reaches here — [Required] rejects it.
                     Name = request.Name.Trim(),
 
-                    // Always custom. There is no way to create a system column after the board exists.
+                    // Always custom: a system column cannot be created after the board exists.
                     SystemKind = null
 
                     // CreatedDate is intentionally not set; the database default supplies it.
@@ -59,12 +56,10 @@ public class WorkflowColumnService
                 columns.Add(column);
                 ApplyCanonicalOrder(columns);
 
-                // One save for the insert and every changed position, so the board is never briefly
-                // ordered in a way no rule allows.
+                // One save for the insert and every changed position, so the board is never
+                // briefly ordered in a way no rule allows.
                 await boardRepository.SaveChangesAsync(token);
 
-                // A new column holds nothing yet, so an empty task list here is the truth, not a
-                // shortcut.
                 return column.ToResponseDto();
             },
             cancellationToken);
@@ -91,8 +86,8 @@ public class WorkflowColumnService
 
         await boardRepository.SaveChangesAsync(cancellationToken);
 
-        // Read the tasks back rather than returning an empty list: renaming changes nothing about
-        // them, and a response that implied otherwise would be wrong.
+        // Read the tasks back: renaming changes nothing about them, and an empty list would imply
+        // otherwise.
         var tasks = await taskRepository.GetTasksWithDetailsAsync([columnId], cancellationToken);
 
         return (RenameColumnOutcome.Renamed, column.ToResponseDto(tasks));
@@ -100,9 +95,8 @@ public class WorkflowColumnService
 
     public async Task<DeleteColumnOutcome> DeleteAsync(int columnId, CancellationToken cancellationToken)
     {
-        // Read without the lock only to learn which board to lock, and to reject a system column
-        // before taking a lock that would achieve nothing. Everything this decision rests on is
-        // read again inside.
+        // Read without the lock only to learn which board to lock and to reject a system column
+        // early. Everything this decision rests on is read again inside.
         var column = await boardRepository.GetColumnAsync(columnId, cancellationToken);
 
         if (column is null)
@@ -133,11 +127,9 @@ public class WorkflowColumnService
                     return DeleteColumnOutcome.ColumnIsSystem;
                 }
 
-                // Refused while the column holds anything. Nothing is moved and nothing is deleted
-                // — the caller empties the column first. The foreign key would refuse the delete
-                // anyway; this check is what turns that into a clear 400 instead of a database
-                // error. Asked under the lock, so a task cannot arrive between the answer and the
-                // delete.
+                // Refused while the column holds anything; the caller empties it first. The
+                // foreign key would refuse the delete anyway — this check turns that into a clear
+                // 400. Asked under the lock, so a task cannot arrive before the delete.
                 if (await boardRepository.ColumnHasTasksAsync(columnId, token))
                 {
                     return DeleteColumnOutcome.ColumnHasTasks;
@@ -166,9 +158,8 @@ public class WorkflowColumnService
             return (ReorderColumnsOutcome.BoardNotFound, null);
         }
 
-        // Under the board's lock. The payload is validated against the board's columns as they are
-        // right now, so a column created or deleted a moment ago cannot make a valid-looking
-        // request write a broken order.
+        // Under the board's lock, so a column created or deleted a moment ago cannot let a
+        // valid-looking request write a broken order.
         return await boardRepository.RunBoardOrderingAsync(
             boardId,
             async token =>
@@ -176,8 +167,7 @@ public class WorkflowColumnService
                 var columns = await boardRepository.GetBoardColumnsForUpdateAsync(boardId, token);
                 var requestedIds = request.OrderedColumnIds;
 
-                // Checked before the set comparison so naming a system column reports the real
-                // reason rather than the generic mismatch it would also cause.
+                // Before the set comparison, so naming a system column reports the real reason.
                 var systemIds = columns
                     .Where(column => column.SystemKind is not null)
                     .Select(column => column.WorkflowColumnId)

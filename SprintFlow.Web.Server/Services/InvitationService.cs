@@ -1,4 +1,4 @@
-using System.Buffers.Text;
+﻿using System.Buffers.Text;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Data.SqlClient;
@@ -66,19 +66,17 @@ public class InvitationService
         int invitedByUserId,
         CancellationToken cancellationToken)
     {
-        // Cryptographically secure by construction, and carrying nothing: not the inviter, not an
-        // address, not a timestamp. Everything the token means is looked up by its digest.
+        // Cryptographically secure and carrying nothing: not the inviter, not an address, not a
+        // timestamp. Everything the token means is looked up by its digest.
         var token = Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(TokenBytes));
 
-        // Instants, not calendar days, so this reads the clock directly rather than through
-        // IApplicationClock — that answers which day it is where the company works, which is a
-        // different question and would drag a timezone into an expiry that has no business with one.
+        // Instants, not calendar days, so the clock is read directly rather than through
+        // IApplicationClock — which answers a different question and would drag a timezone in.
         var expiresAt = DateTime.UtcNow.AddHours(options.ExpiryHours);
 
         var invitation = new Invitation
         {
-            // Only the digest is kept. Someone reading this table learns that an invitation exists
-            // and who created it, but cannot redeem it.
+            // Only the digest is kept: reading this table cannot yield a redeemable token.
             TokenHash = HashToken(token),
             InvitedByUserId = invitedByUserId,
             ExpiresAt = expiresAt
@@ -90,7 +88,7 @@ public class InvitationService
 
         await invitationRepository.SaveChangesAsync(cancellationToken);
 
-        // The one and only time the token leaves this process. It is not logged here or anywhere.
+        // The one and only time the token leaves this process. It is never logged.
         return new InvitationResponseDto(token, expiresAt);
     }
 
@@ -108,8 +106,7 @@ public class InvitationService
         RegisterRequestDto request,
         CancellationToken cancellationToken)
     {
-        // Checked before the invitation is touched: it reads nothing but the request, so spending a
-        // database round trip and an exclusive hold to decide it would be wasted work — and a
+        // Checked before the invitation is touched: it reads nothing but the request, and a
         // rejected password must leave the invitation usable for the next attempt.
         if (Encoding.UTF8.GetByteCount(request.Password) > IPasswordHasher.MaxPasswordBytes)
         {
@@ -118,16 +115,13 @@ public class InvitationService
 
         var tokenHash = HashToken(request.Token);
 
-        // Everything below runs with an exclusive hold on this invitation's row. Two callers
-        // presenting the same token are serialised by it: the second one's read happens only after
-        // the first has committed, so it sees the invitation already spent instead of creating a
-        // second account from it.
+        // Everything below runs with an exclusive hold on this invitation's row, so two callers
+        // presenting the same token are serialised: the second sees it already spent.
         return await invitationRepository.RunRedemptionAsync(
             tokenHash,
             async token =>
             {
-                // Read inside the hold. Asked before it was taken, the answer could already be
-                // stale by the time it was acted on — which is the whole failure this guards.
+                // Read inside the hold: asked before it was taken, the answer could be stale.
                 var invitation = await invitationRepository.GetForUpdateAsync(tokenHash, token);
 
                 var status = Evaluate(invitation, DateTime.UtcNow);
@@ -139,9 +133,8 @@ public class InvitationService
 
                 var email = AuthService.CanonicalizeEmail(request.Email);
 
-                // The fast path, for a clear answer. Not the guarantee — two registrations for one
-                // address can both pass this, and the unique index below is what actually stops the
-                // second.
+                // The fast path, not the guarantee: two registrations for one address can both
+                // pass this, and the unique index below is what stops the second.
                 if (await userRepository.EmailExistsAsync(email, token))
                 {
                     return (RegisterOutcome.EmailAlreadyRegistered, status, null);
@@ -149,7 +142,6 @@ public class InvitationService
 
                 var user = new User
                 {
-                    // Stored without surrounding whitespace, as every other name in this project is.
                     FirstName = request.FirstName.Trim(),
                     LastName = request.LastName.Trim(),
                     Email = email,
@@ -157,7 +149,6 @@ public class InvitationService
                     // The plaintext goes no further than this call.
                     PasswordHash = passwordHasher.Hash(request.Password),
 
-                    // Never from the request: there is no property for it to arrive in.
                     RoleId = MemberRoleId
 
                     // IsActive and CreatedDate are intentionally not set; the database defaults
@@ -172,15 +163,13 @@ public class InvitationService
                 }
                 catch (DbUpdateException exception) when (IsUniquenessViolation(exception))
                 {
-                    // Another registration took this address between the check above and this
-                    // insert. The index did its job; the caller gets the same answer they would
-                    // have got a moment earlier, and the transaction rolls back so neither the row
-                    // nor the invitation's consumption survives.
+                    // Another registration took this address between the check and this insert.
+                    // The transaction rolls back, so neither the row nor the invitation's
+                    // consumption survives.
                     return (RegisterOutcome.EmailAlreadyRegistered, status, null);
                 }
 
-                // Spent, in the same transaction that created the account. The two facts are
-                // committed together or not at all.
+                // Spent in the same transaction that created the account: both or neither.
                 invitation!.UsedAt = DateTime.UtcNow;
                 invitation.RegisteredUserId = user.UserId;
 

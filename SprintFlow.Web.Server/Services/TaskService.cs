@@ -1,4 +1,4 @@
-using SprintFlow.Web.Server.Common.Enums;
+﻿using SprintFlow.Web.Server.Common.Enums;
 using SprintFlow.Web.Server.Data.Repositories;
 using SprintFlow.Web.Server.DTOs.Columns;
 using SprintFlow.Web.Server.DTOs.Tasks;
@@ -119,9 +119,9 @@ public class TaskService
             return (CreateTaskOutcome.BoardNotFound, null);
         }
 
-        // Under the board's lock, because the new task's position is derived from how many tasks
-        // the column already holds. Two requests reading that count at the same time would both
-        // pick the same index; the lock makes the second one wait and read the larger count.
+        // Under the board's lock: the new task's position is derived from how many tasks the
+        // column already holds, and two requests reading that count together would pick the same
+        // index.
         var (outcome, taskId) = await boardRepository.RunBoardOrderingAsync(
             boardId,
             async token =>
@@ -139,8 +139,8 @@ public class TaskService
                     return (CreateTaskOutcome.AssigneeUnavailable, null);
                 }
 
-                // Same reason, for the sprint. The composite foreign key would refuse a sprint from
-                // another board anyway; checking here is what makes it a clear 400.
+                // Same for the sprint: the composite foreign key would refuse one from another
+                // board anyway, and checking here makes it a clear 400.
                 var sprintCheck = await CheckSprintAsync(request.SprintId, boardId, token);
 
                 if (sprintCheck is CreateTaskOutcome problem)
@@ -148,8 +148,7 @@ public class TaskService
                     return (problem, null);
                 }
 
-                // The next free slot. Positions are contiguous from zero, so the count is the index
-                // a new task takes at the end of the column.
+                // Positions are contiguous from zero, so the count is the next free slot.
                 var position = await taskRepository.CountInColumnAsync(column.WorkflowColumnId, token);
 
                 var task = new TaskItem
@@ -158,19 +157,15 @@ public class TaskService
                     TaskColumnId = column.WorkflowColumnId,
                     Position = position,
 
-                    // Stored without surrounding whitespace. A title that is only whitespace never
-                    // reaches here — [Required] rejects it.
                     Title = request.Title.Trim(),
                     Description = Normalise(request.Description),
                     Priority = request.Priority,
 
-                    // From the caller's token. The request DTO has no property for it, so nothing a
-                    // client sends can influence this.
+                    // From the caller's token; no request DTO property can influence it.
                     CreatedByUserId = createdByUserId,
 
-                    // Normally the sprint the board is scoped to, so a task added while looking at
-                    // a sprint belongs to it instead of seeming to disappear. Null when the caller
-                    // was looking at the whole board.
+                    // The sprint the board is scoped to, so a task added while looking at one
+                    // belongs to it rather than seeming to disappear. Null for the whole board.
                     SprintId = request.SprintId
 
                     // CreatedDate is intentionally not set; the database default supplies it.
@@ -180,8 +175,7 @@ public class TaskService
 
                 if (request.AssigneeUserId is int assignee)
                 {
-                    // Staged alongside the task itself, so one save writes both. A task is never
-                    // briefly visible without the assignee it was created with.
+                    // One save writes both, so a task is never briefly visible unassigned.
                     task.Participants.Add(new TaskParticipant { UserId = assignee });
                 }
 
@@ -196,14 +190,12 @@ public class TaskService
             return (outcome, null);
         }
 
-        // The board has one more task than its cached summary says, in a column that summary counts.
         await summaryCache.RemoveAsync(boardId, cancellationToken);
 
         await NotifyBoardChangedAsync(boardId, "taskCreated", cancellationToken);
 
-        // Outside the lock and after the commit, like everything else here: the task exists before
-        // anyone is told about it. Creating a task already assigned to yourself tells you nothing,
-        // so the actor is never his own recipient.
+        // After the commit: the task exists before anyone is told. The actor is never their own
+        // recipient — being told about a task you just assigned yourself says nothing.
         if (request.AssigneeUserId is int assignee && assignee != createdByUserId)
         {
             await PublishNotificationAsync(
@@ -214,8 +206,8 @@ public class TaskService
                 cancellationToken);
         }
 
-        // Read back outside the lock: the row is committed by now, and holding the board while
-        // assembling a response would make every other request on it wait for no reason.
+        // Read back outside the lock: the row is committed, and assembling a response is not work
+        // the board needs to be held for.
         return (outcome, await ReadBackAsync(taskId.Value, cancellationToken));
     }
 
@@ -236,8 +228,8 @@ public class TaskService
             return (UpdateTaskOutcome.TaskNotFound, null);
         }
 
-        // Under the board's write lock. Replacing an assignee is a delete followed by an insert on
-        // a uniquely-indexed column, so two edits arriving together must not interleave.
+        // Under the board's lock: replacing an assignee is a delete then an insert on a uniquely
+        // indexed column, so two edits must not interleave.
         var (outcome, assigneeChanged) = await boardRepository.RunBoardOrderingAsync(
             boardId.Value,
             async token =>
@@ -258,24 +250,21 @@ public class TaskService
                 task.Description = Normalise(request.Description);
                 task.Priority = request.Priority;
 
-                // Whether the assignment actually moved, decided inside the lock against the rows
-                // as they were. An edit that renames a task and leaves its assignee alone must not
-                // tell that person they have been given it again.
+                // Decided inside the lock: an edit that renames a task and leaves its assignee
+                // alone must not tell that person they have been given it again.
                 var changed = await ReplaceAssigneeAsync(taskId, request.AssigneeUserId, token);
 
-                // The creator, the column and the position are deliberately untouched: editing what
-                // a task says is not the same operation as moving it, and ownership is never
-                // editable. One save covers the text and the assignment together.
+                // Creator, column and position are untouched: editing what a task says is not
+                // moving it, and ownership is never editable.
                 await taskRepository.SaveChangesAsync(token);
 
                 return (UpdateTaskOutcome.Updated, changed);
             },
             cancellationToken);
 
-        // The board summary is deliberately not invalidated here. This method changes a task's
-        // title, description, priority and assignee, and the summary reports none of those — it
-        // counts tasks by their column and by whether they carry a sprint, and this touches
-        // neither. Dropping the entry would throw away a correct answer on every text edit.
+        // The board summary is deliberately not invalidated: it counts tasks by column and by
+        // whether they carry a sprint, and none of the fields this changes affect either. Dropping
+        // the entry would throw away a correct answer on every text edit.
         if (outcome != UpdateTaskOutcome.Updated)
         {
             return (outcome, null);
@@ -285,8 +274,7 @@ public class TaskService
         // keeps its entry.
         await NotifyBoardChangedAsync(boardId.Value, "taskUpdated", cancellationToken);
 
-        // Only when the assignment moved, only to somebody, and never to the person who moved it.
-        // Unassigning also changes it, and there is nobody to tell — which the null check says.
+        // Only when the assignment moved, only to somebody, and never to whoever moved it.
         if (assigneeChanged && request.AssigneeUserId is int assignee && assignee != actorUserId)
         {
             await PublishNotificationAsync(
@@ -325,8 +313,7 @@ public class TaskService
     {
         var existing = await taskRepository.GetParticipantsAsync(taskId, cancellationToken);
 
-        // Already the right person: leave the row alone so its AddedDate is not reset by an edit
-        // that did not change the assignment.
+        // Already the right person: leave the row so AddedDate is not reset by a no-op edit.
         if (assigneeUserId is int wanted && existing.Count == 1 && existing[0].UserId == wanted)
         {
             return false;
@@ -356,9 +343,8 @@ public class TaskService
         AssignTaskSprintRequestDto request,
         CancellationToken cancellationToken)
     {
-        // No board lock here, unlike the other writes. This changes one column on one row and
-        // touches no position and no uniquely-indexed table, so there is nothing for two callers to
-        // interleave: the later write simply wins, exactly as it does for a task's title.
+        // No board lock, unlike the other writes: this changes one column on one row and touches
+        // no position and no unique index, so the later write simply wins.
         var task = await taskRepository.GetForUpdateAsync(taskId, cancellationToken);
 
         if (task is null)
@@ -375,17 +361,14 @@ public class TaskService
                 return (AssignSprintOutcome.SprintNotFound, null);
             }
 
-            // The composite foreign key would refuse this too; checking first is what turns it into
-            // a clear 400 rather than a constraint violation surfacing as a 500.
+            // The composite foreign key would refuse this too; checking first makes it a 400.
             if (sprint.BoardId != task.BoardId)
             {
                 return (AssignSprintOutcome.SprintOnDifferentBoard, null);
             }
         }
 
-        // Null takes the task out of whichever sprint it was in. The task keeps its column and its
-        // position either way: which sprint a task belongs to and where it sits on the board are
-        // different questions.
+        // Null takes the task out of its sprint. Column and position are untouched either way.
         task.SprintId = request.SprintId;
 
         await taskRepository.SaveChangesAsync(cancellationToken);
@@ -400,8 +383,7 @@ public class TaskService
 
     public async Task<bool> DeleteAsync(int taskId, CancellationToken cancellationToken)
     {
-        // Read without the lock only to learn which board to lock. The decision is made again
-        // inside, against rows that cannot change while it is held.
+        // Read without the lock only to learn which board to lock; decided again inside.
         var boardId = await taskRepository.GetBoardIdAsync(taskId, cancellationToken);
 
         if (boardId is null)
@@ -412,8 +394,7 @@ public class TaskService
         // Read before the delete, because the rows go by cascade and the files on disk do not.
         var attachmentNames = await taskRepository.GetAttachmentNamesAsync(taskId, cancellationToken);
 
-        // Under the board's lock: deleting renumbers the survivors, which is the same kind of
-        // rewrite a move performs and has to be serialised for the same reason.
+        // Under the board's lock: deleting renumbers the survivors.
         var deleted = await boardRepository.RunBoardOrderingAsync(
             boardId.Value,
             async token =>
@@ -432,8 +413,7 @@ public class TaskService
                 columnTasks.RemoveAll(candidate => candidate.TaskId == taskId);
                 Renumber(columnTasks);
 
-                // The task's participation rows go with it by cascade, and team membership needs no
-                // clean-up because it is derived from those rows rather than stored.
+                // Participation rows go by cascade, and team membership is derived from them.
                 await taskRepository.SaveChangesAsync(token);
 
                 return true;
@@ -442,14 +422,13 @@ public class TaskService
 
         if (deleted)
         {
-            // The comment and attachment rows went with the task by cascade. The files did not, so
-            // they are removed here — after the commit, because a deleted file cannot be rolled back.
+            // Comment and attachment rows went by cascade; the files did not. Removed after the
+            // commit, because a deleted file cannot be rolled back.
             foreach (var storedName in attachmentNames)
             {
                 attachmentStorage.Delete(storedName);
             }
 
-            // One fewer task on the board, and one fewer in whichever bucket it was counted in.
             await summaryCache.RemoveAsync(boardId.Value, cancellationToken);
 
             await NotifyBoardChangedAsync(boardId.Value, "taskDeleted", cancellationToken);
@@ -468,9 +447,8 @@ public class TaskService
         int actorUserId,
         CancellationToken cancellationToken)
     {
-        // Read without the lock only to learn which board to lock. The target column names the
-        // board the move must happen on; if the task turns out to belong to a different one, the
-        // move is rejected inside and nothing is written.
+        // Read without the lock only to learn which board to lock. A task belonging to a different
+        // board is rejected inside, and nothing is written.
         var targetColumn = await boardRepository.GetColumnAsync(request.TargetColumnId, cancellationToken);
 
         if (targetColumn is null)
@@ -478,9 +456,8 @@ public class TaskService
             return (MoveTaskOutcome.ColumnNotFound, null);
         }
 
-        // Under the board's lock. Both columns a move touches belong to the same board, so this one
-        // lock covers both — there is never a second lock to acquire, and therefore no lock order
-        // to get wrong and no deadlock to avoid.
+        // Under the board's lock. Both columns a move touches belong to the same board, so one
+        // lock covers both — no second lock, no lock order to get wrong, no deadlock.
         var (outcome, affectedColumnIds) = await boardRepository.RunBoardOrderingAsync(
             targetColumn.BoardId,
             async token =>
@@ -513,9 +490,8 @@ public class TaskService
                     ? sourceTasks
                     : await taskRepository.GetColumnTasksForUpdateAsync(targetColumnId, token);
 
-                // The index the caller sent was counted among the cards they could see, which on a
-                // sprint-scoped board is only some of the column. Translated here into a position
-                // in the whole column, and clamped on the way.
+                // The caller counted only the cards they could see, which on a sprint-scoped board
+                // is some of the column. Translated here into a position in the whole one.
                 var index = ToColumnIndex(targetTasks, request.TargetIndex, request.SprintId);
 
                 task.TaskColumnId = targetColumnId;
@@ -544,16 +520,15 @@ public class TaskService
             return (outcome, null);
         }
 
-        // A move changes which column the task is counted in, and the summary's buckets — and the
-        // progress figure derived from them — are exactly that count. The board is the target
-        // column's, which the check inside the lock has already proven is also the task's.
+        // A move changes which column the task is counted in, which is exactly what the summary's
+        // buckets are.
         await summaryCache.RemoveAsync(targetColumn.BoardId, cancellationToken);
 
         await NotifyBoardChangedAsync(targetColumn.BoardId, "taskMoved", cancellationToken);
 
-        // Two ids mean two columns, so the task genuinely left one for another — a drag that only
-        // reorders a column returns one id and is not news to anybody. Of the destinations, only
-        // the two system columns say something happened to the work rather than to the board.
+        // Two ids mean the task genuinely left one column for another; a reorder returns one and is
+        // news to nobody. Of the destinations, only the two system columns say something happened to
+        // the work rather than to the board.
         if (affectedColumnIds.Count == 2)
         {
             var type = targetColumn.SystemKind switch
@@ -577,9 +552,8 @@ public class TaskService
             }
         }
 
-        // Read back outside the lock: the move is committed, and assembling a response is not
-        // ordering work. Reported through the same sprint the caller was looking at, so the columns
-        // that come back are the columns they can see rather than the whole board's.
+        // Read back outside the lock, through the same sprint the caller was looking at, so the
+        // columns that come back are the ones they can see.
         return (outcome, await ReadColumnsAsync(affectedColumnIds, request.SprintId, cancellationToken));
     }
 
@@ -602,8 +576,7 @@ public class TaskService
         int userId,
         CancellationToken cancellationToken)
     {
-        // The board is read rather than mere existence, because the team that will be told about
-        // this comment is the board's. One query answers both questions.
+        // The board itself, not just its existence: the team told about this comment is its own.
         var boardId = await taskRepository.GetBoardIdAsync(taskId, cancellationToken);
 
         if (boardId is null)
@@ -625,8 +598,7 @@ public class TaskService
 
         await taskRepository.SaveChangesAsync(cancellationToken);
 
-        // After the commit, and to the whole team rather than to the assignee alone: a comment is
-        // addressed to whoever is working on this board, and the author is left out below.
+        // To the whole team rather than the assignee alone; the author is left out below.
         await PublishNotificationAsync(
             NotificationType.TaskCommented,
             taskId,
@@ -657,8 +629,7 @@ public class TaskService
     {
         var comment = await taskRepository.GetCommentForUpdateAsync(commentId, cancellationToken);
 
-        // A comment id belonging to another task is simply not found, so this cannot be used to
-        // learn which ids exist elsewhere.
+        // A comment id from another task is not found, so this leaks nothing about other ids.
         if (comment is null || comment.TaskId != taskId)
         {
             return DeleteCommentOutcome.NotFound;
@@ -735,8 +706,7 @@ public class TaskService
             return (AddAttachmentOutcome.TaskNotFound, null);
         }
 
-        // A comment on another task is treated as no comment at all being found, for the same
-        // reason the delete does: the id says nothing about what exists elsewhere.
+        // A comment on another task is treated as not found, as the delete does.
         if (commentId is int comment
             && !await taskRepository.CommentExistsOnTaskAsync(comment, taskId, cancellationToken))
         {
@@ -767,8 +737,7 @@ public class TaskService
         }
         catch
         {
-            // The file is already on disk and the row that gives it meaning is not. Removing it
-            // keeps the folder free of files nothing points at.
+            // The file is on disk and the row that gives it meaning is not; remove it.
             attachmentStorage.Delete(storedName);
 
             throw;
@@ -845,8 +814,8 @@ public class TaskService
                 SystemColumnKind.ToDo,
                 cancellationToken);
 
-            // Every board is created with a To Do column and it can never be deleted, so its
-            // absence means the data is broken, not that the request was wrong.
+            // Every board is created with a To Do column and it cannot be deleted, so its absence
+            // means the data is broken, not the request.
             return (
                 CreateTaskOutcome.Created,
                 toDo ?? throw new InvalidOperationException(
@@ -860,8 +829,8 @@ public class TaskService
             return (CreateTaskOutcome.ColumnNotFound, null);
         }
 
-        // Nothing is created. A task must never end up in another board's column, and refusing here
-        // means the composite foreign key never has to be the thing that reports it.
+        // A task must never end up in another board's column; refusing here keeps the composite
+        // foreign key from being the thing that reports it.
         return column.BoardId != boardId
             ? (CreateTaskOutcome.ColumnOnDifferentBoard, null)
             : (CreateTaskOutcome.Created, column);
@@ -887,8 +856,7 @@ public class TaskService
     /// </param>
     private static int ToColumnIndex(List<TaskItem> columnTasks, int visibleIndex, int? sprintId)
     {
-        // Clamped rather than rejected: a card dropped past the last one plainly means "put it
-        // last", and a client should not have to know how many cards a column holds.
+        // Clamped rather than rejected: dropped past the last card means it goes last.
         if (sprintId is null)
         {
             return Math.Clamp(visibleIndex, 0, columnTasks.Count);
@@ -896,9 +864,8 @@ public class TaskService
 
         var visible = columnTasks.FindAll(task => task.SprintId == sprintId);
 
-        // Nothing of this sprint is in the column, so there is no visible card to sit before or
-        // after. The end of the column is as good a place as any, and it leaves the tasks already
-        // there undisturbed.
+        // No visible card to sit before or after, so the end of the column, which leaves the tasks
+        // already there undisturbed.
         if (visible.Count == 0)
         {
             return columnTasks.Count;
@@ -906,8 +873,8 @@ public class TaskService
 
         var clamped = Math.Clamp(visibleIndex, 0, visible.Count);
 
-        // Past the last visible card means immediately after it — not the end of the column, which
-        // would jump the task over any hidden cards that follow.
+        // Immediately after the last visible card — not the end of the column, which would jump
+        // the task over any hidden cards that follow.
         return clamped == visible.Count
             ? columnTasks.IndexOf(visible[^1]) + 1
             : columnTasks.IndexOf(visible[clamped]);
@@ -981,8 +948,7 @@ public class TaskService
     {
         var tasks = await taskRepository.GetTasksWithDetailsAsync(columnIds, cancellationToken);
 
-        // Filtered here rather than in the query: this is at most two columns, and the alternative
-        // is a second repository read that differs from the first only by a where clause.
+        // Filtered here rather than in the query: at most two columns, against a second read.
         var tasksByColumn = tasks
             .Where(task => sprintId is null || task.SprintId == sprintId)
             .ToLookup(task => task.TaskColumnId);

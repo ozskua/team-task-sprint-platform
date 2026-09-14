@@ -1,4 +1,4 @@
-import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+﻿import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
@@ -18,23 +18,19 @@ import { BoardActions } from '../board-actions';
 import { ConfirmDialog, ConfirmDialogData } from '../dialogs/confirm-dialog/confirm-dialog';
 import { ColumnFormDialog, ColumnFormDialogData } from '../dialogs/column-form-dialog/column-form-dialog';
 
-/**
- * Below this a lane stops being readable, so the workflow area starts scrolling sideways instead of
- * squeezing further. Kept beside the gap because the band's width is worked out from both.
- */
+/** Below this a lane stops being readable, so the workflow area scrolls sideways instead. */
 const LANE_MIN_WIDTH = 260;
 const LANE_GAP = 12;
 
 /**
  * The board page. The columns and cards below only report what was clicked or dragged.
  *
- * Anything a task or the board itself can have done to it lives in BoardActions, because the
- * backlog offers the same things and they must not drift apart. What stays here is what only a
- * kanban has: the columns, and the drag that moves a card between them.
+ * Anything a task or the board can have done to it lives in BoardActions, because the backlog
+ * offers the same things and they must not drift apart. What stays here is what only a kanban has:
+ * the columns, and the drag that moves a card between them.
  *
- * Moves are shown before the server has answered, because a card that lags behind the pointer feels
- * broken. Each one keeps the board exactly as it was beforehand, so a failed request puts the card
- * back where it was picked up from rather than leaving a lie on screen.
+ * Moves are shown before the server answers, each keeping the board exactly as it was, so a failed
+ * request puts the card back rather than leaving a lie on screen.
  */
 @Component({
   selector: 'app-board-detail',
@@ -73,10 +69,8 @@ export class BoardDetail {
       .sort((left, right) => left.position - right.position));
 
   /**
-   * The two outcome columns, drawn as one lane on the right.
-   *
-   * They stay two separate columns in every sense that matters — their own ids, their own tasks and
-   * their own drop lists. Only the way they are drawn is shared.
+   * The two outcome columns, drawn as one lane on the right. They stay separate in every sense that
+   * matters — own ids, own tasks, own drop lists. Only the drawing is shared.
    */
   protected readonly completedColumn = computed(() =>
     this.board()?.columns.find(column => column.systemKind === 'Completed'));
@@ -91,9 +85,8 @@ export class BoardDetail {
     this.allColumns().map(column => `tasks-${column.workflowColumnId}`));
 
   /**
-   * The custom columns occupy one lane each, so their band claims that many shares of the row and
-   * refuses to shrink below the point where a lane stops being readable. Past that the whole
-   * workflow area scrolls sideways instead of the lanes overlapping.
+   * One lane per custom column, so the band claims that many shares of the row and refuses to
+   * shrink past the readable minimum. Beyond that the workflow area scrolls sideways.
    */
   protected readonly customBandFlexGrow = computed(() => this.customColumns().length);
 
@@ -104,26 +97,21 @@ export class BoardDetail {
   });
 
   /**
-   * The sprint whose tasks are on screen, or `null` when none is.
-   *
-   * Resolved by the server: naming no sprint means "whichever is running today", so this is the
-   * answer rather than anything this page worked out.
+   * The sprint whose tasks are on screen, or `null`. Resolved by the server — naming no sprint means
+   * "whichever is running today" — so this is the answer, not anything this page worked out.
    */
   protected readonly selectedSprint = computed(() => this.board()?.selectedSprint ?? null);
 
   /**
-   * Whether the board has a sprint in context at all.
-   *
-   * When it does not, the kanban is deliberately empty — the board's columns are all there with no
-   * cards in them — and creating a task is turned off, because a task made here would belong to no
-   * sprint and so would not appear in the very view it was created from. The backlog is where a
-   * task without a sprint is created.
+   * Whether the board has a sprint in context at all. When it does not the kanban is deliberately
+   * empty and creating a task is turned off, because the new task would belong to no sprint and so
+   * would not appear in the view it was created from. The backlog is where those are created.
    */
   protected readonly hasSprintContext = computed(() => this.selectedSprint() !== null);
 
   constructor() {
-    // The board comes from the path and the sprint from the query string, so both have to be
-    // watched: switching sprints changes only the latter and would otherwise not reload anything.
+    // Board from the path, sprint from the query string, so both are watched: switching sprints
+    // changes only the latter and would otherwise reload nothing.
     combineLatest([this.route.paramMap, this.route.queryParamMap])
       .pipe(takeUntilDestroyed())
       .subscribe(([params, query]) => {
@@ -132,8 +120,7 @@ export class BoardDetail {
         this.loadBoard(boardId, parseSprintId(query.get('sprint')));
 
         // Here rather than in an init hook: moving to another board only changes the route
-        // parameter, so this component is reused and would otherwise stay in the old board's group.
-        // Switching sprints repeats the same id, which the service ignores.
+        // parameter, so the component is reused and would otherwise stay in the old board's group.
         this.realtime.watch(boardId);
       });
 
@@ -208,7 +195,7 @@ export class BoardDetail {
 
   protected moveTask(move: { taskId: number; targetColumnId: number; targetIndex: number }): void {
     // One move at a time per card: a second would be computed against a board the server has not
-    // agreed to yet, and the two answers could disagree.
+    // agreed to yet.
     if (this.movingTaskIds().has(move.taskId)) {
       return;
     }
@@ -224,8 +211,8 @@ export class BoardDetail {
       .moveTask(move.taskId, {
         targetColumnId: move.targetColumnId,
         targetIndex: move.targetIndex,
-        // What the index was counted against. On a scoped board the user only sees this sprint's
-        // cards, so the server has to translate the slot back into the whole column.
+        // What the index was counted against: on a scoped board the user sees only this sprint's
+        // cards, so the server translates the slot back into the whole column.
         sprintId: this.boardDetail.scope()
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
