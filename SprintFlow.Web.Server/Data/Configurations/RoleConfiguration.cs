@@ -21,7 +21,6 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
             .IsUnique()
             .HasDatabaseName("IX_Roles_RoleName");
 
-        // The role set is closed and known up front, so both rows ship with the schema.
         builder.HasData(
             new Role { RoleId = 1, RoleName = RoleNames.Admin },
             new Role { RoleId = 2, RoleName = RoleNames.Member });

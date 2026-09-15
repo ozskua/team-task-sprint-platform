@@ -5,7 +5,6 @@
     <span class="team-count">{{ assignedTaskLabel() }}</span>
   </span>
 
-  <!-- Each person once, however many tasks they hold — the server deduplicates per board. -->
   @if (team().members.length > 0) {
     <ul class="member-avatars">
       @for (member of team().members; track member.userId) {

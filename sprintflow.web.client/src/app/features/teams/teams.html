@@ -25,8 +25,6 @@
             <p class="team-area">{{ team.areaName }}</p>
           </header>
 
-          <!-- Ownership, kept apart from the member list: creating a board does not put anyone on
-               its team, so the two routinely name different people. -->
           <p class="team-owner">Board created by {{ team.ownerFullName }}</p>
 
           <section class="team-members" [attr.aria-label]="'Members of the ' + team.boardName + ' team'">
@@ -35,8 +33,6 @@
             } @else {
               <ul class="member-avatars">
                 @for (member of team.members; track member.userId) {
-                  <!-- Avatar only. The name is the tooltip and the accessible label, so nothing
-                       depends on being able to see the initials. -->
                   <li
                     class="member-avatar"
                     role="img"

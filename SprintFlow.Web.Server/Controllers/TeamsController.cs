@@ -5,10 +5,6 @@ using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
-/// <summary>
-/// Read-only. Teams are created with their board and never by hand, they have no name of their own
-/// to edit, and their membership follows from task assignment — so there is nothing here but a list.
-/// </summary>
 [ApiController]
 [Route("api/teams")]
 [Authorize]
@@ -21,7 +17,6 @@ public class TeamsController : ControllerBase
         this.boardService = boardService;
     }
 
-    /// <summary>Every team, with the members currently derived from assignment.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<TeamResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

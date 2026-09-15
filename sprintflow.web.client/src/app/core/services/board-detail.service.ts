@@ -19,12 +19,6 @@ import {
   UpdateTaskRequest
 } from '../models/board-detail-models';
 
-/**
- * Owns the board currently on screen, so a create, a move or a rename shows up without a reload.
- *
- * Everything written into the signal comes from a server response, except the optimistic helpers,
- * which apply a drag immediately and hand back the previous state so a failed request can undo it.
- */
 @Injectable()
 export class BoardDetailService {
   private readonly http = inject(HttpClient);
@@ -33,32 +27,16 @@ export class BoardDetailService {
 
   readonly board = this.boardState.asReadonly();
 
-  /**
-   * The sprint the loaded state is actually showing, or `null`.
-   *
-   * Taken from the **response**, not the request: the kanban usually names no sprint and lets the
-   * server pick the one running today. Creating a task and dragging a card both read this.
-   */
   private readonly scopeState = signal<number | null>(null);
 
   readonly scope = this.scopeState.asReadonly();
 
-  /**
-   * Whether the loaded state is the board's whole inventory rather than one sprint's tasks.
-   * Remembered because a re-read after a write must happen in the same mode.
-   */
   private readonly allTasksState = signal(false);
 
   private get baseUrl(): string {
     return `${environment.apiBaseUrl}/boards`;
   }
 
-  /**
-   * Loads the board for the kanban: one sprint's tasks. Naming none lets the server use whichever
-   * sprint is running today, and a board with none comes back with its columns and no cards.
-   *
-   * Either way the columns are the same: the sprint is a filter over one kanban, never a second one.
-   */
   load(boardId: number, sprintId?: number | null): Observable<BoardDetail> {
     const options = sprintId == null
       ? {}
@@ -69,10 +47,6 @@ export class BoardDetailService {
       .pipe(tap(board => this.store(board, false)));
   }
 
-  /**
-   * Loads the board for the backlog: every task, in a sprint or not. Asked for explicitly, because
-   * leaving the sprint out now means "whatever is running today".
-   */
   loadAllTasks(boardId: number): Observable<BoardDetail> {
     return this.http
       .get<BoardDetail>(`${this.baseUrl}/${boardId}`, {
@@ -81,47 +55,33 @@ export class BoardDetailService {
       .pipe(tap(board => this.store(board, true)));
   }
 
-  /**
-   * Re-reads the board the same way it was read before — what every write does once it succeeds.
-   * The mode must carry over, or the backlog comes back cut down to one sprint and back again.
-   */
   reload(boardId: number): Observable<BoardDetail> {
     return this.allTasksState()
       ? this.loadAllTasks(boardId)
       : this.load(boardId, this.scopeState());
   }
 
-  /** Dropped when leaving the page, so the next board never flashes the previous one's cards. */
   clear(): void {
     this.boardState.set(null);
     this.scopeState.set(null);
     this.allTasksState.set(false);
   }
 
-  /** The sprint on screen comes from the server's answer, never from what was requested. */
   private store(board: BoardDetail, allTasks: boolean): void {
     this.boardState.set(board);
     this.scopeState.set(board.selectedSprint?.sprintId ?? null);
     this.allTasksState.set(allTasks);
   }
 
-  /** The current state, for a caller that wants to be able to undo what it is about to do. */
   snapshot(): BoardDetail | null {
     return this.boardState();
   }
 
-  /** Puts a snapshot back after a failed request. */
   restore(snapshot: BoardDetail | null): void {
     this.boardState.set(snapshot);
   }
 
-  // --- Tasks --------------------------------------------------------------
-
-  /**
-   * Creates a task. `columnId` is left out by the board-level action, which is what tells the
-   * server to start it in To Do; the column-level action sends its own id.
-   */
-  createTask(boardId: number, request: CreateTaskRequest): Observable<BoardTask> {
+createTask(boardId: number, request: CreateTaskRequest): Observable<BoardTask> {
     return this.http
       .post<BoardTask>(`${this.baseUrl}/${boardId}/tasks`, request)
       .pipe(tap(task => this.insertTask(task)));
@@ -139,45 +99,27 @@ export class BoardDetailService {
       .pipe(tap(() => this.removeTask(taskId)));
   }
 
-  /**
-   * Sends the move the UI has already shown. The response carries the columns the server actually
-   * touched, so the local guess is replaced by the truth rather than trusted.
-   */
   moveTask(taskId: number, request: MoveTaskRequest): Observable<readonly BoardColumn[]> {
     return this.http
       .put<readonly BoardColumn[]>(`${environment.apiBaseUrl}/tasks/${taskId}/move`, request)
       .pipe(tap(columns => this.replaceColumns(columns)));
   }
 
-  /**
-   * The same move followed by a re-read, for callers that pick a status from a list rather than
-   * dragging: there is nothing on screen to roll back, and only a reload proves the other columns.
-   */
   moveTaskAndReload(
     boardId: number,
     taskId: number,
     request: MoveTaskRequest): Observable<BoardDetail> {
-    // Reloaded the same way the page was read: the backlog must not come back as a kanban.
     return this.moveTask(taskId, request)
       .pipe(switchMap(() => this.reload(boardId)));
   }
 
-  /**
-   * Puts a task into a sprint, or takes it out. The response is the task as the server now has it,
-   * which is what replaces the local copy.
-   */
   assignTaskSprint(taskId: number, request: AssignTaskSprintRequest): Observable<BoardTask> {
     return this.http
       .put<BoardTask>(`${environment.apiBaseUrl}/tasks/${taskId}/sprint`, request)
       .pipe(tap(task => this.replaceTask(task)));
   }
 
-  // --- The task card ------------------------------------------------------
-  //
-  // Read on its own rather than from the board signal: the card carries comments and attachments,
-  // which the board has no reason to load for every card on screen.
-
-  taskDetail(taskId: number): Observable<TaskDetail> {
+taskDetail(taskId: number): Observable<TaskDetail> {
     return this.http.get<TaskDetail>(`${environment.apiBaseUrl}/tasks/${taskId}`);
   }
 
@@ -191,10 +133,6 @@ export class BoardDetailService {
       `${environment.apiBaseUrl}/tasks/${taskId}/comments/${commentId}`);
   }
 
-  /**
-   * Multipart form data under the field name the server binds, `file`. `commentId` names the comment
-   * the file was posted with; left out for a file attached to the task on its own.
-   */
   uploadAttachment(taskId: number, file: File, commentId?: number): Observable<TaskAttachment> {
     const form = new FormData();
     form.append('file', file);
@@ -207,7 +145,6 @@ export class BoardDetailService {
       `${environment.apiBaseUrl}/tasks/${taskId}/attachments`, form);
   }
 
-  /** Fetched rather than linked: a plain anchor sends no bearer token and would come back 401. */
   downloadAttachment(taskId: number, attachmentId: number): Observable<Blob> {
     return this.http.get(
       `${environment.apiBaseUrl}/tasks/${taskId}/attachments/${attachmentId}`,
@@ -219,20 +156,15 @@ export class BoardDetailService {
       `${environment.apiBaseUrl}/tasks/${taskId}/attachments/${attachmentId}`);
   }
 
-  // --- Boards -------------------------------------------------------------
-
-  renameBoard(boardId: number, request: ColumnNameRequest): Observable<unknown> {
+renameBoard(boardId: number, request: ColumnNameRequest): Observable<unknown> {
     return this.http.put(`${this.baseUrl}/${boardId}`, request);
   }
 
-  /** Deletes the board and everything under it. The caller navigates away rather than patching. */
   deleteBoard(boardId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${boardId}`);
   }
 
-  // --- Columns ------------------------------------------------------------
-
-  createColumn(boardId: number, request: ColumnNameRequest): Observable<BoardColumn> {
+createColumn(boardId: number, request: ColumnNameRequest): Observable<BoardColumn> {
     return this.http
       .post<BoardColumn>(`${this.baseUrl}/${boardId}/columns`, request)
       .pipe(tap(column => this.insertColumn(column)));
@@ -256,10 +188,7 @@ export class BoardDetailService {
       .pipe(tap(columns => this.setColumns(columns)));
   }
 
-  // --- Optimistic helpers -------------------------------------------------
-
-  /** Shows the move at once and returns the previous state, so a failure can put the card back. */
-  applyTaskMove(taskId: number, targetColumnId: number, targetIndex: number): BoardDetail | null {
+applyTaskMove(taskId: number, targetColumnId: number, targetIndex: number): BoardDetail | null {
     const previous = this.boardState();
 
     if (previous === null) {
@@ -293,7 +222,6 @@ export class BoardDetailService {
     return previous;
   }
 
-  /** Shows a custom-column reorder at once. System columns keep the places the server pins them to. */
   applyColumnReorder(orderedCustomIds: readonly number[]): BoardDetail | null {
     const previous = this.boardState();
 
@@ -318,9 +246,7 @@ export class BoardDetailService {
     return previous;
   }
 
-  // --- Local state maintenance -------------------------------------------
-
-  private insertTask(task: BoardTask): void {
+private insertTask(task: BoardTask): void {
     this.mutate(board => ({
       ...board,
       columns: board.columns.map(column => column.workflowColumnId === task.taskColumnId
@@ -350,8 +276,6 @@ export class BoardDetailService {
   }
 
   private insertColumn(created: BoardColumn): void {
-    // Before Completed, where the server puts it. Positions come from the rebuilt order rather
-    // than being invented, so the two cannot drift apart.
     this.mutate(board => {
       const head = board.columns.filter(column => column.systemKind === null || column.systemKind === 'ToDo');
       const tail = board.columns.filter(
@@ -364,7 +288,6 @@ export class BoardDetailService {
     });
   }
 
-  /** Applies the columns a write returned, leaving every other column untouched. */
   private replaceColumns(updated: readonly BoardColumn[]): void {
     const byId = new Map(updated.map(column => [column.workflowColumnId, column]));
 
@@ -396,7 +319,6 @@ export class BoardDetailService {
   }
 }
 
-/** Keeps the local copy's positions contiguous, matching what the server stored. */
 function renumber(tasks: readonly BoardTask[]): readonly BoardTask[] {
   return tasks.map((task, index) => ({ ...task, position: index }));
 }

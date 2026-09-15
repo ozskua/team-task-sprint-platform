@@ -6,16 +6,11 @@ import { environment } from '../../../environments/environment';
 import { AuthSession, LoginRequest, LoginResponse } from '../models/auth-models';
 import { TokenStorage } from './token-storage';
 
-/**
- * Owns the signed-in session. Makes no authorization decision of its own: `isAdmin` is whatever the
- * backend returned. The token is never decoded here and no role string is compared.
- */
 @Injectable()
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly tokenStorage = inject(TokenStorage);
 
-  // Seeded from storage so a page refresh does not sign the user out.
   private readonly sessionState = signal<AuthSession | null>(this.tokenStorage.read());
 
   readonly session = this.sessionState.asReadonly();
@@ -26,20 +21,12 @@ export class AuthService {
 
   readonly fullName = computed(() => this.sessionState()?.fullName ?? '');
 
-  /**
-   * Who is signed in, or `undefined` for a session stored before the server sent it.
-   *
-   * Read only to recognise the caller's own rows — which comment offers a delete control, for one.
-   * It is never an authorization decision: the server checks the author again on every write, and
-   * `undefined` simply hides the control rather than assuming anything.
-   */
   readonly userId = computed(() => this.sessionState()?.userId);
 
   login(request: LoginRequest): Observable<AuthSession> {
     return this.http
       .post<LoginResponse>(`${environment.apiBaseUrl}/auth/login`, request)
       .pipe(
-        // Fields are picked one by one, so new backend fields cannot reach storage unnoticed.
         map(response => ({
           userId: response.userId,
           token: response.token,
@@ -53,7 +40,6 @@ export class AuthService {
       );
   }
 
-  /** No server call: the token is stateless, so signing out means forgetting it locally. */
   logout(): void {
     this.tokenStorage.clear();
     this.sessionState.set(null);

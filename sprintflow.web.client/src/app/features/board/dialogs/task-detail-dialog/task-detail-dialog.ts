@@ -21,25 +21,10 @@ export interface TaskDetailDialogData {
   readonly taskId: number;
 }
 
-/** What the page should do once this closes. Editing happens here now, so only deletion is left. */
 export type TaskDetailDialogResult = 'delete' | undefined;
 
-/** Which fact is open for editing. One at a time — two half-finished edits help nobody. */
 type EditableField = 'title' | 'description' | 'assignee' | 'priority' | 'status';
 
-/**
- * The task card. What the task says on the left — description, date and the thread — and who it
- * concerns on the right: assignee, reporter, priority, status.
- *
- * Every editable fact carries its own pencil and saves on its own, so there is no general "edit the
- * task" mode. Each save goes through the endpoint that already owns it: the ordinary task update
- * for text, assignee and priority, and the same move endpoint a drag uses for status. Both write
- * through BoardDetailService, whose board signal the kanban renders — which is why a change here
- * shows up behind the dialog without a reload.
- *
- * Read on its own rather than from the board's state, because the thread is not part of what the
- * board loads for every card on screen.
- */
 @Component({
   selector: 'app-task-detail-dialog',
   templateUrl: './task-detail-dialog.html',
@@ -59,14 +44,12 @@ export class TaskDetailDialog {
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
 
-  /** Every status this task could be given, in the board's own order. */
   protected readonly columns = computed<readonly BoardColumn[]>(() =>
     this.boardDetail.board()?.columns ?? []);
 
   protected readonly editing = signal<EditableField | null>(null);
   protected readonly saving = signal(false);
 
-  /** A local, generic message. The server's own wording is never shown. */
   protected readonly saveFailed = signal(false);
 
   protected readonly draftText = signal('');
@@ -78,10 +61,8 @@ export class TaskDetailDialog {
   protected readonly titleMaxLength = 200;
   protected readonly descriptionMaxLength = 2000;
 
-  /** Only active accounts: a task assigned to someone who cannot sign in has nobody behind it. */
   protected readonly assignableUsers = signal<readonly UserListItem[]>([]);
 
-  /** Which outcome the task's column is, or nothing for the columns still in progress. */
   protected readonly currentOutcome = computed<'Completed' | 'Cancelled' | null>(() => {
     const columnId = this.task()?.taskColumnId;
     const kind = this.columns().find(column => column.workflowColumnId === columnId)?.systemKind;
@@ -96,7 +77,6 @@ export class TaskDetailDialog {
       .pipe(takeUntilDestroyed())
       .subscribe({
         next: users => this.assignableUsers.set(users.filter(user => user.isActive)),
-        // Left empty: the assignee editor says so rather than offering a list that is not there.
         error: () => this.assignableUsers.set([])
       });
   }
@@ -109,13 +89,10 @@ export class TaskDetailDialog {
     return initialsOf(fullName);
   }
 
-  // --- Inline editing -----------------------------------------------------
-
-  protected isEditing(field: EditableField): boolean {
+protected isEditing(field: EditableField): boolean {
     return this.editing() === field;
   }
 
-  /** Opens one field, seeded with what the task says today. */
   protected startEdit(field: EditableField): void {
     const task = this.task();
 
@@ -159,7 +136,6 @@ export class TaskDetailDialog {
   }
 
   protected onDraftAssignee(value: string): void {
-    // The empty option is Unassigned, which is a real choice rather than "nothing selected".
     this.draftAssignee.set(value === '' ? null : Number(value));
   }
 
@@ -170,7 +146,6 @@ export class TaskDetailDialog {
   protected saveTitle(): void {
     const title = this.draftText().trim();
 
-    // Whitespace alone is not a title. The server rejects it too; stopping here saves a round trip.
     if (title.length > 0) {
       this.applyUpdate({ title });
     }
@@ -179,7 +154,6 @@ export class TaskDetailDialog {
   protected saveDescription(): void {
     const description = this.draftText().trim();
 
-    // Sent as nothing at all rather than an empty string, which is how the server stores it.
     this.applyUpdate({ description: description.length === 0 ? undefined : description });
   }
 
@@ -187,18 +161,10 @@ export class TaskDetailDialog {
     this.applyUpdate({ priority: this.draftPriority() });
   }
 
-  /**
-   * Who the task is assigned to. The board is re-read afterwards as well, because participation is
-   * what team membership is computed from — the same reason the edit dialog already reloads.
-   */
   protected saveAssignee(): void {
     this.applyUpdate({ assigneeUserId: this.draftAssignee() }, true);
   }
 
-  /**
-   * Status, through the very same move endpoint a drag uses. It reloads the board, so the card
-   * leaves its old column and appears in the new one behind this dialog with nothing to refresh.
-   */
   protected saveStatus(): void {
     const task = this.task();
     const targetColumnId = this.draftColumnId();
@@ -217,7 +183,6 @@ export class TaskDetailDialog {
     this.saving.set(true);
     this.saveFailed.set(false);
 
-    // Appended to the end of the target column. The server owns the final position and clamps this.
     this.boardDetail
       .moveTaskAndReload(task.boardId, task.taskId, {
         targetColumnId,
@@ -228,7 +193,6 @@ export class TaskDetailDialog {
         next: () => {
           this.saving.set(false);
           this.editing.set(null);
-          // The card names its own column, and the move has just changed it.
           this.patch(current => ({
             ...current,
             taskColumnId: targetColumnId,
@@ -242,13 +206,6 @@ export class TaskDetailDialog {
       });
   }
 
-  /**
-   * One update endpoint for every text and metadata change.
-   *
-   * The request carries the whole task, so anything not being edited is sent as it stands — an
-   * update replaces the task rather than patching it, which is why omitting a field would quietly
-   * clear it.
-   */
   private applyUpdate(patch: Partial<UpdateTaskRequest>, reloadBoard = false): void {
     const task = this.task();
 
@@ -271,7 +228,6 @@ export class TaskDetailDialog {
 
     (reloadBoard
       ? write.pipe(switchMap(saved => this.boardDetail.reload(task.boardId).pipe(
-        // The reload answers with the board; the saved task is what this card needs.
         switchMap(() => [saved]))))
       : write)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -294,9 +250,7 @@ export class TaskDetailDialog {
       });
   }
 
-  // --- The thread ---------------------------------------------------------
-
-  protected onCommentAdded(comment: TaskComment): void {
+protected onCommentAdded(comment: TaskComment): void {
     this.patch(task => ({ ...task, comments: [...task.comments, comment] }));
   }
 
@@ -307,7 +261,6 @@ export class TaskDetailDialog {
     }));
   }
 
-  /** The file may hang off a comment or off the task; it is dropped from wherever it is. */
   protected onAttachmentDeleted(attachmentId: number): void {
     this.patch(task => ({
       ...task,
@@ -320,15 +273,11 @@ export class TaskDetailDialog {
     }));
   }
 
-  // --- Closing ------------------------------------------------------------
-
-  protected requestDelete(): void {
+protected requestDelete(): void {
     this.dialogRef.close('delete');
   }
 
-  // --- Plumbing -----------------------------------------------------------
-
-  private load(): void {
+private load(): void {
     this.loading.set(true);
     this.failed.set(false);
 

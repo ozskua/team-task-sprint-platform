@@ -6,10 +6,6 @@ using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
-/// <summary>
-/// Operations on a column that already exists. Creating one and reordering the board are nested
-/// under the board instead, because both are really operations on the board as a whole.
-/// </summary>
 [ApiController]
 [Route("api/columns")]
 [Authorize]
@@ -22,7 +18,6 @@ public class WorkflowColumnsController : ControllerBase
         this.workflowColumnService = workflowColumnService;
     }
 
-    /// <summary>Renames a custom column. To Do, Completed and Cancelled cannot be renamed.</summary>
     [HttpPut("{columnId:int}")]
     [ProducesResponseType(typeof(WorkflowColumnResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -50,10 +45,6 @@ public class WorkflowColumnsController : ControllerBase
         };
     }
 
-    /// <summary>
-    /// Deletes an empty custom column. A column that still holds tasks is refused and nothing about
-    /// those tasks changes — the caller moves them out first.
-    /// </summary>
     [HttpDelete("{columnId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -65,7 +56,6 @@ public class WorkflowColumnsController : ControllerBase
 
         return outcome switch
         {
-            // Nothing moved, so there is nothing for the client to re-read.
             DeleteColumnOutcome.Deleted => NoContent(),
 
             DeleteColumnOutcome.ColumnNotFound => ColumnNotFound(),

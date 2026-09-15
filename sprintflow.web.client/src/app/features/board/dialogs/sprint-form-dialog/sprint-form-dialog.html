@@ -13,10 +13,6 @@
       [value]="name()"
       (input)="onNameInput($any($event.target).value)" />
 
-    <!--
-      Native date inputs on purpose: no hours, no minutes, and the value is a plain YYYY-MM-DD
-      string, so nothing here can shift a day into another timezone.
-    -->
     <div class="sprint-form-dates">
       <div class="sprint-form-field">
         <label class="sprint-form-label" for="sprint-start">First day</label>
@@ -29,7 +25,6 @@
       </div>
 
       <div class="sprint-form-field">
-        <!-- Exclusive: the first day after the sprint, and where the next one may begin. -->
         <label class="sprint-form-label" for="sprint-end">Ends before</label>
         <input
           id="sprint-end"

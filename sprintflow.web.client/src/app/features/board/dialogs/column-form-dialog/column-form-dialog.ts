@@ -5,14 +5,9 @@ export interface ColumnFormDialogData {
   readonly heading: string;
   readonly confirmLabel: string;
 
-  /** Present when renaming, absent when creating. */
   readonly name?: string;
 }
 
-/**
- * Names a custom column. Only ever opened for custom columns — the three system columns keep
- * their names on every board, so nothing offers this for them.
- */
 @Component({
   selector: 'app-column-form-dialog',
   templateUrl: './column-form-dialog.html',
@@ -27,7 +22,6 @@ export class ColumnFormDialog {
 
   protected readonly name = signal(this.data.name ?? '');
 
-  /** Matches the server's column-name limit, so the field cannot produce a request it will reject. */
   protected readonly maxLength = 100;
 
   protected onNameInput(value: string): void {
@@ -37,7 +31,6 @@ export class ColumnFormDialog {
   protected submit(): void {
     const trimmed = this.name().trim();
 
-    // Whitespace alone is not a name. The server rejects it too; stopping here saves a round trip.
     if (trimmed.length === 0) {
       return;
     }

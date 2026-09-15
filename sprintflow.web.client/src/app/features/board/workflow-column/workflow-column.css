@@ -1,23 +1,8 @@
-/*
-  The width is the parent's decision — a lane on the board row, or half the shared outcome lane.
-  `min-width: 0` is what lets this actually shrink: without it a flex item refuses to go below its
-  content's intrinsic width and the lanes start overlapping.
-*/
 :host {
     display: block;
     min-width: 0;
 }
 
-/*
-  `min-height` rather than `height`: the frame fills the lane it was stretched to, and grows past it
-  when the cards need more room. The workflow area is what scrolls, so a column is free to be as
-  tall as its contents.
-
-  `border-box` is not optional here. There is no global box-sizing reset in this project, so under
-  the default sizing `min-height: 100%` means "the lane's height *plus* my own padding and border" —
-  every column ended up 26px taller than the lane holding it, and the workflow area showed a
-  permanent 17px scrollbar on boards whose cards fit the screen perfectly well.
-*/
 .column {
     display: flex;
     flex-direction: column;
@@ -73,12 +58,6 @@
     flex: 0 0 auto;
 }
 
-/*
-  Cards stack downwards and the list simply gets longer — no scrollbar of its own. A column with
-  twenty cards makes every lane on the row twenty cards tall and the workflow area scrolls once,
-  which is the behaviour you expect from a board; a little scrolling box inside a fixed lane is not.
-  A floor of 60px keeps an empty lane a visible drop target.
-*/
 .column-tasks {
     display: flex;
     flex-direction: column;
@@ -96,7 +75,6 @@
     color: var(--mat-sys-on-surface-variant);
 }
 
-/* CDK drag feedback. */
 .cdk-drag-preview {
     border-radius: var(--app-radius-control);
     box-shadow: 0 8px 24px rgba(32, 18, 45, 0.18);

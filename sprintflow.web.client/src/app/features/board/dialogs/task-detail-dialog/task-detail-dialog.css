@@ -15,10 +15,6 @@
     font-size: 1rem;
 }
 
-/*
-  The content itself never scrolls: it is a fixed frame, and the thread inside it takes what is
-  left. Without this the whole card would lengthen with every comment.
-*/
 .card-content {
     display: flex;
     overflow: hidden;
@@ -42,7 +38,6 @@
     min-height: 0;
 }
 
-/* Takes whatever the description leaves, and scrolls inside itself. */
 .thread-host {
     flex: 1 1 auto;
     min-height: 0;
@@ -91,7 +86,6 @@
     margin-top: 6px;
 }
 
-/* One pencil, one Kaydet, one Vazgeç — the same small control everywhere. */
 .pencil {
     display: inline-grid;
     place-items: center;
@@ -191,7 +185,6 @@ textarea.control {
     color: var(--mat-sys-on-surface);
 }
 
-/* The same circle the card shows, so the person is recognisable in both places. */
 .avatar {
     display: grid;
     place-items: center;
@@ -204,7 +197,6 @@ textarea.control {
     font-weight: 700;
 }
 
-/* The same four tints the kanban card uses, so a level looks the same in both places. */
 .priority {
     align-self: flex-start;
     padding: 2px 8px;
@@ -238,10 +230,6 @@ textarea.control {
     font-size: 0.875rem;
 }
 
-/*
-  The column's name is written out beside it, so the dot repeats something already said in words
-  rather than carrying the meaning by itself.
-*/
 .dot {
     display: inline-block;
     flex: 0 0 auto;
@@ -263,7 +251,6 @@ textarea.control {
     color: var(--app-attention-ink);
 }
 
-/* Stacked on a narrow window; the left column keeps its order. */
 @media (max-width: 760px) {
     .card-layout {
         grid-template-columns: minmax(0, 1fr);

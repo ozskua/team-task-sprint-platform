@@ -14,7 +14,6 @@ import { SprintReportService } from '../../../core/services/sprint-report.servic
 import { SprintService } from '../../../core/services/sprint.service';
 import { TaskTableRow } from '../../../shared/task-table/task-table';
 
-/** What is known about one sprint's tasks, once someone has opened it. */
 interface TaskState {
   readonly status: 'loading' | 'ready' | 'failed';
   readonly completed: readonly TaskTableRow[];
@@ -24,7 +23,6 @@ interface TaskState {
 
 const NO_TASKS: TaskState = { status: 'loading', completed: [], cancelled: [], ongoing: [] };
 
-/** The four figures above the table, summed from the rows rather than asked for separately. */
 interface ReportTotals {
   readonly sprints: number;
   readonly tasks: number;
@@ -32,16 +30,6 @@ interface ReportTotals {
   readonly cancelled: number;
 }
 
-/**
- * Every sprint's outcome, for the administrator.
- *
- * Read-only, and admin-only on the server as well as here: the endpoint compares the caller against
- * the configured admin id and answers 403 otherwise. The guard on `/admin` is a convenience.
- *
- * Each row opens on its own to reveal what was actually in the sprint. Nothing is fetched until a
- * row is opened, and what has been fetched is kept for the rest of the visit — the same shape the
- * system-wide Sprints page uses.
- */
 @Component({
   selector: 'app-sprint-report',
   templateUrl: './sprint-report.html',
@@ -59,10 +47,8 @@ export class SprintReport {
 
   protected readonly rows = signal<readonly SprintReportRow[]>([]);
 
-  /** Which rows are open. Several may be at once — each is its own disclosure. */
   private readonly expanded = signal<ReadonlySet<number>>(new Set());
 
-  /** Tasks per sprint, kept once loaded so collapsing and reopening costs no request. */
   private readonly tasksBySprint = signal<ReadonlyMap<number, TaskState>>(new Map());
 
   protected readonly skeletonRows = [0, 1, 2, 3, 4];
@@ -87,7 +73,6 @@ export class SprintReport {
           this.loading.set(false);
         },
         error: () => {
-          // The message is a local constant; the server's text is never shown.
           this.failed.set(true);
           this.loading.set(false);
         }
@@ -102,10 +87,6 @@ export class SprintReport {
     return this.tasksBySprint().get(sprintId);
   }
 
-  /**
-   * Opens or closes one row. Closing keeps whatever was loaded, so opening it again is instant and
-   * makes no second request.
-   */
   protected toggle(sprintId: number): void {
     const open = new Set(this.expanded());
 
@@ -118,7 +99,6 @@ export class SprintReport {
     open.add(sprintId);
     this.expanded.set(open);
 
-    // Already fetched, or already being fetched: nothing to do.
     if (this.tasksBySprint().has(sprintId)) {
       return;
     }
@@ -126,7 +106,6 @@ export class SprintReport {
     this.setTaskState(sprintId, NO_TASKS);
 
     this.sprintService.tasks(sprintId)
-      // Explicit DestroyRef: this runs from a click, outside the constructor's injection context.
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (tasks: readonly SprintTask[]) =>
@@ -139,12 +118,6 @@ export class SprintReport {
     return `/admin/boards/${boardId}/sprints`;
   }
 
-  /**
-   * Splits a sprint's tasks the same three ways the server counted them.
-   *
-   * Ongoing is everything that is neither completed nor cancelled — To Do and every custom column —
-   * which is the server's definition exactly, so the group sizes always match the row's figures.
-   */
   private static group(tasks: readonly SprintTask[]): TaskState {
     return {
       status: 'ready',

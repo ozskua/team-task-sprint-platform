@@ -7,7 +7,6 @@ using SprintFlow.Web.SignalR.Hubs;
 using SprintFlow.Web.SignalR.Messaging;
 using SprintFlow.Web.SignalR.Options;
 
-// Loaded before the host so that failures during start-up are still written to the log file.
 var logger = LogManager.Setup()
     .LoadConfigurationFromFile("nlog.config")
     .GetCurrentClassLogger();
@@ -27,9 +26,6 @@ try
     var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
         ?? new JwtOptions();
 
-    // Fail fast rather than run misconfigured, the same way the API service does. An empty key
-    // would make every token invalid and the symptom - "realtime silently never works" - is one of
-    // the hardest to diagnose from the outside.
     if (string.IsNullOrWhiteSpace(jwt.Key))
     {
         throw new InvalidOperationException(
@@ -38,9 +34,6 @@ try
             + "same value the API service issues tokens with.");
     }
 
-    // Validation only. This service holds no ITokenService and has no sign-in endpoint: issuing
-    // tokens stays with the API service. Note that the key is symmetric, so this is a property of
-    // the code rather than of the cryptography - see the roadmap's RS256 entry.
     builder.Services
         .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(bearer =>
@@ -61,9 +54,6 @@ try
 
                 RoleClaimType = System.Security.Claims.ClaimTypes.Role,
 
-                // What SignalR's default provider reads to answer "who is this connection?", which
-                // is what makes Clients.User(id) reach the right person. The API service writes
-                // this claim into every token it issues.
                 NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
             };
 
@@ -71,8 +61,6 @@ try
             {
                 OnMessageReceived = context =>
                 {
-                    // A WebSocket handshake cannot carry an Authorization header, so the SignalR
-                    // client sends the token in the query string instead.
                     var accessToken = context.Request.Query["access_token"];
 
                     if (!string.IsNullOrEmpty(accessToken)
@@ -90,7 +78,6 @@ try
 
     builder.Services.AddSignalR();
 
-    // One connection for the process; the consumer opens its own channel on it.
     builder.Services.AddSingleton<RabbitMqConnection>();
     builder.Services.AddHostedService<RealtimeConsumer>();
 
@@ -99,8 +86,6 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    // The same two paths the browser has always used. Only the process answering them changed,
-    // which is why no Angular file had to.
     app.MapHub<BoardHub>("/hubs/board");
     app.MapHub<NotificationHub>("/hubs/notifications");
 

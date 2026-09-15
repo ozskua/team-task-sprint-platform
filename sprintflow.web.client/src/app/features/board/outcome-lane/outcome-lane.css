@@ -1,17 +1,8 @@
-/*
-  The width is the parent's decision, exactly as it is for a workflow column. `min-width: 0` is what
-  lets this actually shrink instead of holding the row open at its content's intrinsic width.
-*/
 :host {
     display: block;
     min-width: 0;
 }
 
-/*
-  One frame for both outcomes. `min-height: 100%` rather than `height`, so the lane fills the row it
-  was stretched to and can still grow past it when a region fills up — the whole workflow area
-  scrolls, never this lane on its own.
-*/
 .outcome {
     display: flex;
     flex-direction: column;
@@ -25,7 +16,6 @@
     box-sizing: border-box;
 }
 
-/* The lane's only permanent label. Neither region gets one of its own. */
 .outcome-heading {
     margin: 0;
     font-size: 0.875rem;
@@ -33,15 +23,6 @@
     color: var(--mat-sys-on-surface);
 }
 
-/*
-  The two regions. Equal `flex-grow`, so spare height in the lane is split evenly and the boundary
-  sits halfway down whenever there is room — which is what makes "drop it in the top half" mean
-  something. `flex-basis: auto` keeps a region that is full of cards from being squashed by the
-  empty one opposite it: it grows past its share instead, and the lane grows with it.
-
-  No border, no background and no scrollbar of their own: idle, the two are indistinguishable and
-  the lane reads as one surface.
-*/
 .outcome-zone {
     display: flex;
     flex-direction: column;
@@ -53,21 +34,12 @@
     border-radius: var(--app-radius-control);
 }
 
-/*
-  The one moment the boundary matters. The CDK marks every connected list `receiving` while a drag
-  is live, and the list the card came from `dragging` — between them that is both regions, whichever
-  one the card started in. Nothing here needs a signal or a drag-started handler.
-*/
 .outcome-zone.cdk-drop-list-receiving,
 .outcome-zone.cdk-drop-list-dragging {
     border-color: var(--app-border-card);
     background-color: var(--app-surface-hover);
 }
 
-/*
-  Says which outcome this half means, in the verb form — "Complete", not "Completed" — because at
-  this moment it is describing what dropping here will do, not what the card already is.
-*/
 .outcome-hint {
     display: none;
     padding: 2px 6px;

@@ -1,8 +1,3 @@
-<!--
-  The badge is on the button rather than on the icon, so it sits at the corner of the whole control
-  and is not clipped by the icon's own box. It is hidden at zero: an empty badge would still draw a
-  dot and say there is something to read.
--->
 <button
   class="bell-trigger"
   mat-icon-button
@@ -20,10 +15,6 @@
 </button>
 
 <mat-menu #menu="matMenu" class="bell-panel">
-  <!--
-    A plain div, deliberately not a mat-menu-item: it is a heading, not an action, so it must not be
-    focusable and must not sit in the arrow-key order. The button inside it is.
-  -->
   <div class="bell-header">
     <span class="bell-title">Bildirimler</span>
 
@@ -54,7 +45,6 @@
       <span class="bell-item-body">
         <span class="bell-item-text">{{ text(notification) }}</span>
         <span class="bell-item-task">{{ notification.taskTitle }}</span>
-        <!-- No timezone argument: the value carries no offset, so any conversion would shift it. -->
         <span class="bell-item-date">{{ notification.createdDate | date:'dd MMM yyyy HH:mm' }}</span>
       </span>
     </button>

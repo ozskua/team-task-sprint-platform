@@ -61,14 +61,12 @@
     list-style: none;
 }
 
-/* The row is the disclosure; opening the board is a separate control beside it. */
 .sprint-row-line {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-/* Carries the row's own layout: chevron, then the four facts the row states. */
 .sprint-row-toggle {
     flex: 1 1 auto;
     min-width: 0;
@@ -92,7 +90,6 @@
 
 .sprint-row-chevron {
     flex: none;
-    /* The grid gap already separates it; without this the icon's own box adds a second gap. */
     margin-right: -8px;
     font-size: 18px;
     width: 18px;
@@ -113,7 +110,6 @@
     text-decoration: underline;
 }
 
-/* Indented past the disclosure, so the tasks read as belonging to the row above them. */
 .sprint-row-tasks {
     margin: 4px 0 8px 28px;
 }
@@ -125,7 +121,6 @@
     color: var(--mat-sys-on-surface-variant);
 }
 
-/* The rest of the row is the link, so the target is the row and not just its name. */
 .sprint-row-name {
     overflow: hidden;
     font-size: 0.875rem;
@@ -150,7 +145,6 @@
     color: var(--mat-sys-on-surface-variant);
 }
 
-/* Only the running one is tinted: it is the row a reader is looking for. */
 .sprint-row-status--Active {
     background-color: rgba(37, 99, 235, 0.16);
     color: #93b4fd;
@@ -176,8 +170,6 @@
 }
 
 @media (max-width: 767.98px) {
-    /* One column for the chevron, one for everything it opens — so the facts stack beside the
-       disclosure rather than underneath it. */
     .sprint-row-toggle {
         grid-template-columns: auto minmax(0, 1fr);
         gap: 4px 8px;
@@ -197,7 +189,6 @@
         grid-column: 2;
     }
 
-    /* A pill should be as wide as its text, not as wide as the column. */
     .sprint-row-status {
         justify-self: start;
     }

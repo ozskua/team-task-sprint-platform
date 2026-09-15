@@ -20,19 +20,16 @@ public class TaskCommentConfiguration : IEntityTypeConfiguration<TaskComment>
             .IsRequired()
             .HasDefaultValueSql("SYSUTCDATETIME()");
 
-        // Cascade: a comment has no meaning without its task.
         builder.HasOne(c => c.Task)
             .WithMany(t => t.Comments)
             .HasForeignKey(c => c.TaskId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Restrict, like everywhere else: removing a user must never delete what they wrote.
         builder.HasOne(c => c.User)
             .WithMany()
             .HasForeignKey(c => c.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Reading a task means reading its comments oldest first.
         builder.HasIndex(c => new { c.TaskId, c.CreatedDate });
     }
 }

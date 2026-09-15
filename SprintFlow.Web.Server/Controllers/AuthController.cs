@@ -18,7 +18,6 @@ public class AuthController : ControllerBase
         this.invitationService = invitationService;
     }
 
-    /// <summary>Signs a user in. Returns 401 with a generic message for any failure.</summary>
     [HttpPost("login")]
     [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -27,19 +26,9 @@ public class AuthController : ControllerBase
         [FromBody] LoginRequestDto request,
         CancellationToken cancellationToken)
     {
-        // No business rule here on purpose — the controller routes and returns.
         return Ok(await authService.LoginAsync(request, cancellationToken));
     }
 
-    /// <summary>
-    /// Creates an account from an invitation. Anonymous, but not open: without a usable token
-    /// nothing is created, so accounts still exist only because someone already signed in decided
-    /// one should.
-    /// </summary>
-    /// <remarks>
-    /// No token is issued here. The new account signs in through <c>login</c> like every other one,
-    /// so there is exactly one way to obtain a JWT and exactly one place a session begins.
-    /// </remarks>
     [HttpPost("register")]
     [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -53,8 +42,6 @@ public class AuthController : ControllerBase
         {
             RegisterOutcome.Created => StatusCode(StatusCodes.Status201Created, user),
 
-            // Reported in the invitation's own words, identical to what the pre-check returns, so
-            // the page says the same thing whenever it finds out.
             RegisterOutcome.InvitationNotUsable =>
                 InvitationsController.InvitationProblem(this, tokenStatus),
 
@@ -63,9 +50,6 @@ public class AuthController : ControllerBase
                 title: "E-mail already registered",
                 detail: "An account already uses this e-mail address. Sign in instead, or register with a different address."),
 
-            // A limit of the hashing algorithm rather than a password rule: bcrypt reads no more
-            // than 72 bytes, so a longer password would be stored as something other than what was
-            // typed. Said in bytes because that is what is actually measured.
             RegisterOutcome.PasswordTooLong => Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Password too long",

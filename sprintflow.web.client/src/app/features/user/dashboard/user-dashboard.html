@@ -1,6 +1,5 @@
 <div class="user-dashboard">
 
-  <!-- Welcome + compact summary. The numbers are context, not the subject. -->
   <section class="welcome">
     <h2 class="welcome-title">Welcome back</h2>
 
@@ -12,8 +11,6 @@
 
     <div class="summary">
       <div class="summary-counts">
-        <!-- Four buckets, one per kind of column. Together they account for every task assigned
-             to this user, so nothing is hidden by the list below only showing two of them. -->
         <div class="summary-item">
           <span class="summary-label">To Do</span>
           @if (loading()) {
@@ -50,7 +47,6 @@
 
       <div class="summary-progress">
         <div class="summary-progress-head">
-          <!-- Cancelled is not in the denominator: abandoned work is neither done nor outstanding. -->
           <span class="summary-label">Overall progress</span>
           <span class="summary-percent">{{ progressPercent() }}%</span>
         </div>
@@ -66,7 +62,6 @@
     </div>
   </section>
 
-  <!-- Rendered only when something is actually late. -->
   @if (hasOverdue()) {
     <section class="attention">
       <h2 class="attention-title">Needs Attention ({{ overdueTasks().length }})</h2>
@@ -78,10 +73,6 @@
     </section>
   }
 
-  <!--
-    Tasks assigned to this user, across every board they are on. Not tasks they created: being the
-    author of a task says who wrote it down, not who owes it.
-  -->
   <section class="dashboard-section">
     <h2 class="section-title">My Tasks</h2>
 
@@ -125,10 +116,6 @@
     }
   </section>
 
-  <!--
-    A team is a board you hold a task on. Creating a board does not put you on its team, and no
-    membership is stored anywhere — it is worked out from assignment every time this is read.
-  -->
   <section class="dashboard-section">
     <h2 class="section-title">My Teams</h2>
 

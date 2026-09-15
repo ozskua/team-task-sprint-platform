@@ -5,7 +5,6 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { UserListItem } from '../models/user-models';
 
-/** Reads the user list. The endpoint is Admin-only; the server enforces that, not this class. */
 @Injectable()
 export class UserService {
   private readonly http = inject(HttpClient);

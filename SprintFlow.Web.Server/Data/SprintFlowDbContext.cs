@@ -3,10 +3,6 @@ using SprintFlow.Web.Server.Models;
 
 namespace SprintFlow.Web.Server.Data;
 
-/// <summary>
-/// EF Core context for SprintFlow. This application owns the schema and every migration; the
-/// notification service writes the Notifications table through a narrow model of its own.
-/// </summary>
 public class SprintFlowDbContext : DbContext
 {
     public SprintFlowDbContext(DbContextOptions<SprintFlowDbContext> options)
@@ -44,8 +40,6 @@ public class SprintFlowDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Picks up every IEntityTypeConfiguration in this assembly, so adding an entity means
-        // adding one configuration file — this method never changes.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(SprintFlowDbContext).Assembly);
     }
 }

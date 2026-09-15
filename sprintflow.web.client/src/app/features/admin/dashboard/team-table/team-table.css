@@ -12,7 +12,6 @@
     vertical-align: middle;
 }
 
-/* A tinted header separates column labels from data without adding a rule. */
 .team-table thead th {
     height: 44px;
     border-bottom: 1px solid var(--app-border);
@@ -57,7 +56,6 @@
     overflow: hidden;
 }
 
-/* A fill, never text — the accompanying percentage carries the meaning. */
 .team-progress-fill {
     height: 100%;
     border-radius: 999px;

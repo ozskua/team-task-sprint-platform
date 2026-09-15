@@ -15,7 +15,6 @@
       <span>{{ s.name }}</span>
     </nav>
 
-    <!-- Sprint information, then the work in it. -->
     <div class="detail-card">
       <div class="detail-head">
         <h2 class="detail-title">{{ s.name }}</h2>
@@ -32,7 +31,6 @@
           <dd>{{ s.startDate }}</dd>
         </div>
         <div class="detail-fact">
-          <!-- Exclusive: the sprint stops before this day, and the next one may start on it. -->
           <dt>Ends before</dt>
           <dd>{{ s.endDate }}</dd>
         </div>
@@ -67,8 +65,6 @@
           </p>
         </div>
       } @else {
-        <!-- The same table the Backlog draws, without its selectors: this page shows the sprint,
-             it is not where work is reassigned. -->
         <app-task-table
           [rows]="taskRows()"
           [caption]="'Tasks in ' + s.name" />

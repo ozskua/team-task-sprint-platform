@@ -1,12 +1,3 @@
-/*
-  The task table's own styles, moved here with the markup so the Backlog and the sprint pages cannot
-  drift apart visually. The Backlog keeps only what is unique to it — its two selector columns.
-*/
-
-/*
-  The one scroll surface on this page: the rows move under a header that stays put. The table inside
-  keeps its normal display, so the header cells and the body cells go on sharing column widths.
-*/
 .task-scroll {
     flex: 1 1 auto;
     min-height: 0;
@@ -22,11 +13,6 @@
     font-size: 0.875rem;
 }
 
-/*
-  Sticky on the cells rather than on the row: `position: sticky` does not apply to `<tr>` in every
-  engine, and the cells are what actually paint. An opaque background is required — without it the
-  rows scroll visibly through the header.
-*/
 .task-table thead th {
     position: sticky;
     top: 0;
@@ -58,7 +44,6 @@
     background-color: var(--app-surface-hover);
 }
 
-/* A move in flight. Reduced opacity plus a disabled select, never colour alone. */
 .task-row--busy td {
     opacity: 0.55;
 }
@@ -92,10 +77,6 @@
     white-space: nowrap;
 }
 
-/*
-  The same green and red as the card badge. Here the column's name is written out beside it, so the
-  dot is only a repetition of something already said in words — it never carries the meaning alone.
-*/
 .task-dot {
     display: inline-block;
     flex: 0 0 auto;
@@ -123,7 +104,6 @@
     overflow-wrap: anywhere;
 }
 
-/* The same circle the card shows, so the person is recognisable in both places. */
 .assignee-avatar {
     display: grid;
     place-items: center;
@@ -148,7 +128,6 @@
     white-space: nowrap;
 }
 
-/* Plain text where the Backlog has a button: the sprint pages have nothing to open. */
 .task-title--plain {
     background: none;
     border: none;
@@ -156,4 +135,3 @@
     color: inherit;
     cursor: default;
 }
-

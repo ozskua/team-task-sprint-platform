@@ -3,10 +3,6 @@ using SprintFlow.Web.Server.Common;
 
 namespace SprintFlow.Web.Server.Middleware;
 
-/// <summary>
-/// Turns exceptions into RFC 7807 ProblemDetails. Known failures keep their status and message;
-/// anything else becomes a plain 500 and the real detail goes to the log, never to the client.
-/// </summary>
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate next;
@@ -26,9 +22,6 @@ public class ExceptionHandlingMiddleware
         }
         catch (AuthenticationFailedException exception)
         {
-            // Warning, not Error: an expected outcome worth noticing in the log. Deliberately
-            // records nothing about the attempt — no e-mail, and not which field was wrong —
-            // because that would assist account enumeration.
             logger.LogWarning("Sign-in attempt rejected.");
 
             await WriteProblemAsync(
@@ -53,7 +46,6 @@ public class ExceptionHandlingMiddleware
     {
         if (context.Response.HasStarted)
         {
-            // The response is already on the wire; overwriting it would corrupt it.
             return;
         }
 

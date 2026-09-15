@@ -7,10 +7,6 @@ import { filter, map, startWith } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { USER_NAVIGATION } from '../navigation';
 
-/**
- * Shell for the normal user area. Same structure and behaviour as AdminLayout —
- * the only difference is the navigation list it hands to the shared Sidebar.
- */
 @Component({
   selector: 'app-user-layout',
   templateUrl: './user-layout.html',
@@ -25,7 +21,6 @@ export class UserLayout {
 
   protected readonly navigation = USER_NAVIGATION;
 
-  /** Below 1024px the sidebar overlays the content instead of sitting beside it. */
   protected readonly compact = toSignal(
     this.breakpoints.observe('(max-width: 1023.98px)').pipe(map(state => state.matches)),
     { initialValue: false }
@@ -34,11 +29,6 @@ export class UserLayout {
   protected readonly sidebarOpen = signal(true);
   protected readonly pageTitle = signal('');
 
-  /**
-   * Whether the current page wants the whole content area rather than the centred reading column.
-   * Declared by the route itself, the same way the header title is, so the shell never has to
-   * recognise particular URLs.
-   */
   protected readonly fullBleed = signal(false);
 
   constructor() {
@@ -62,11 +52,10 @@ export class UserLayout {
   }
 
   protected onLogout(): void {
-    this.authService.logout(); // Clear first, so a browser "back" is rejected by authGuard.
+    this.authService.logout();
     void this.router.navigate(['/login']);
   }
 
-  /** The deepest activated route's data — where both the header title and the layout mode live. */
   private resolveRouteData(): Record<string, unknown> {
     let route = this.router.routerState.snapshot.root;
 

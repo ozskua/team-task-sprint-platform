@@ -1,4 +1,3 @@
-/* Sits below the navigation list inside the same sidebar padding. */
 .area-nav {
     margin-top: 24px;
     padding: 16px 12px 0;
@@ -47,7 +46,6 @@
     margin-top: 4px;
 }
 
-/* A row, not a link: there is no Area page to navigate to yet. */
 .area-row {
     display: flex;
     align-items: center;
@@ -71,13 +69,11 @@
     white-space: nowrap;
 }
 
-/* The add-board "+" and the "..." menu. Both are affordances, not decoration. */
 .area-row-action {
     flex: 0 0 auto;
     color: var(--mat-sys-on-surface-variant);
 }
 
-/* Indented to sit with the boards it creates. */
 .board-form {
     display: flex;
     flex-direction: column;
@@ -89,7 +85,6 @@
     background-color: var(--app-surface-card);
 }
 
-/* Indented under its Area, with a rule standing in for the tree line. */
 .board-list {
     margin: 2px 0 0;
     padding: 0 0 0 16px;
@@ -123,7 +118,6 @@
     outline-offset: -2px;
 }
 
-/* Weight rather than colour alone, so the current board is still obvious without relying on hue. */
 .board-link--active {
     background-color: var(--app-surface-muted);
     color: var(--mat-sys-on-surface);

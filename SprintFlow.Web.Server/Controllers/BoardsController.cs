@@ -6,14 +6,8 @@ using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
-/// <summary>
-/// Boards live inside an Area, which is why the route is nested. Renaming and deleting do not
-/// exist yet.
-/// </summary>
 [ApiController]
 [Route("api/areas/{areaId:int}/boards")]
-// Authentication only. Any signed-in user may add a Board to any Area — being the Area's creator is
-// not required, and creating a Board grants no permission over it.
 [Authorize]
 public class BoardsController : ControllerBase
 {
@@ -24,7 +18,6 @@ public class BoardsController : ControllerBase
         this.boardService = boardService;
     }
 
-    /// <summary>Creates a Board in the Area, along with the Board's one Team.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(BoardResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -41,8 +34,6 @@ public class BoardsController : ControllerBase
             User.GetAuthenticatedUserId(),
             cancellationToken);
 
-        // Turning "no such Area" into a status code is an HTTP concern, so it belongs here rather
-        // than in the service.
         if (board is null)
         {
             return Problem(

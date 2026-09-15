@@ -15,16 +15,11 @@
       <span class="summary-message-hint">Please refresh the page to try again.</span>
     </section>
   } @else if (summary(); as s) {
-    <!-- This board only. The Dashboard answers the same question about the whole system. -->
     <p class="summary-scope">{{ s.areaName }} · {{ s.boardName }}</p>
 
     <section class="summary-section">
       <h2 class="summary-title">Tasks</h2>
 
-      <!--
-        The four buckets are mutually exclusive and cover every column, so they add up to the total
-        shown beside them. Cancelled counts here and is left out of progress below.
-      -->
       <div class="summary-grid summary-grid--four">
         <app-metric-card label="To Do" [value]="s.toDo" />
         <app-metric-card label="Open" [value]="s.open" />
@@ -39,7 +34,6 @@
 
       <div class="panel summary-progress">
         <div class="summary-progress-head">
-          <!-- Cancelled is not in the denominator: abandoned work is neither done nor outstanding. -->
           <span class="summary-progress-label">Board progress</span>
           <span class="summary-progress-percent">{{ s.progressPercent }}%</span>
         </div>

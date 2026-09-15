@@ -1,7 +1,5 @@
 namespace SprintFlow.Web.Server.Models;
 
-// Exactly one per board, created with it and never by hand. Membership is not stored here: it is
-// computed from TaskParticipants.
 public class Team
 {
     public int TeamId { get; set; }

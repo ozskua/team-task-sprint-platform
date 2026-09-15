@@ -23,8 +23,6 @@
 } @else if (board(); as board) {
   <div class="backlog-page">
     <section class="panel board-panel">
-      <!-- Only Add column is dropped: there are no columns on screen to add one beside. Everything
-           else the header offers means the same here as it does on the kanban. -->
       <app-board-header
         [board]="board"
         [showAddColumn]="false"
@@ -48,11 +46,6 @@
         <span class="board-message-hint">Use New task above to add the first one.</span>
       </section>
     } @else {
-      <!--
-        The same table the sprint pages draw. The two columns only the Backlog has — putting a task
-        into a sprint, and moving it between columns — are passed in as templates, so this page keeps
-        everything it had without a second copy of the markup existing anywhere.
-      -->
       <app-task-table
         [rows]="taskRows()"
         [caption]="'Every task on ' + board.name"
@@ -68,10 +61,6 @@
       </ng-template>
 
       <ng-template #backlogCells let-row>
-        <!--
-          Scheduling a task, which the kanban has no room for. The backlog is where the whole board
-          is visible at once, so it is where work gets put into sprints.
-        -->
         <td>
           @if (sprintsFailed()) {
             <span class="backlog-muted">—</span>
@@ -81,7 +70,6 @@
               [disabled]="isAssigningSprint(row.taskId) || sprintsLoading()"
               [attr.aria-label]="'Sprint of ' + row.title"
               (change)="onSprintChangeById(row.taskId, $any($event.target).value)">
-              <!-- A visible way back out, exactly like the assignee picker's Unassigned. -->
               <option value="" [selected]="sprintIdOf(row.taskId) === null">No sprint</option>
 
               @for (sprint of sprints(); track sprint.sprintId) {
@@ -96,9 +84,6 @@
         </td>
 
         <td>
-          <!-- Marked on the options rather than bound on the select: the options are rendered in
-               the same pass, so a value set on the select has nothing to match yet and the field
-               would open showing the wrong status. -->
           <select
             class="backlog-select"
             [disabled]="isMoving(row.taskId)"

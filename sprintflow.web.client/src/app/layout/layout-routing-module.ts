@@ -3,7 +3,6 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { AdminLayout } from './admin-layout/admin-layout';
 
-// Feature pages are added as children as each phase lands.
 const routes: Routes = [
   {
     path: '',
@@ -24,25 +23,16 @@ const routes: Routes = [
         path: 'teams',
         loadChildren: () => import('../features/teams/teams-module').then(m => m.TeamsModule)
       },
-      // The system-wide sprint overview. Read-only — a board's own Sprint tab is where they are
-      // created and managed.
       {
         path: 'sprints',
         loadChildren: () => import('../features/sprints/sprints-module').then(m => m.SprintsModule)
       },
-      // Admin-only by living here: the whole /admin branch is behind authGuard and adminGuard, and
-      // the endpoint behind it checks the caller's id as well.
       {
         path: 'sprint-report',
         loadChildren: () =>
           import('../features/admin/sprint-report/sprint-report-module')
             .then(m => m.SprintReportModule)
       },
-      // The same feature module the user shell loads. A board looks and behaves identically in
-      // both; only the URL differs, because each shell owns its own prefix.
-      //
-      // fullBleed tells the shell to hand the page the whole content area: a kanban board is a
-      // workspace, not a document, so the centred reading column would waste most of the screen.
       {
         path: 'boards/:boardId',
         data: { fullBleed: true },

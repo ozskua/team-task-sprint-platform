@@ -4,7 +4,6 @@
     color: var(--mat-sys-on-surface);
 }
 
-/* Label above value, matching how the rest of the app stacks a caption over its figure. */
 .area-info-list {
     display: flex;
     flex-direction: column;

@@ -6,15 +6,6 @@ import { InvitationService } from '../../core/services/invitation.service';
 
 const UNEXPECTED_ERROR_MESSAGE = 'The invitation could not be created. Please try again.';
 
-/**
- * Creates a registration link for the signed-in user to pass on.
- *
- * Open to Admin and Member alike — it lives in the shared user menu and asks no question about the
- * viewer's role, because inviting someone is not an administrative act.
- *
- * The link is created as soon as the dialog opens and is shown once. Only its digest is stored on
- * the server, so closing this without copying means creating another.
- */
 @Component({
   selector: 'app-invite-dialog',
   templateUrl: './invite-dialog.html',
@@ -31,7 +22,6 @@ export class InviteDialog implements OnInit {
   protected readonly expiresAt = signal<string | null>(null);
   protected readonly errorMessage = signal<string | null>(null);
 
-  /** Turns the copy button into a confirmation for a moment after it is pressed. */
   protected readonly copied = signal(false);
 
   ngOnInit(): void {
@@ -62,8 +52,6 @@ export class InviteDialog implements OnInit {
       await navigator.clipboard.writeText(link);
       this.copied.set(true);
     } catch {
-      // Clipboard access can be refused — an insecure origin, or a browser that asks first. The
-      // link is on screen and selectable, so this is not worth an error message.
       this.copied.set(false);
     }
   }

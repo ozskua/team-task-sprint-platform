@@ -15,7 +15,6 @@ import { ShellModule } from './shell-module';
     MatButtonModule,
     MatIconModule,
     MatSidenavModule,
-    // Sidebar and UserMenu moved here so UserLayout can use the same components.
     ShellModule,
     LayoutRoutingModule
   ]

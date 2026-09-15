@@ -21,7 +21,6 @@ export class AdminLayout {
 
   protected readonly navigation = ADMIN_NAVIGATION;
 
-  /** Below 1024px the sidebar overlays the content instead of sitting beside it. */
   protected readonly compact = toSignal(
     this.breakpoints.observe('(max-width: 1023.98px)').pipe(map(state => state.matches)),
     { initialValue: false }
@@ -30,15 +29,9 @@ export class AdminLayout {
   protected readonly sidebarOpen = signal(true);
   protected readonly pageTitle = signal('');
 
-  /**
-   * Whether the current page wants the whole content area rather than the centred reading column.
-   * Declared by the route itself, the same way the header title is, so the shell never has to
-   * recognise particular URLs.
-   */
   protected readonly fullBleed = signal(false);
 
   constructor() {
-    // Open beside the content on desktop, closed over it on narrower screens.
     effect(() => this.sidebarOpen.set(!this.compact()));
 
     this.router.events
@@ -59,11 +52,10 @@ export class AdminLayout {
   }
 
   protected onLogout(): void {
-    this.authService.logout(); // Clear first, so a browser "back" is rejected by authGuard.
+    this.authService.logout();
     void this.router.navigate(['/login']);
   }
 
-  /** The deepest activated route's data — where both the header title and the layout mode live. */
   private resolveRouteData(): Record<string, unknown> {
     let route = this.router.routerState.snapshot.root;
 

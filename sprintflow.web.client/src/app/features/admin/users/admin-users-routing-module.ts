@@ -3,7 +3,6 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { AdminUsers } from './admin-users';
 
-// AdminLayout reads `title` from the deepest activated route to fill the header.
 const routes: Routes = [
   { path: '', component: AdminUsers, data: { title: 'Users' } }
 ];

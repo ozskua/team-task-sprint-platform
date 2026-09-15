@@ -10,8 +10,6 @@ public class Sprint
 
     public DateOnly StartDate { get; set; }
 
-    // The day the sprint stops and is NOT part of it, which is what lets the next sprint start on
-    // this same day without the two overlapping.
     public DateOnly EndDate { get; set; }
 
     public int CreatedByUserId { get; set; }

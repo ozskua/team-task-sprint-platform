@@ -2,17 +2,13 @@
   <div class="board-identity">
     <h1 class="board-name">{{ board().name }}</h1>
 
-    <!-- Ownership. Kept apart from the team, because the two answer different questions and
-         routinely name different people. -->
     <p class="board-ownership">
       Created by <span class="board-creator">{{ board().createdByFullName }}</span>
       <span class="board-separator" aria-hidden="true">·</span>
-      <!-- No timezone argument: the value carries no offset, so any conversion would shift the day. -->
       Created {{ board().createdDate | date:'dd MMM yyyy' }}
     </p>
   </div>
 
-  <!-- Team members, as avatars only. The name is the tooltip and the accessible label. -->
   <div class="board-team" [attr.aria-label]="'Team members of ' + board().name">
     <span class="board-team-label">Team</span>
 
@@ -39,7 +35,6 @@
     }
 
     @if (showNewTask()) {
-      <!-- Sends no column: the server starts a task in To Do unless one is named. -->
       <button
         mat-flat-button
         type="button"

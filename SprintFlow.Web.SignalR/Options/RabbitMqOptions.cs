@@ -1,9 +1,5 @@
 namespace SprintFlow.Web.SignalR.Options;
 
-// Where the broker is and who to connect as. This service's own copy — the services share a broker,
-// not an assembly. Values live in appsettings.Development.json, which is git-ignored, and every one
-// of them can be overridden by an environment variable (RabbitMQ__Host, RabbitMQ__Password, and so
-// on) the way .NET configuration always allows.
 public class RabbitMqOptions
 {
     public const string SectionName = "RabbitMQ";
@@ -16,6 +12,5 @@ public class RabbitMqOptions
 
     public string Password { get; set; } = string.Empty;
 
-    /// <summary>The default vhost. Named here rather than assumed, because "/" is easy to mistype.</summary>
     public string VirtualHost { get; set; } = "/";
 }

@@ -8,11 +8,6 @@ namespace SprintFlow.Web.Server.Extensions;
 
 public static class StartupValidationExtensions
 {
-    /// <summary>
-    /// Refuses to start when the authentication configuration is wrong. A bad Auth:AdminUserId
-    /// crashes nothing — it just makes the wrong person admin, or nobody — so it is turned into a
-    /// startup failure instead. Runs after the host is built because it queries the database.
-    /// </summary>
     public static async Task ValidateAuthenticationConfigurationAsync(this WebApplication app)
     {
         using var scope = app.Services.CreateScope();
@@ -48,8 +43,6 @@ public static class StartupValidationExtensions
 
         var invitations = provider.GetRequiredService<IOptions<InvitationOptions>>().Value;
 
-        // Zero or negative would mint invitations that have already expired — every registration
-        // link would fail, and it would look like a bug in registration rather than a setting.
         if (invitations.ExpiryHours <= 0)
         {
             throw new InvalidOperationException(

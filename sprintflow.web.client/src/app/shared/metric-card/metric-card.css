@@ -20,7 +20,6 @@
     color: var(--mat-sys-on-surface-variant);
 }
 
-/* Tabular numerals keep stacked figures aligned. */
 .metric-value {
     font-weight: 600;
     line-height: 1.1;
@@ -28,7 +27,6 @@
     color: var(--mat-sys-on-surface);
 }
 
-/* Tier is expressed through size and padding only. */
 .metric-card--primary {
     padding: 32px;
 }
@@ -45,7 +43,6 @@
     font-size: 2rem;
 }
 
-/* Only linked cards get an interactive affordance. */
 a.metric-card {
     transition: background-color 150ms ease;
 }
@@ -59,7 +56,6 @@ a.metric-card:focus-visible {
     outline-offset: 2px;
 }
 
-/* Sized to the value it replaces so nothing shifts when data arrives. */
 .metric-value-skeleton {
     display: block;
     width: 4rem;

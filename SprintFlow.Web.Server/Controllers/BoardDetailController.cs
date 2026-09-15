@@ -10,16 +10,8 @@ using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
-/// <summary>
-/// One board and the things created inside it. Separate from <see cref="BoardsController"/>, whose
-/// route is nested under an Area because that is where a board is created; a board's own page is
-/// not addressed that way.
-/// </summary>
 [ApiController]
 [Route("api/boards")]
-// Authentication only, like everywhere else. Being the board's creator, or a member of its team,
-// is not required for anything here — and requiring membership to create a task would be
-// impossible anyway, since membership comes from participating in tasks that do not exist yet.
 [Authorize]
 public class BoardDetailController : ControllerBase
 {
@@ -40,21 +32,6 @@ public class BoardDetailController : ControllerBase
         this.sprintService = sprintService;
     }
 
-    /// <summary>The board page: metadata, creator, computed team members, columns and tasks.</summary>
-    /// <param name="boardId">The board to read.</param>
-    /// <param name="sprintId">
-    /// Optional. Shows only the tasks in that sprint, which must be one of this board's.
-    /// </param>
-    /// <param name="allTasks">
-    /// Optional. Every task on the board whatever its sprint — the backlog's complete inventory.
-    /// Cannot be combined with <paramref name="sprintId"/>.
-    /// </param>
-    /// <param name="cancellationToken">Cancels the read.</param>
-    /// <remarks>
-    /// With neither, the board's sprint running today is used, and a board with none running comes
-    /// back with its columns and no tasks. The columns are the same either way — a board has one
-    /// kanban, and a sprint only decides which of its cards are in it.
-    /// </remarks>
     [HttpGet("{boardId:int}")]
     [ProducesResponseType(typeof(BoardDetailResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -89,7 +66,6 @@ public class BoardDetailController : ControllerBase
         };
     }
 
-    /// <summary>Adds a custom column, which always lands immediately before Completed.</summary>
     [HttpPost("{boardId:int}/columns")]
     [ProducesResponseType(typeof(WorkflowColumnResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -107,10 +83,6 @@ public class BoardDetailController : ControllerBase
             : StatusCode(StatusCodes.Status201Created, column);
     }
 
-    /// <summary>
-    /// Reorders the board's custom columns. To Do stays first and Completed and Cancelled stay
-    /// last whatever is sent, so naming one of them is rejected rather than quietly ignored.
-    /// </summary>
     [HttpPut("{boardId:int}/columns/order")]
     [ProducesResponseType(typeof(IReadOnlyList<WorkflowColumnResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -143,10 +115,6 @@ public class BoardDetailController : ControllerBase
         };
     }
 
-    /// <summary>
-    /// Creates a task. Without a column id it starts in the board's To Do column; with one, that
-    /// column must belong to this board.
-    /// </summary>
     [HttpPost("{boardId:int}/tasks")]
     [ProducesResponseType(typeof(TaskResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -198,14 +166,6 @@ public class BoardDetailController : ControllerBase
         };
     }
 
-    /// <summary>
-    /// This board's own figures, for its Özet tab. Scoped to the board in the route and nothing else.
-    /// </summary>
-    /// <remarks>
-    /// Not the Dashboard's summary, which stays system-wide and is untouched by this. Authentication
-    /// only, like every endpoint here — there is no board-scoped access control in this project to
-    /// apply, and these figures describe tasks any signed-in user can already read one by one.
-    /// </remarks>
     [HttpGet("{boardId:int}/summary")]
     [ProducesResponseType(typeof(BoardSummaryResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -219,7 +179,6 @@ public class BoardDetailController : ControllerBase
         return summary is null ? BoardNotFound() : Ok(summary);
     }
 
-    /// <summary>The board's sprints, in date order. An empty list is a normal answer.</summary>
     [HttpGet("{boardId:int}/sprints")]
     [ProducesResponseType(typeof(IReadOnlyList<SprintResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -233,10 +192,6 @@ public class BoardDetailController : ControllerBase
         return sprints is null ? BoardNotFound() : Ok(sprints);
     }
 
-    /// <summary>
-    /// Creates a sprint on this board. The board's sprints form one timeline, so a sprint covering
-    /// days another already covers is refused and nothing is created.
-    /// </summary>
     [HttpPost("{boardId:int}/sprints")]
     [ProducesResponseType(typeof(SprintResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -273,7 +228,6 @@ public class BoardDetailController : ControllerBase
         };
     }
 
-    /// <summary>Renames the board. Nothing else about it is editable.</summary>
     [HttpPut("{boardId:int}")]
     [ProducesResponseType(typeof(BoardResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -289,10 +243,6 @@ public class BoardDetailController : ControllerBase
         return board is null ? BoardNotFound() : Ok(board);
     }
 
-    /// <summary>
-    /// Deletes the board outright. Its team, columns, tasks and assignments go with it by cascade —
-    /// the schema already describes that, so nothing is removed row by row here.
-    /// </summary>
     [HttpDelete("{boardId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

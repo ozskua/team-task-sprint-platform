@@ -12,33 +12,22 @@ export interface TaskFormDialogData {
   readonly heading: string;
   readonly confirmLabel: string;
 
-  /** Present when editing, absent when creating. */
   readonly title?: string;
   readonly description?: string | null;
 
-  /** Absent when creating, which is what makes a new task Normal. */
   readonly priority?: TaskPriority;
 
-  /** Who the task is assigned to today. `null` — the default for a new task — is unassigned. */
   readonly assigneeUserId?: number | null;
 }
 
-/** What the caller gets back. Nothing else — the server decides the rest. */
 export interface TaskFormDialogResult {
   readonly title: string;
   readonly description?: string;
   readonly priority: TaskPriority;
 
-  /** `null` means unassigned. */
   readonly assigneeUserId: number | null;
 }
 
-/**
- * Writes what a task says and who is responsible for it.
- *
- * There is deliberately no creator field, and no position or column picker. The creator comes from
- * the caller's token, and where a new task lands is decided by which action opened this dialog.
- */
 @Component({
   selector: 'app-task-form-dialog',
   templateUrl: './task-form-dialog.html',
@@ -58,19 +47,15 @@ export class TaskFormDialog {
   protected readonly priority = signal<TaskPriority>(this.data.priority ?? DEFAULT_TASK_PRIORITY);
   protected readonly priorities = TASK_PRIORITIES;
 
-  /** Unassigned unless the task already has someone. */
   protected readonly assigneeUserId = signal<number | null>(this.data.assigneeUserId ?? null);
 
-  /** Only active accounts: a task assigned to someone who cannot sign in has nobody behind it. */
   protected readonly assignableUsers = signal<readonly UserListItem[]>([]);
   protected readonly usersLoading = signal(true);
   protected readonly usersFailed = signal(false);
 
-  /** The chosen person, for the avatar beside the picker. `undefined` while unassigned. */
   protected readonly selectedUser = computed(() =>
     this.assignableUsers().find(user => user.userId === this.assigneeUserId()));
 
-  /** Match the server's column widths, so the form cannot build a request it will reject. */
   protected readonly titleMaxLength = 200;
   protected readonly descriptionMaxLength = 2000;
 
@@ -83,7 +68,6 @@ export class TaskFormDialog {
           this.usersLoading.set(false);
         },
         error: () => {
-          // The message is a local constant; the server's text is never shown.
           this.usersFailed.set(true);
           this.usersLoading.set(false);
         }
@@ -111,14 +95,12 @@ export class TaskFormDialog {
   }
 
   protected onAssigneeChange(value: string): void {
-    // The empty option is Unassigned, which is a real choice rather than "nothing selected".
     this.assigneeUserId.set(value === '' ? null : Number(value));
   }
 
   protected submit(): void {
     const title = this.title().trim();
 
-    // Whitespace alone is not a title. The server rejects it too; stopping here saves a round trip.
     if (title.length === 0) {
       return;
     }
@@ -127,7 +109,6 @@ export class TaskFormDialog {
 
     this.dialogRef.close({
       title,
-      // Sent as nothing at all rather than an empty string, which is how the server stores it.
       description: description.length === 0 ? undefined : description,
       priority: this.priority(),
       assigneeUserId: this.assigneeUserId()

@@ -6,10 +6,6 @@ namespace SprintFlow.Web.Server.Data.Configurations;
 
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
-    /// <summary>
-    /// Fixed timestamp for the seeded rows. <c>HasData</c> has to be deterministic — a value such as
-    /// <c>DateTime.UtcNow</c> would differ on every run and rewrite the model snapshot each time.
-    /// </summary>
     private static readonly DateTime SeedCreatedDate = new(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
 
     private const int AdminRoleId = 1;
@@ -29,9 +25,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(100);
 
-        // Pinned away from the server's Turkish collation, where 'i' and 'I' are different letters.
-        // Under Turkish rules "AYSE.DEMIR@..." would not match "ayse.demir@..." on login, and the
-        // unique index would allow both as separate accounts.
         builder.Property(u => u.Email)
             .IsRequired()
             .HasMaxLength(256)
@@ -49,7 +42,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasDefaultValueSql("SYSUTCDATETIME()");
 
-        // Two accounts must never share an address: the address is what login resolves a user by.
         builder.HasIndex(u => u.Email)
             .IsUnique()
             .HasDatabaseName("IX_Users_Email");
@@ -60,18 +52,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.IsActive)
             .HasDatabaseName("IX_Users_IsActive");
 
-        // Restrict, not Cascade: deleting a role must never delete the people who hold it.
         builder.HasOne(u => u.Role)
             .WithMany(r => r.Users)
             .HasForeignKey(u => u.RoleId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Composed from FirstName and LastName, so there is nothing to store.
         builder.Ignore(u => u.FullName);
 
-        // Development accounts. The identities are invented; no real person's data is used here.
-        // Passwords are BCrypt hashes at work factor 12 ($2a$12$...) — no plaintext is stored, and
-        // the hashes are constants for the same determinism reason as SeedCreatedDate above.
         builder.HasData(
             new User
             {

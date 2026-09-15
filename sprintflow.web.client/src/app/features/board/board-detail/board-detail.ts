@@ -6,7 +6,6 @@ import { ActivatedRoute } from '@angular/router';
 
 import { Observable, combineLatest } from 'rxjs';
 
-// Aliased: the model and this component are both called BoardDetail.
 import {
   BoardColumn,
   BoardDetail as BoardDetailModel,
@@ -18,20 +17,9 @@ import { BoardActions } from '../board-actions';
 import { ConfirmDialog, ConfirmDialogData } from '../dialogs/confirm-dialog/confirm-dialog';
 import { ColumnFormDialog, ColumnFormDialogData } from '../dialogs/column-form-dialog/column-form-dialog';
 
-/** Below this a lane stops being readable, so the workflow area scrolls sideways instead. */
 const LANE_MIN_WIDTH = 260;
 const LANE_GAP = 12;
 
-/**
- * The board page. The columns and cards below only report what was clicked or dragged.
- *
- * Anything a task or the board can have done to it lives in BoardActions, because the backlog
- * offers the same things and they must not drift apart. What stays here is what only a kanban has:
- * the columns, and the drag that moves a card between them.
- *
- * Moves are shown before the server answers, each keeping the board exactly as it was, so a failed
- * request puts the card back rather than leaving a lie on screen.
- */
 @Component({
   selector: 'app-board-detail',
   templateUrl: './board-detail.html',
@@ -52,26 +40,19 @@ export class BoardDetail {
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
 
-  /** A local, generic message. The server's own wording is never shown. */
   protected readonly actionError = signal<string | null>(null);
 
-  /** Cards whose move has been sent but not yet answered. */
   protected readonly movingTaskIds = signal<ReadonlySet<number>>(new Set());
 
   protected readonly toDoColumn = computed(() =>
     this.board()?.columns.find(column => column.systemKind === 'ToDo'));
 
-  /** The only columns a user may reorder, and the only ones that can be dragged. */
   protected readonly customColumns = computed<BoardColumn[]>(() =>
     (this.board()?.columns ?? [])
       .filter(column => column.systemKind === null)
       .slice()
       .sort((left, right) => left.position - right.position));
 
-  /**
-   * The two outcome columns, drawn as one lane on the right. They stay separate in every sense that
-   * matters — own ids, own tasks, own drop lists. Only the drawing is shared.
-   */
   protected readonly completedColumn = computed(() =>
     this.board()?.columns.find(column => column.systemKind === 'Completed'));
 
@@ -80,14 +61,9 @@ export class BoardDetail {
 
   protected readonly allColumns = computed(() => this.board()?.columns ?? []);
 
-  /** Every task list can accept a card from every other, including Completed and Cancelled. */
   protected readonly taskListIds = computed<string[]>(() =>
     this.allColumns().map(column => `tasks-${column.workflowColumnId}`));
 
-  /**
-   * One lane per custom column, so the band claims that many shares of the row and refuses to
-   * shrink past the readable minimum. Beyond that the workflow area scrolls sideways.
-   */
   protected readonly customBandFlexGrow = computed(() => this.customColumns().length);
 
   protected readonly customBandMinWidth = computed(() => {
@@ -96,22 +72,11 @@ export class BoardDetail {
     return lanes === 0 ? 0 : lanes * LANE_MIN_WIDTH + (lanes - 1) * LANE_GAP;
   });
 
-  /**
-   * The sprint whose tasks are on screen, or `null`. Resolved by the server — naming no sprint means
-   * "whichever is running today" — so this is the answer, not anything this page worked out.
-   */
   protected readonly selectedSprint = computed(() => this.board()?.selectedSprint ?? null);
 
-  /**
-   * Whether the board has a sprint in context at all. When it does not the kanban is deliberately
-   * empty and creating a task is turned off, because the new task would belong to no sprint and so
-   * would not appear in the view it was created from. The backlog is where those are created.
-   */
   protected readonly hasSprintContext = computed(() => this.selectedSprint() !== null);
 
   constructor() {
-    // Board from the path, sprint from the query string, so both are watched: switching sprints
-    // changes only the latter and would otherwise reload nothing.
     combineLatest([this.route.paramMap, this.route.queryParamMap])
       .pipe(takeUntilDestroyed())
       .subscribe(([params, query]) => {
@@ -119,12 +84,9 @@ export class BoardDetail {
 
         this.loadBoard(boardId, parseSprintId(query.get('sprint')));
 
-        // Here rather than in an init hook: moving to another board only changes the route
-        // parameter, so the component is reused and would otherwise stay in the old board's group.
         this.realtime.watch(boardId);
       });
 
-    // Dropped on the way out, so opening another board never shows this one's cards first.
     this.destroyRef.onDestroy(() => {
       this.boardDetail.clear();
       this.realtime.stop();
@@ -135,16 +97,12 @@ export class BoardDetail {
     this.actionError.set(null);
   }
 
-  // --- Tasks --------------------------------------------------------------
-
-  /** The board-level action. Sends no column, so the server starts the task in To Do. */
-  protected createTaskInToDo(): void {
+protected createTaskInToDo(): void {
     this.run(
       board => this.boardActions.createTask(board.boardId),
       'That task could not be created.');
   }
 
-  /** A column's own action. Sends that column, and the server checks it belongs to this board. */
   protected createTaskInColumn(columnId: number): void {
     const column = this.allColumns().find(c => c.workflowColumnId === columnId);
 
@@ -159,7 +117,6 @@ export class BoardDetail {
       'That task could not be updated.');
   }
 
-  /** Opened straight from a card's menu, skipping the details dialog. */
   protected editTaskDirectly(task: BoardTask): void {
     this.run(
       board => this.boardActions.editTask(board.boardId, task.taskId),
@@ -172,9 +129,7 @@ export class BoardDetail {
       'That task could not be deleted.');
   }
 
-  // --- Moving -------------------------------------------------------------
-
-  protected onTaskDropped(event: CdkDragDrop<BoardColumn>): void {
+protected onTaskDropped(event: CdkDragDrop<BoardColumn>): void {
     const task = event.item.data as BoardTask;
     const target = event.container.data;
     const source = event.previousContainer.data;
@@ -194,8 +149,6 @@ export class BoardDetail {
   }
 
   protected moveTask(move: { taskId: number; targetColumnId: number; targetIndex: number }): void {
-    // One move at a time per card: a second would be computed against a board the server has not
-    // agreed to yet.
     if (this.movingTaskIds().has(move.taskId)) {
       return;
     }
@@ -211,8 +164,6 @@ export class BoardDetail {
       .moveTask(move.taskId, {
         targetColumnId: move.targetColumnId,
         targetIndex: move.targetIndex,
-        // What the index was counted against: on a scoped board the user sees only this sprint's
-        // cards, so the server translates the slot back into the whole column.
         sprintId: this.boardDetail.scope()
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -226,10 +177,7 @@ export class BoardDetail {
       });
   }
 
-  // --- Columns ------------------------------------------------------------
-  // Not shared with the backlog: it has no columns on screen to act on.
-
-  protected createColumn(): void {
+protected createColumn(): void {
     const boardId = this.board()?.boardId;
 
     if (boardId === undefined) {
@@ -271,11 +219,6 @@ export class BoardDetail {
       });
   }
 
-  /**
-   * Delete is offered whatever the column holds. Whether it can actually go is explained here, at
-   * the moment it is tried — a warning that sits under a column all the time is noise for the many
-   * boards where nobody is trying to delete anything.
-   */
   protected confirmDeleteColumn(column: BoardColumn): void {
     if (column.tasks.length > 0) {
       this.dialog.open<ConfirmDialog, ConfirmDialogData, boolean>(ConfirmDialog, {
@@ -308,8 +251,6 @@ export class BoardDetail {
           this.boardDetail.deleteColumn(column.workflowColumnId)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
-              // The server refuses a column that gained a task since this dialog opened, which is
-              // the same rule stated one layer down.
               error: () => this.reportError(
                 'That column could not be deleted. It may no longer be empty.')
             });
@@ -317,7 +258,6 @@ export class BoardDetail {
       });
   }
 
-  /** Dragging the grip is the only way to reorder a column, so this is the only caller. */
   protected onColumnDropped(event: CdkDragDrop<BoardColumn[]>): void {
     if (event.previousIndex === event.currentIndex) {
       return;
@@ -348,9 +288,7 @@ export class BoardDetail {
       });
   }
 
-  // --- The board itself ---------------------------------------------------
-
-  protected renameBoard(): void {
+protected renameBoard(): void {
     this.run(board => this.boardActions.renameBoard(board), 'That board could not be renamed.');
   }
 
@@ -358,14 +296,7 @@ export class BoardDetail {
     this.run(board => this.boardActions.deleteBoard(board), 'That board could not be deleted.');
   }
 
-  // --- Plumbing -----------------------------------------------------------
-
-  /**
-   * Runs one shared action against the board currently loaded, and turns any failure into this
-   * page's own wording. The action already knows how to cancel quietly, so there is nothing to
-   * handle here but the error.
-   */
-  private run(
+private run(
     action: (board: BoardDetailModel) => Observable<unknown>,
     failureMessage: string): void {
     const board = this.board();
@@ -396,8 +327,6 @@ export class BoardDetail {
       .subscribe({
         next: () => this.loading.set(false),
         error: () => {
-          // Also covers a sprint that is not this board's, which the server refuses rather than
-          // answering with an empty board.
           this.failed.set(true);
           this.loading.set(false);
         }
@@ -423,12 +352,6 @@ export class BoardDetail {
   }
 }
 
-/**
- * The `sprint` query parameter as a positive integer, or `null` for anything else.
- *
- * A URL can carry anything, so a value that is not a sprint id is treated as no sprint at all —
- * the whole board — rather than being sent on for the server to reject.
- */
 function parseSprintId(raw: string | null): number | null {
   if (raw === null) {
     return null;

@@ -20,6 +20,5 @@ public class User
 
     public Role Role { get; set; } = null!;
 
-    // Composed at read time, never a column - see UserConfiguration.
     public string FullName => $"{FirstName} {LastName}".Trim();
 }

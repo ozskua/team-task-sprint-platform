@@ -3,10 +3,6 @@
   <section class="dashboard-section">
     <h2 class="section-title">System Summary</h2>
 
-    <!--
-      The four workflow buckets. Together they account for every task in the system, so nothing is
-      hidden by the table below. No card carries a link: the tasks are on this same page.
-    -->
     <div class="metric-grid metric-grid--four">
       <app-metric-card label="To Do" [value]="counts().toDo" [loading]="loading()" />
       <app-metric-card label="Open" [value]="counts().open" [loading]="loading()" />
@@ -14,7 +10,6 @@
       <app-metric-card label="Cancelled" [value]="counts().cancelled" [loading]="loading()" />
     </div>
 
-    <!-- How large the system is. Context, not action — so the smallest treatment. -->
     <div class="metric-grid metric-grid--two">
       <app-metric-card label="Users" tier="tertiary" [value]="counts().totalUsers" [loading]="loading()" />
       <app-metric-card label="Boards" tier="tertiary" [value]="counts().totalBoards" [loading]="loading()" />
@@ -22,7 +17,6 @@
 
     <div class="panel summary-progress">
       <div class="summary-progress-head">
-        <!-- Cancelled is not in the denominator: abandoned work is neither done nor outstanding. -->
         <span class="summary-progress-label">Overall progress</span>
         <span class="summary-progress-percent">{{ progressPercent() }}%</span>
       </div>
@@ -38,10 +32,6 @@
     </div>
   </section>
 
-  <!--
-    Every task in every board — the page's main content. Completed and Cancelled are included: this
-    answers "what exists", not "what is left to do".
-  -->
   <section class="dashboard-section">
     <h2 class="section-title">All Tasks</h2>
 

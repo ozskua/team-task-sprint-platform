@@ -82,7 +82,6 @@
     color: var(--mat-sys-on-surface);
 }
 
-/* The sprint's own work, directly under its facts. */
 .detail-tasks {
     display: flex;
     flex-direction: column;

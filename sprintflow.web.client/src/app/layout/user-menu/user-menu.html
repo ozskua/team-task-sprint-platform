@@ -4,27 +4,16 @@
   type="button"
   [matMenuTriggerFor]="menu"
   [attr.aria-label]="triggerLabel()">
-  <!--
-    Avatar and chevron only. The initials are decorative here — the button's aria-label already
-    names whose account this is, so announcing "AD" as well would only be noise. The full name and
-    role are inside the card, which is where they are actually readable.
-  -->
   <span class="user-menu-trigger-avatar" aria-hidden="true">{{ initials() }}</span>
-  <!-- iconPositionEnd: MatButton projects icons before the label by default. -->
   <mat-icon iconPositionEnd class="user-menu-chevron">expand_more</mat-icon>
 </button>
 
 <mat-menu #menu="matMenu" class="user-menu-panel">
-  <!--
-    Who is signed in. A plain div, deliberately not a mat-menu-item: it is an identity, not an
-    action, so it must not be focusable and must not sit in the arrow-key order.
-  -->
   <div class="user-menu-card">
     <span class="user-menu-avatar" role="img" [attr.aria-label]="profileLabel()">
       <span aria-hidden="true">{{ initials() }}</span>
     </span>
 
-    <!-- Both in words. The avatar is never the only place the user is identified. -->
     <span class="user-menu-identity">
       <span class="user-menu-name">{{ fullName() }}</span>
       <span
@@ -42,10 +31,6 @@
     <span class="user-menu-action-label">Invite</span>
   </button>
 
-  <!--
-    Reachable by arrow keys, but activation still leads nowhere — Settings has no screen yet. The
-    handler below swallows the activation; nothing on the item advertises that any more.
-  -->
   <button
     class="user-menu-action user-menu-action--muted"
     mat-menu-item

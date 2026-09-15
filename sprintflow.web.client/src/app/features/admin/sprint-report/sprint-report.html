@@ -59,10 +59,6 @@
               @for (row of rows(); track row.sprintId) {
                 <tr class="report-row">
                   <th scope="row" class="report-name-cell">
-                    <!--
-                      The sprint name is the disclosure: it opens the row to show what was in it.
-                      Each row opens on its own, so several may be open at once.
-                    -->
                     <button
                       class="report-toggle"
                       type="button"
@@ -78,11 +74,9 @@
 
                   <td class="report-col-board">
                     <span class="report-board">{{ row.boardName }}</span>
-                    <!-- Board names are not unique; the area is what tells two of them apart. -->
                     <span class="report-area">{{ row.areaName }}</span>
                   </td>
 
-                  <!-- "up to, not including" — the end day is not part of the sprint. -->
                   <td class="report-col-dates">{{ row.startDate }} → {{ row.endDate }}</td>
 
                   <td>
@@ -93,8 +87,6 @@
 
                   <td class="report-col-number">{{ row.totalTasks }}</td>
 
-                  <!-- The share is bracketed rather than set beside the count: "3 100%" reads as one
-                       number, both on screen and to a screen reader. -->
                   <td class="report-col-outcome">
                     <span class="report-figure">{{ row.completedCount }}</span>
                     <span class="report-percent">({{ row.completedPercent }}%)</span>
@@ -132,8 +124,6 @@
                               </p>
                             } @else {
                               <div class="report-groups">
-                                <!-- The same table the Backlog draws, read-only here and split into
-                                     the three groups the figures above are counted from. -->
                                 @if (state.completed.length > 0) {
                                   <section class="report-group">
                                     <h3 class="report-group-title">
@@ -168,7 +158,6 @@
                                 }
                               </div>
 
-                              <!-- Managing a sprint happens on its board, never here. -->
                               <a
                                 class="report-detail-link"
                                 [routerLink]="boardSprintsPath(row.boardId)">

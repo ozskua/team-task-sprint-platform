@@ -59,7 +59,6 @@
     padding: 0 10px;
 }
 
-/* The same circle the card shows, so the choice made here is recognisable there. */
 .assignee-preview {
     display: grid;
     place-items: center;

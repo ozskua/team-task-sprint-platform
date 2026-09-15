@@ -28,7 +28,6 @@
     outline-offset: 1px;
 }
 
-/* Side by side: the two dates are one decision, and reading them apart invites transposing them. */
 .sprint-form-dates {
     display: flex;
     gap: 12px;
@@ -40,7 +39,6 @@
     min-width: 0;
 }
 
-/* The narrower of the pair, so two fit where one full-width field would. */
 .sprint-form-field .sprint-form-input {
     min-width: 0;
 }

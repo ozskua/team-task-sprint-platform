@@ -8,14 +8,6 @@ using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
-/// <summary>
-/// Operations on a task that already exists. Creating one is nested under its board, because that
-/// is what a new task needs to belong to.
-/// </summary>
-/// <remarks>
-/// Authentication only. Being the task's creator grants nothing: ownership is recorded, not
-/// enforced, so any signed-in user may edit, move or delete any task.
-/// </remarks>
 [ApiController]
 [Route("api/tasks")]
 [Authorize]
@@ -28,9 +20,6 @@ public class TasksController : ControllerBase
         this.taskService = taskService;
     }
 
-    /// <summary>
-    /// The task card: everything one task carries, including its comments and its attachments.
-    /// </summary>
     [HttpGet("{taskId:int}")]
     [ProducesResponseType(typeof(TaskDetailResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -44,9 +33,6 @@ public class TasksController : ControllerBase
         return task is null ? TaskNotFound() : Ok(task);
     }
 
-    /// <summary>
-    /// Edits what a task says and who it is assigned to. Moving it is a separate operation.
-    /// </summary>
     [HttpPut("{taskId:int}")]
     [ProducesResponseType(typeof(TaskResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -75,10 +61,6 @@ public class TasksController : ControllerBase
         };
     }
 
-    /// <summary>
-    /// Deletes the task outright. Its participation rows go with it, which may end someone's
-    /// membership of the board's team — correctly, since membership is derived from participation.
-    /// </summary>
     [HttpDelete("{taskId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -88,10 +70,6 @@ public class TasksController : ControllerBase
             ? NoContent()
             : TaskNotFound();
 
-    /// <summary>
-    /// Moves a task within its column or into another column of the same board. Every column is a
-    /// valid destination — Completed and Cancelled hold nothing in place.
-    /// </summary>
     [HttpPut("{taskId:int}/move")]
     [ProducesResponseType(typeof(IReadOnlyList<WorkflowColumnResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -128,13 +106,6 @@ public class TasksController : ControllerBase
         };
     }
 
-    /// <summary>
-    /// Puts the task into one of its board's sprints, or takes it out of whichever one it is in.
-    /// </summary>
-    /// <remarks>
-    /// Separate from editing the task, and from moving it: scheduling a task is neither a change to
-    /// what it says nor a change to where it sits on the board.
-    /// </remarks>
     [HttpPut("{taskId:int}/sprint")]
     [ProducesResponseType(typeof(TaskResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -167,9 +138,6 @@ public class TasksController : ControllerBase
         };
     }
 
-    /// <summary>
-    /// Adds a comment to the task. The author is the caller — the request body carries no user id.
-    /// </summary>
     [HttpPost("{taskId:int}/comments")]
     [ProducesResponseType(typeof(TaskCommentResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -191,9 +159,6 @@ public class TasksController : ControllerBase
             : StatusCode(StatusCodes.Status201Created, comment);
     }
 
-    /// <summary>
-    /// Removes a comment, and the files posted with it. Only its author may.
-    /// </summary>
     [HttpDelete("{taskId:int}/comments/{commentId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -228,13 +193,6 @@ public class TasksController : ControllerBase
         };
     }
 
-    /// <summary>
-    /// Attaches a file to the task. The bytes are written to the server's attachment folder under a
-    /// name the server generates; the database keeps only the metadata.
-    /// </summary>
-    /// <param name="commentId">
-    /// Sent when the file was posted with a comment, so the thread can draw it under that message.
-    /// </param>
     [HttpPost("{taskId:int}/attachments")]
     [ProducesResponseType(typeof(TaskAttachmentResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -244,8 +202,6 @@ public class TasksController : ControllerBase
         int taskId,
         IFormFile? file,
 
-        // [FromForm] is required: IFormFile is bound from the form automatically, but a simple type
-        // is read from the route or the query string unless it is asked for explicitly.
         [FromForm] int? commentId,
         CancellationToken cancellationToken)
     {
@@ -292,10 +248,6 @@ public class TasksController : ControllerBase
         };
     }
 
-    /// <summary>
-    /// Downloads one attachment. Addressed through its task, so an id belonging to another task is
-    /// simply not found.
-    /// </summary>
     [HttpGet("{taskId:int}/attachments/{attachmentId:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -312,14 +264,12 @@ public class TasksController : ControllerBase
             return AttachmentNotFound();
         }
 
-        // Naming the file makes this a download rather than something the browser renders in place.
         return File(
             download.Value.Content,
             download.Value.Metadata.ContentType,
             download.Value.Metadata.FileName);
     }
 
-    /// <summary>Removes an attachment, and the file behind it.</summary>
     [HttpDelete("{taskId:int}/attachments/{attachmentId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

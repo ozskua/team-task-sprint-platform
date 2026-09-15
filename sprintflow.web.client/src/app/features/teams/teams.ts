@@ -5,13 +5,6 @@ import { Team } from '../../core/models/team-models';
 import { TeamService } from '../../core/services/team.service';
 import { initialsOf } from '../../shared/initials';
 
-/**
- * Every team in the company, read-only for everyone.
- *
- * A team is not something anyone creates or edits here: it comes into existence with its board, and
- * its members are whoever is assigned to that board's tasks. There is nothing to manage, so there
- * are no controls.
- */
 @Component({
   selector: 'app-teams',
   templateUrl: './teams.html',
@@ -37,7 +30,6 @@ export class Teams {
           this.loading.set(false);
         },
         error: () => {
-          // The message is a local constant; the server's text is never shown.
           this.failed.set(true);
           this.loading.set(false);
         }

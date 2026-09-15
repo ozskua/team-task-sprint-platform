@@ -30,7 +30,6 @@
     position: relative;
 }
 
-/* viewBox scales uniformly, so stroke weights stay true at every width. */
 .chart-svg {
     display: block;
     width: 100%;
@@ -38,7 +37,6 @@
     overflow: visible;
 }
 
-/* The grid supports the data; it must never compete with it. */
 .chart-grid {
     stroke: var(--app-border);
     stroke-width: 1;
@@ -132,7 +130,6 @@
     background-color: var(--app-skeleton);
 }
 
-/* Available to assistive technology, invisible on screen. */
 .visually-hidden {
     position: absolute;
     width: 1px;

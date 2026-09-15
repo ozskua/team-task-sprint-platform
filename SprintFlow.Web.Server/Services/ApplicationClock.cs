@@ -3,21 +3,6 @@ using SprintFlow.Web.Server.Options;
 
 namespace SprintFlow.Web.Server.Services;
 
-/// <summary>
-/// Today's date in the company's timezone.
-/// </summary>
-/// <remarks>
-/// The instant always comes from UTC; the timezone only decides which calendar day that instant
-/// falls in. Reading the machine's local time instead would make a sprint's status depend on where
-/// the server is deployed, and staying in UTC would move the day boundary for everyone using the
-/// application — three hours early in Turkey, so a sprint that ended yesterday still reads as
-/// running until 03:00.
-/// <para>
-/// The timezone is resolved once at construction rather than on every call: an unknown id is a
-/// configuration mistake, and it should stop the application starting rather than throw on the
-/// first request that happens to look at a sprint.
-/// </para>
-/// </remarks>
 public class ApplicationClock : IApplicationClock
 {
     private readonly TimeZoneInfo timeZone;
@@ -35,8 +20,6 @@ public class ApplicationClock : IApplicationClock
 
         try
         {
-            // IANA ids resolve on Windows as well as Linux — .NET maps them through ICU — so one
-            // configured value works wherever this runs.
             timeZone = TimeZoneInfo.FindSystemTimeZoneById(configured);
         }
         catch (Exception exception) when (

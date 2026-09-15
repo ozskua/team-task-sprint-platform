@@ -1,7 +1,6 @@
 <section class="column">
   <header class="column-header">
     @if (!isSystem()) {
-      <!-- The only draggable part of a custom column, so dragging a card never moves the column. -->
       <span class="column-grip" cdkDragHandle aria-hidden="true">
         <mat-icon>drag_indicator</mat-icon>
       </span>
@@ -23,7 +22,6 @@
       <mat-icon>add</mat-icon>
     </button>
 
-    <!-- System columns keep their name and their place on every board, so they get no menu. -->
     @if (!isSystem()) {
       <button
         class="column-action"
@@ -34,12 +32,9 @@
         <mat-icon>more_horiz</mat-icon>
       </button>
 
-      <!-- Reordering is the grip's job and only the grip's job, so it is not repeated here. -->
       <mat-menu #columnMenu="matMenu">
         <button mat-menu-item type="button" (click)="renameColumn.emit(column())">Rename</button>
 
-        <!-- Offered whatever the column holds. Whether it can actually go is explained when it is
-             tried, rather than by a warning that sits there all the time. -->
         <button mat-menu-item type="button" (click)="deleteColumn.emit(column())">Delete</button>
       </mat-menu>
     }

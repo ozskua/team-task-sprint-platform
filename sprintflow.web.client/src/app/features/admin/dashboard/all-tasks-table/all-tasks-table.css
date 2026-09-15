@@ -12,8 +12,6 @@
     overflow: hidden;
 }
 
-/* ---- Controls -------------------------------------------------------------- */
-
 .tasks-controls {
     display: flex;
     flex-wrap: wrap;
@@ -43,12 +41,6 @@
     outline-offset: 1px;
 }
 
-/* ---- Table ----------------------------------------------------------------- */
-
-/*
-  One scroll surface with the header stuck to its top. The table keeps its normal display so the
-  header cells and the body cells go on sharing column widths — a block tbody would break that.
-*/
 .tasks-scroll {
     max-height: 620px;
     overflow: auto;
@@ -60,8 +52,6 @@
     font-size: 0.875rem;
 }
 
-/* Sticky on the cells, not the row: `position: sticky` does not apply to <tr> in every engine, and
-   an opaque background is required or the rows scroll visibly through the header. */
 .tasks-table thead th {
     position: sticky;
     top: 0;
@@ -114,9 +104,6 @@
 .tasks-col-where { color: var(--mat-sys-on-surface-variant); overflow-wrap: anywhere; }
 .tasks-col-created { white-space: nowrap; }
 
-/* ---- Status chip ----------------------------------------------------------- */
-
-/* Fill carries the meaning and the label stays dark ink — these tints cannot be read as text. */
 .column-chip {
     display: inline-block;
     padding: 4px 10px;
@@ -132,8 +119,6 @@
 .column-chip--completed { background-color: var(--app-status-done); }
 .column-chip--cancelled { background-color: var(--app-status-overdue); }
 
-/* ---- People ---------------------------------------------------------------- */
-
 .tasks-person {
     display: inline-flex;
     align-items: center;
@@ -143,7 +128,6 @@
 
 .tasks-person-name { overflow-wrap: anywhere; }
 
-/* The same circle the board shows, so a person is recognisable in both places. */
 .person-avatar {
     display: grid;
     place-items: center;
@@ -159,8 +143,6 @@
 }
 
 .tasks-muted { font-style: italic; color: var(--mat-sys-on-surface-variant); }
-
-/* ---- States ---------------------------------------------------------------- */
 
 .tasks-skeleton {
     display: block;

@@ -12,22 +12,12 @@ namespace SprintFlow.Web.Server.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    /// <summary>The configuration key holding the Redis server's address.</summary>
     private const string RedisConnectionStringName = "Redis";
 
-    // Namespaces every key this application stores in Redis.
     private const string RedisInstanceName = "sprintflow:";
 
-    // Applied to connecting AND to running a command: the client queues a command rather than
-    // aborting, so a stopped Redis failed on the command timeout, not the connect one — two
-    // five-second waits per summary. Half a second is far more than a local Redis needs, and giving
-    // up early is only a cache miss.
     private const int RedisTimeoutMilliseconds = 500;
 
-    /// <summary>
-    /// Registers everything sign-in needs: configuration binding, the auth collaborators, and the
-    /// bearer scheme that will validate tokens once endpoints are protected.
-    /// </summary>
     public static IServiceCollection AddAuthenticationServices(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -43,13 +33,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<UserRepository>();
         services.AddScoped<AuthService>();
 
-        // An invitation exists only to create an account, so it belongs with signing in.
         services.AddScoped<InvitationRepository>();
         services.AddScoped<InvitationService>();
 
         var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 
-        // Validates incoming tokens. Issuing them is JwtTokenService's job.
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(bearer =>
@@ -66,9 +54,8 @@ public static class ServiceCollectionExtensions
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
 
-                    ClockSkew = TimeSpan.Zero, // Default 5-minute tolerance would extend every expired token.
+                    ClockSkew = TimeSpan.Zero,
 
-                    // Which claims [Authorize(Roles = ...)] and User.Identity.Name read.
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                     NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
                 };
@@ -77,8 +64,6 @@ public static class ServiceCollectionExtensions
                 {
                     OnMessageReceived = context =>
                     {
-                        // A WebSocket handshake cannot carry an Authorization header, so the client
-                        // sends the token in the query string. Hub paths only.
                         var accessToken = context.Request.Query["access_token"];
 
                         if (!string.IsNullOrEmpty(accessToken)
@@ -97,18 +82,12 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>
-    /// The Redis-backed cache. Redis runs in Docker for development (docker-compose.yml at the
-    /// solution root); the application itself is not containerised and reaches it over loopback.
-    /// </summary>
     public static IServiceCollection AddCachingServices(
         this IServiceCollection services,
         IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString(RedisConnectionStringName);
 
-        // A missing address stops start-up, like a missing JWT key. Redis being *unreachable* is a
-        // different matter, handled where the cache is used - so Redis can start after the app.
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
@@ -120,47 +99,32 @@ public static class ServiceCollectionExtensions
 
         services.AddStackExchangeRedisCache(options =>
         {
-            // Parsed rather than assigned to options.Configuration: the address belongs in
-            // configuration, but how the client behaves belongs here.
             var redis = ConfigurationOptions.Parse(connectionString);
 
             redis.ConnectTimeout = RedisTimeoutMilliseconds;
 
-            // AsyncTimeout is what the cache's Get/Set run under and is what actually bounds a
-            // request when Redis is stopped. SyncTimeout matches so the two cannot drift apart.
             redis.SyncTimeout = RedisTimeoutMilliseconds;
             redis.AsyncTimeout = RedisTimeoutMilliseconds;
 
             options.ConfigurationOptions = redis;
 
-            // Prefixes every key, so a shared Redis instance stays legible and nothing collides.
             options.InstanceName = RedisInstanceName;
         });
 
         services.AddSingleton<IBoardSummaryCache, BoardSummaryCache>();
         services.AddSingleton<IAdminDashboardCache, AdminDashboardCache>();
 
-        // Its only job is to keep the cache above warm: nothing invalidates that entry, so this
-        // timer is the only thing that writes it.
         services.AddHostedService<AdminDashboardRefreshService>();
 
         return services;
     }
 
-    /// <summary>
-    /// RabbitMQ: the connection, the publisher and the consumer that turns events into
-    /// notifications. Like Redis, the broker runs in Docker for development and the application
-    /// itself is not containerised.
-    /// </summary>
     public static IServiceCollection AddMessagingServices(
         this IServiceCollection services,
         IConfiguration configuration)
     {
         services.Configure<RabbitMqOptions>(configuration.GetSection(RabbitMqOptions.SectionName));
 
-        // A missing host stops start-up, like a missing JWT key or Redis address. The broker being
-        // *unreachable* is a different matter, handled where it is used - so RabbitMQ can start
-        // after the application, and the application runs without it.
         if (string.IsNullOrWhiteSpace(configuration[$"{RabbitMqOptions.SectionName}:Host"]))
         {
             throw new InvalidOperationException(
@@ -169,29 +133,19 @@ public static class ServiceCollectionExtensions
                 + "Use the literal address rather than 'localhost': that name resolves to ::1 first, which nothing is listening on.");
         }
 
-        // Singletons: one connection for the application, one channel per publisher. Opening a
-        // connection per message is the classic misuse of this client — see RabbitMqConnection.
         services.AddSingleton<RabbitMqConnection>();
         services.AddSingleton<NotificationEventPublisher>();
         services.AddSingleton<BoardEventPublisher>();
 
-        // No consumer here: this application publishes and nothing else. The notification and
-        // realtime services drain their own queues, each in its own process.
-
-        return services;
+return services;
     }
 
-    /// <summary>
-    /// Everything that is not signing in. <c>UserRepository</c> is registered above and serves both.
-    /// </summary>
     public static IServiceCollection AddApplicationServices(
         this IServiceCollection services,
         IConfiguration configuration)
     {
         services.Configure<AttachmentOptions>(configuration.GetSection(AttachmentOptions.SectionName));
 
-        // A missing folder path stops start-up, like a missing JWT key or Redis address: uploads
-        // would otherwise fail one at a time, long after the mistake was made.
         if (string.IsNullOrWhiteSpace(configuration[$"{AttachmentOptions.SectionName}:RootPath"]))
         {
             throw new InvalidOperationException(
@@ -200,8 +154,8 @@ public static class ServiceCollectionExtensions
                 + "this repository, where task attachments are stored. The folder is created if missing.");
         }
 
-        services.AddScoped<BoardRepository>();   // areas, boards, teams, columns
-        services.AddScoped<TaskRepository>();    // tasks and their assignments
+        services.AddScoped<BoardRepository>();
+        services.AddScoped<TaskRepository>();
         services.AddScoped<SprintRepository>();
         services.AddScoped<NotificationRepository>();
 

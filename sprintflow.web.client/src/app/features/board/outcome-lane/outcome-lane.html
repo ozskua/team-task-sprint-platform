@@ -1,11 +1,6 @@
 <section class="outcome" aria-labelledby="outcome-heading">
   <h2 class="outcome-heading" id="outcome-heading">Outcome</h2>
 
-  <!--
-    Two drop lists, one lane. Each keeps its own column id, so a card dropped here moves through the
-    same endpoint as a card dropped anywhere else. The `role`/`aria-label` pair is what tells a
-    screen reader there are two targets, since nothing on screen says so while nobody is dragging.
-  -->
   <div
     class="outcome-zone outcome-zone--complete"
     role="group"
@@ -15,7 +10,6 @@
     [cdkDropListData]="completed()"
     [cdkDropListConnectedTo]="connectedTo()"
     (cdkDropListDropped)="taskDropped.emit($event)">
-    <!-- Shown only while a drag is live — see the stylesheet. -->
     <span class="outcome-hint" aria-hidden="true">Complete</span>
 
     @for (task of completed().tasks; track task.taskId) {

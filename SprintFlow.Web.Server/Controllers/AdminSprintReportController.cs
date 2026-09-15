@@ -8,20 +8,6 @@ using SprintFlow.Web.Server.Services;
 
 namespace SprintFlow.Web.Server.Controllers;
 
-/// <summary>
-/// Every sprint's outcome, for the administrator. Read-only.
-/// </summary>
-/// <remarks>
-/// The first endpoint in this project that is not open to every signed-in user. Admin is decided the
-/// way <c>AuthService</c> and the Angular guard decide it — the caller's id against
-/// <c>Auth:AdminUserId</c> — so there is one definition of admin rather than two. Deliberately
-/// <b>not</b> <c>[Authorize(Roles = ...)]</c>: role names are a second definition, and
-/// <c>docs/AUTHENTICATION.md</c> §3 fixes the decision on the id. No policy, handler or role system
-/// was introduced; this is one condition in one action, like the author check on deleting a comment.
-/// <para>
-/// <c>/api/admin/dashboard</c> is deliberately left as it was — see the roadmap's D11.
-/// </para>
-/// </remarks>
 [ApiController]
 [Route("api/admin/sprint-report")]
 [Authorize]
@@ -36,7 +22,6 @@ public class AdminSprintReportController : ControllerBase
         this.authOptions = authOptions.Value;
     }
 
-    /// <summary>Every sprint with its completed, cancelled and still-open counts and percentages.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<SprintReportRowDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -52,7 +37,6 @@ public class AdminSprintReportController : ControllerBase
                 detail: "This report is available to the administrator only.");
         }
 
-        // A system with no sprints is not a missing resource: it answers with an empty list.
         return Ok(await sprintService.GetReportAsync(cancellationToken));
     }
 }

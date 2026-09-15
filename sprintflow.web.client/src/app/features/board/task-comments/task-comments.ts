@@ -16,19 +16,10 @@ import { AuthService } from '../../../core/services/auth.service';
 import { BoardDetailService } from '../../../core/services/board-detail.service';
 import { initialsOf } from '../../../shared/initials';
 
-/** What people are told when a file is refused. The server's own wording is never shown. */
 const ATTACHMENT_REFUSED =
   'Dosya eklenemedi. En fazla 10 MB, ve yalnızca görsel, PDF, Office, metin ve zip dosyaları '
   + 'eklenebilir.';
 
-/**
- * The task's thread: every comment, the files posted with each one, and the box for the next
- * message. One section rather than two, because a file is almost always about something someone
- * said — `looseAttachments` exists only for files uploaded before comments could carry them.
- *
- * The list is passed in and every change is emitted back: the card owns the task, and nothing here
- * re-reads it.
- */
 @Component({
   selector: 'app-task-comments',
   templateUrl: './task-comments.html',
@@ -40,7 +31,6 @@ export class TaskComments {
   readonly taskId = input.required<number>();
   readonly comments = input.required<readonly TaskComment[]>();
 
-  /** Files belonging to no comment. Empty for anything posted through this box. */
   readonly looseAttachments = input.required<readonly TaskAttachment[]>();
 
   readonly commentAdded = output<TaskComment>();
@@ -55,11 +45,9 @@ export class TaskComments {
   protected readonly pendingFile = signal<File | null>(null);
   protected readonly saving = signal(false);
 
-  /** Local, generic messages. The server's own wording is never rendered. */
   protected readonly failed = signal(false);
   protected readonly actionError = signal<string | null>(null);
 
-  /** Which row has a request of its own in flight, so only that row is disabled. */
   protected readonly busyAttachmentId = signal<number | null>(null);
   protected readonly busyCommentId = signal<number | null>(null);
 
@@ -67,10 +55,6 @@ export class TaskComments {
 
   protected readonly canSubmit = computed(() => !this.saving() && this.text().trim().length > 0);
 
-  /**
-   * Who is signed in. A session stored before the server sent the id has none, so no delete control
-   * is offered rather than all of them — and the server refuses another author's comment anyway.
-   */
   private readonly ownUserId = this.auth.userId;
 
   protected canDelete(comment: TaskComment): boolean {
@@ -83,23 +67,16 @@ export class TaskComments {
     return initialsOf(fullName);
   }
 
-  /** Bytes are what the server records; this is only how they are read out. */
   protected formatSize(bytes: number): string {
     return bytes < 1024 * 1024
       ? Math.max(1, Math.round(bytes / 1024)) + ' KB'
       : (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
-  // --- Writing ------------------------------------------------------------
-
-  protected onInput(value: string): void {
+protected onInput(value: string): void {
     this.text.set(value);
   }
 
-  /**
-   * Enter sends; Shift+Enter is a newline. Angular builds the modifier into the event name, so
-   * `keydown.enter` never fires for `shift.enter` and no modifier check is needed here.
-   */
   protected onEnterKey(event: Event): void {
     event.preventDefault();
     this.submit();
@@ -108,7 +85,6 @@ export class TaskComments {
   protected onFilePicked(input: HTMLInputElement): void {
     const file = input.files?.[0] ?? null;
 
-    // Cleared straight away, so choosing the same file twice still raises a change event.
     input.value = '';
 
     this.pendingFile.set(file);
@@ -120,15 +96,9 @@ export class TaskComments {
     this.actionError.set(null);
   }
 
-  /**
-   * One message, however many requests it takes: the comment is written first, then the file is
-   * attached to it. If the file fails the comment is kept — it was said — and the failure is
-   * reported against the file alone.
-   */
   protected submit(): void {
     const content = this.text().trim();
 
-    // Whitespace alone is not a comment. The server rejects it too; this saves a round trip.
     if (content.length === 0 || this.saving()) {
       return;
     }
@@ -166,7 +136,6 @@ export class TaskComments {
             return;
           }
 
-          // The comment landed; only the file did not. Keep the message and say so.
           this.clearComposer();
           this.actionError.set(ATTACHMENT_REFUSED);
           this.commentAdded.emit(posted);
@@ -174,9 +143,7 @@ export class TaskComments {
       });
   }
 
-  // --- Removing -----------------------------------------------------------
-
-  protected deleteComment(comment: TaskComment): void {
+protected deleteComment(comment: TaskComment): void {
     if (this.busyCommentId() !== null) {
       return;
     }
@@ -220,7 +187,6 @@ export class TaskComments {
       });
   }
 
-  /** Fetched as a blob: the request needs its bearer token and a plain link would carry none. */
   protected download(attachment: TaskAttachment): void {
     if (this.busyAttachmentId() !== null) {
       return;
@@ -243,9 +209,7 @@ export class TaskComments {
       });
   }
 
-  // --- Plumbing -----------------------------------------------------------
-
-  private clearComposer(): void {
+private clearComposer(): void {
     this.text.set('');
     this.pendingFile.set(null);
   }
@@ -264,7 +228,6 @@ export class TaskComments {
     link.download = fileName;
     link.click();
 
-    // The blob stays in memory until the URL is released.
     URL.revokeObjectURL(url);
   }
 }

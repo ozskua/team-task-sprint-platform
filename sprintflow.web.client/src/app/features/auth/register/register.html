@@ -6,7 +6,6 @@
         <p class="register-subtitle">You have been invited to SprintFlow.</p>
       </header>
 
-      <!-- Three states: still checking the invitation, it cannot be used, or the form. -->
       @if (invitationUsable() === null) {
         <div class="register-checking" role="status">
           <mat-spinner diameter="28" />

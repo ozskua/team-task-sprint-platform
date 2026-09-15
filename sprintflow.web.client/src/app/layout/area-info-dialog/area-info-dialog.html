@@ -9,7 +9,6 @@
     <dd>{{ area.createdByFullName }}</dd>
 
     <dt>Created</dt>
-    <!-- No timezone argument: the value carries no offset, so any conversion would shift the day. -->
     <dd>{{ area.createdDate | date:'dd MMM yyyy' }}</dd>
   </dl>
 </mat-dialog-content>

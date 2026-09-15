@@ -2,10 +2,6 @@
     display: block;
 }
 
-/*
-  A row rather than a card: the list has no cap, so it can run long, and rows scan faster down one
-  column than a grid does.
-*/
 .task-row {
     display: flex;
     align-items: center;
@@ -48,10 +44,6 @@
     overflow-wrap: anywhere;
 }
 
-/*
-  Fill carries the meaning and the label stays dark ink — these tints cannot be read as text, which
-  is the same rule the board's own status chips follow.
-*/
 .column-chip {
     flex: 0 0 auto;
     padding: 4px 10px;

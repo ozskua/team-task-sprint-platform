@@ -11,13 +11,9 @@ import { SprintReport } from './sprint-report';
     SprintReport
   ],
   imports: [
-    // The four figures above the table.
     MetricCardModule,
-    // The task rows inside an opened sprint — the same table the Backlog draws.
     TaskTableModule,
-    // The disclosure chevron.
     MatIconModule,
-    // SprintReportRoutingModule re-exports RouterModule, which supplies routerLink.
     SprintReportRoutingModule
   ]
 })

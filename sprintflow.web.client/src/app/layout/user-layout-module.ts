@@ -17,7 +17,6 @@ import { UserLayoutRoutingModule } from './user-layout-routing-module';
     MatButtonModule,
     MatIconModule,
     MatSidenavModule,
-    // The same Sidebar and UserMenu AdminLayout uses.
     ShellModule,
     UserLayoutRoutingModule
   ]

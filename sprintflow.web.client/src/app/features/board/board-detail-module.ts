@@ -26,18 +26,6 @@ import { SprintList } from './sprint-list/sprint-list';
 import { TaskCard } from './task-card/task-card';
 import { TaskComments } from './task-comments/task-comments';
 import { WorkflowColumnComponent } from './workflow-column/workflow-column';
-/**
- * One board, in two views: the kanban and the backlog. Both are loaded by both shells at their own
- * URL, and both use the same header, the same dialogs and the same actions.
- *
- * The board's state lives in CoreModule, so opening the page twice does not create two copies of
- * it. BoardActions is provided here instead: it is this feature's own behaviour, it holds no state,
- * and nothing outside these two pages has any use for it.
- *
- * DragDropModule comes from the CDK the project already depends on — no new package was added.
- * RouterModule arrives through the routing module, which re-exports it, so the tab strip's links
- * work without importing it again.
- */
 @NgModule({
   declarations: [
     BoardDetail,
@@ -64,9 +52,7 @@ import { WorkflowColumnComponent } from './workflow-column/workflow-column';
     MatDialogModule,
     MatIconModule,
     MatMenuModule,
-    // The board summary draws the same tiles the Dashboard does.
     MetricCardModule,
-    // The Backlog and the sprint detail page draw the same task table.
     TaskTableModule,
     BoardDetailRoutingModule
   ],

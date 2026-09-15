@@ -4,9 +4,6 @@ using SprintFlow.Web.Server.Models;
 
 namespace SprintFlow.Web.Server.Data.Repositories;
 
-/// <summary>
-/// Reads and writes the board hierarchy: areas, boards, their one team each, and their columns.
-/// </summary>
 public class BoardRepository
 {
     private readonly SprintFlowDbContext context;
@@ -16,9 +13,7 @@ public class BoardRepository
         this.context = context;
     }
 
-    // ---- Areas ----
-
-    public async Task<int> AddAreaAsync(Area area, CancellationToken cancellationToken)
+public async Task<int> AddAreaAsync(Area area, CancellationToken cancellationToken)
     {
         context.Areas.Add(area);
         await context.SaveChangesAsync(cancellationToken);
@@ -45,14 +40,10 @@ public class BoardRepository
             .Include(a => a.Boards)
                 .ThenInclude(b => b.CreatedByUser);
 
-    // ---- Boards ----
-
-    public async Task<int> AddAsync(Board board, CancellationToken cancellationToken)
+public async Task<int> AddAsync(Board board, CancellationToken cancellationToken)
     {
         context.Boards.Add(board);
 
-        // One save for the board, its team and its columns: EF wraps a single save in a
-        // transaction, so a board can never exist without them.
         await context.SaveChangesAsync(cancellationToken);
 
         return board.BoardId;
@@ -79,8 +70,6 @@ public class BoardRepository
     public Task<Board?> GetForUpdateAsync(int boardId, CancellationToken cancellationToken)
         => context.Boards.FirstOrDefaultAsync(b => b.BoardId == boardId, cancellationToken);
 
-    // The team, columns, tasks and assignments go by cascade; repeating that here could drift
-    // from the schema.
     public void Remove(Board board) => context.Boards.Remove(board);
 
     public Task SaveChangesAsync(CancellationToken cancellationToken)
@@ -94,12 +83,6 @@ public class BoardRepository
         => context.Boards
             .AsNoTracking()
             .Include(b => b.CreatedByUser)
-            // Repeated on every chain because EF refuses a repeated navigation filtered
-            // differently. One predicate, three answers: all tasks (backlog), one sprint's tasks
-            // (kanban), or none when no sprint is running.
-            //
-            // Only tasks are filtered, never the columns: a sprint with nothing in Testing still has
-            // a Testing column, and that is what keeps one kanban per board.
             .Include(b => b.WorkflowColumns)
                 .ThenInclude(c => c.Tasks.Where(t => allTasks || (sprintId != null && t.SprintId == sprintId)))
                     .ThenInclude(t => t.CreatedByUser)
@@ -110,31 +93,21 @@ public class BoardRepository
             .Include(b => b.WorkflowColumns)
                 .ThenInclude(c => c.Tasks.Where(t => allTasks || (sprintId != null && t.SprintId == sprintId)))
                     .ThenInclude(t => t.Sprint)
-            // Ordering happens in the mapping: EF cannot order an Include chain this deep.
             .FirstOrDefaultAsync(b => b.BoardId == boardId, cancellationToken);
 
-    /// <summary>
-    /// Runs <paramref name="operation"/> holding an exclusive lock on the board row, so writes that
-    /// depend on reading the board's current ordering cannot interleave.
-    /// </summary>
     public async Task<TResult> RunBoardOrderingAsync<TResult>(
         int boardId,
         Func<CancellationToken, Task<TResult>> operation,
         CancellationToken cancellationToken)
     {
-        // The connection retries transient failures, and a retrying strategy refuses to manage a
-        // transaction it did not open — so the whole unit is handed to it.
         var strategy = context.Database.CreateExecutionStrategy();
 
         return await strategy.ExecuteAsync(async () =>
         {
-            // A retry re-runs everything below, so start from a clean tracker.
             context.ChangeTracker.Clear();
 
             await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
-            // UPDLOCK blocks a second request for this board; HOLDLOCK keeps the lock until commit,
-            // so the loser reads the winner's committed rows. The row is a mutex, not data.
             await context.Database.ExecuteSqlInterpolatedAsync(
                 $"SELECT TOP 1 BoardId FROM Boards WITH (UPDLOCK, HOLDLOCK) WHERE BoardId = {boardId}",
                 cancellationToken);
@@ -147,9 +120,7 @@ public class BoardRepository
         });
     }
 
-    // ---- Teams ----
-
-    public async Task<IReadOnlyList<Team>> GetTeamsAsync(CancellationToken cancellationToken)
+public async Task<IReadOnlyList<Team>> GetTeamsAsync(CancellationToken cancellationToken)
         => await context.Teams
             .AsNoTracking()
             .Include(t => t.Board)
@@ -160,14 +131,10 @@ public class BoardRepository
             .ThenBy(t => t.TeamId)
             .ToListAsync(cancellationToken);
 
-    // ---- Workflow columns ----
-
-    public Task<List<WorkflowColumn>> GetBoardColumnsForUpdateAsync(
+public Task<List<WorkflowColumn>> GetBoardColumnsForUpdateAsync(
         int boardId,
         CancellationToken cancellationToken)
         => context.WorkflowColumns
-            // Tracked: the caller rewrites Position on these instances. Ties broken by id so a
-            // create and the renumber that follows it agree.
             .Where(c => c.BoardId == boardId)
             .OrderBy(c => c.Position)
             .ThenBy(c => c.WorkflowColumnId)

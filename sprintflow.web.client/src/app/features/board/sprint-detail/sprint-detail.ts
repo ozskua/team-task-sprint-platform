@@ -6,17 +6,6 @@ import { SprintDetail as SprintDetailModel, SprintTask } from '../../../core/mod
 import { SprintService } from '../../../core/services/sprint.service';
 import { TaskTableRow } from '../../../shared/task-table/task-table';
 
-/**
- * One sprint's own page: what it is, and what is in it.
- *
- * The tasks are listed here rather than behind a link to the board, because "which work is in this
- * sprint" is the question the page exists to answer — sending the reader to the kanban to find out
- * would make them navigate for something the page already knows.
- *
- * Read-only. Editing and deleting a sprint are not part of this phase, and the task rows are drawn
- * by the same table the Backlog uses, without its selectors: moving work between columns or sprints
- * belongs on the Backlog, which has the whole board in view.
- */
 @Component({
   selector: 'app-sprint-detail',
   templateUrl: './sprint-detail.html',
@@ -39,7 +28,6 @@ export class SprintDetail {
   protected readonly tasksLoading = signal(true);
   protected readonly tasksFailed = signal(false);
 
-  /** The server already sends the shape the table wants; this only renames nothing. */
   protected readonly taskRows = computed<readonly TaskTableRow[]>(() => this.tasks());
 
   constructor() {
@@ -48,7 +36,6 @@ export class SprintDetail {
       .subscribe(params => this.load(Number(params.get('sprintId'))));
   }
 
-  /** '' in the member shell and '/admin' in the other. */
   private shellPrefix(): string {
     return this.router.url.split('/boards/')[0];
   }
@@ -81,8 +68,6 @@ export class SprintDetail {
         }
       });
 
-    // A second call rather than part of the sprint payload: the fact card renders as soon as it can
-    // and the list fills in after, instead of the whole page waiting on the longer query.
     this.tasksLoading.set(true);
     this.tasksFailed.set(false);
 

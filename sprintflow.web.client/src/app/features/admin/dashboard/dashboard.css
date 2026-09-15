@@ -1,4 +1,3 @@
-/* The page inherits its width, centring and outer padding from the layout frame. */
 .dashboard {
     display: flex;
     flex-direction: column;
@@ -27,10 +26,6 @@
     grid-template-columns: repeat(4, 1fr);
 }
 
-/*
-  Scale, not action. Two narrow cards rather than a full row, so they read as context beside the
-  workflow buckets instead of competing with them.
-*/
 .metric-grid--two {
     grid-template-columns: repeat(2, minmax(0, 240px));
 }
@@ -42,8 +37,6 @@
     background-color: var(--app-surface-card);
     box-shadow: var(--app-shadow-card);
 }
-
-/* ---- Overall progress ------------------------------------------------------ */
 
 .summary-progress-head {
     display: flex;

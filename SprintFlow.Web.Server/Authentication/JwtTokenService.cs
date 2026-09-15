@@ -8,8 +8,6 @@ using SprintFlow.Web.Server.Options;
 
 namespace SprintFlow.Web.Server.Authentication;
 
-// Only issues tokens. Validating incoming tokens is configured separately in
-// ServiceCollectionExtensions; both read the same Jwt settings.
 public class JwtTokenService : ITokenService
 {
     private readonly JwtOptions options;
@@ -27,12 +25,11 @@ public class JwtTokenService : ITokenService
     {
         var userId = user.UserId.ToString();
 
-        // JWTs are signed, not encrypted; never put secrets in claims.
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userId),
-            new(ClaimTypes.NameIdentifier, userId), // What the server reads to answer "who is calling?".
-            new(ClaimTypes.Role, user.Role.RoleName), // Role name, not id: [Authorize(Roles = "Admin")] compares strings.
+            new(ClaimTypes.NameIdentifier, userId),
+            new(ClaimTypes.Role, user.Role.RoleName),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
@@ -46,7 +43,6 @@ public class JwtTokenService : ITokenService
             SigningCredentials = signingCredentials
         };
 
-        // JsonWebTokenHandler writes claims as given; the older handler rewrites 'sub'.
         return new JsonWebTokenHandler().CreateToken(descriptor);
     }
 }

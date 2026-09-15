@@ -29,8 +29,6 @@
         (input)="onDescriptionInput($any($event.target).value)"></textarea>
     </div>
 
-    <!-- Marked on the options for the same reason the assignee select is: a value bound on the
-         select has nothing to match during the first render. -->
     <div class="task-form-field">
       <label class="task-form-label" for="task-priority">Önem derecesi</label>
       <select
@@ -45,7 +43,6 @@
       </select>
     </div>
 
-    <!-- One person, or nobody. A task never has two. -->
     <div class="task-form-field">
       <label class="task-form-label" for="task-assignee">Assignee</label>
 
@@ -57,7 +54,6 @@
         </p>
       } @else {
         <div class="assignee-row">
-          <!-- Mirrors the card: the chosen person is shown as the same initials avatar there. -->
           @if (selectedUser(); as user) {
             <span class="assignee-preview" role="img" [attr.aria-label]="'Assigned to ' + user.fullName">
               <span aria-hidden="true">{{ initials(user.fullName) }}</span>
@@ -66,9 +62,6 @@
             <span class="assignee-preview assignee-preview--none" aria-hidden="true">—</span>
           }
 
-          <!-- Marked on the options rather than bound on the select: the options are rendered in
-               the same pass, so a value set on the select has nothing to match yet and the field
-               would open showing "Unassigned" for a task that already has someone. -->
           <select
             id="task-assignee"
             class="task-form-input assignee-select"

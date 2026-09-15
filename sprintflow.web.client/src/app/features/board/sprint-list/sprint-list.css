@@ -63,7 +63,6 @@
     gap: 16px;
 }
 
-/* The row itself is the disclosure, so the button fills it and carries every fact on the line. */
 .sprint-row-toggle {
     display: flex;
     align-items: center;
@@ -109,7 +108,6 @@
     text-decoration: underline;
 }
 
-/* The tasks, once the row is open. Indented to the chevron so it reads as belonging to the row. */
 .sprint-row-tasks {
     margin-top: 12px;
     padding-top: 12px;
@@ -129,7 +127,6 @@
     color: var(--mat-sys-on-surface-variant);
 }
 
-/* Tinted by state, so the timeline reads at a glance rather than by comparing dates. */
 .sprint-status {
     padding: 3px 10px;
     border-radius: 999px;

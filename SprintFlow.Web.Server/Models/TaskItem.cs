@@ -14,7 +14,6 @@ public class TaskItem
 
     public int TaskColumnId { get; set; }
 
-    // Contiguous from zero within a column, and scoped to the board+column - never to a sprint.
     public int Position { get; set; }
 
     public TaskPriority Priority { get; set; } = TaskPriority.Normal;

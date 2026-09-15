@@ -3,7 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 
-// Aliased so the model is not confused with the kanban component of the same name.
 import {
   BoardColumn,
   BoardDetail as BoardDetailModel,
@@ -16,19 +15,11 @@ import { SprintService } from '../../../core/services/sprint.service';
 import { initialsOf } from '../../../shared/initials';
 import { BoardActions } from '../board-actions';
 
-/** One line of the table: the task, and the column it is currently sitting in. */
 interface BacklogRow {
   readonly task: BoardTask;
   readonly column: BoardColumn;
 }
 
-/**
- * Every task on one board, as a list. Same board, same endpoint and same actions as the kanban —
- * only the shape differs. A kanban answers "what is the state of the work"; this answers "where is
- * that one task".
- *
- * Completed and Cancelled are ordinary statuses here: sharing a lane is a kanban drawing decision.
- */
 @Component({
   selector: 'app-board-backlog',
   templateUrl: './board-backlog.html',
@@ -49,23 +40,18 @@ export class BoardBacklog {
   protected readonly failed = signal(false);
   protected readonly actionError = signal<string | null>(null);
 
-  /** Rows whose status change has been sent but not yet answered. */
   protected readonly movingTaskIds = signal<ReadonlySet<number>>(new Set());
 
-  /** Rows whose sprint change has been sent but not yet answered. */
   protected readonly assigningSprintIds = signal<ReadonlySet<number>>(new Set());
 
-  /** The board's sprints, for the Sprint selector. Read once when the page opens. */
   protected readonly sprints = signal<readonly Sprint[]>([]);
   protected readonly sprintsLoading = signal(true);
   protected readonly sprintsFailed = signal(false);
 
   protected readonly skeletonRows = [0, 1, 2, 3, 4];
 
-  /** Every status a task can be given, in the board's own column order. */
   protected readonly columns = computed<readonly BoardColumn[]>(() => this.board()?.columns ?? []);
 
-  /** Flattened in column order, then by position, so the list reads the way the board does. */
   protected readonly rows = computed<readonly BacklogRow[]>(() =>
     this.columns()
       .slice()
@@ -75,7 +61,6 @@ export class BoardBacklog {
         .sort((left, right) => left.position - right.position)
         .map(task => ({ task, column }))));
 
-  /** The board's model keeps task and column side by side; the shared table wants one flat row. */
   protected readonly taskRows = computed<readonly TaskTableRow[]>(() =>
     this.rows().map(({ task, column }) => ({
       taskId: task.taskId,
@@ -87,7 +72,6 @@ export class BoardBacklog {
       createdDate: task.createdDate
     })));
 
-  /** The table hands back a task id; the handlers below still work on the full task. */
   private taskById(taskId: number): BoardTask | undefined {
     return this.rows().find(row => row.task.taskId === taskId)?.task;
   }
@@ -149,13 +133,7 @@ export class BoardBacklog {
     return this.assigningSprintIds().has(taskId);
   }
 
-  /**
-   * Puts a task into a sprint, or takes it out. Not optimistic, like the status selector: nothing
-   * follows a pointer here, so waiting for the server is simpler and more truthful. The response
-   * carries the task as it now stands, so no reload is needed.
-   */
   protected onSprintChange(task: BoardTask, value: string): void {
-    // '' is the "No sprint" option; anything else is an id.
     const sprintId = value === '' ? null : Number(value);
 
     if (sprintId !== null && !Number.isInteger(sprintId)) {
@@ -174,8 +152,6 @@ export class BoardBacklog {
         next: () => this.setAssigningSprint(task.taskId, false),
         error: () => {
           this.setAssigningSprint(task.taskId, false);
-          // The select still shows what the user picked, so the board is re-read to put the real
-          // value back.
           this.reload();
           this.actionError.set('That task could not be moved to that sprint.');
         }
@@ -192,9 +168,7 @@ export class BoardBacklog {
     return initialsOf(fullName);
   }
 
-  // --- Actions ------------------------------------------------------------
-
-  protected openTask(task: BoardTask): void {
+protected openTask(task: BoardTask): void {
     this.run(
       board => this.boardActions.openTaskDetail(board.boardId, task.taskId),
       'That task could not be updated.');
@@ -214,10 +188,6 @@ export class BoardBacklog {
     this.run(board => this.boardActions.deleteBoard(board), 'That board could not be deleted.');
   }
 
-  /**
-   * The row's status selector. Nothing is optimistic: no card follows a pointer here, so waiting and
-   * re-reading beats guessing where the task landed.
-   */
   protected onStatusChange(task: BoardTask, value: string): void {
     const targetColumnId = Number(value);
     const board = this.board();
@@ -238,7 +208,6 @@ export class BoardBacklog {
 
     this.setMoving(task.taskId, true);
 
-    // Appended to the end of the target column. The server owns the final position and clamps this.
     this.boardDetail
       .moveTaskAndReload(board.boardId, task.taskId, {
         targetColumnId,
@@ -249,17 +218,13 @@ export class BoardBacklog {
         next: () => this.setMoving(task.taskId, false),
         error: () => {
           this.setMoving(task.taskId, false);
-          // The select still shows the status the user picked, so the reload puts the real one
-          // back.
           this.reload();
           this.actionError.set('That task could not be moved.');
         }
       });
   }
 
-  // --- Plumbing -----------------------------------------------------------
-
-  private run(
+private run(
     action: (board: BoardDetailModel) => Observable<unknown>,
     failureMessage: string): void {
     const board = this.board();
@@ -328,7 +293,6 @@ export class BoardBacklog {
           this.sprintsLoading.set(false);
         },
         error: () => {
-          // The rest of the page still works; only the sprint selector is unavailable.
           this.sprintsFailed.set(true);
           this.sprintsLoading.set(false);
         }
@@ -336,7 +300,6 @@ export class BoardBacklog {
   }
 }
 
-/** Adds or removes an id, returning a new set so the signal sees a change. */
 function toggle(current: ReadonlySet<number>, taskId: number, present: boolean): ReadonlySet<number> {
   const next = new Set(current);
 

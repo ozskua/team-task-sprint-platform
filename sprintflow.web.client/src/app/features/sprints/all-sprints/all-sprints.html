@@ -25,11 +25,9 @@
           <header class="sprint-group-head">
             <div class="sprint-group-title">
               <h2 class="sprint-group-board">{{ group.boardName }}</h2>
-              <!-- Board names are not unique; the area is what tells two of them apart. -->
               <p class="sprint-group-area">{{ group.areaName }}</p>
             </div>
 
-            <!-- Management lives on the board, not here. -->
             <a class="sprint-group-manage" [routerLink]="sprintsPath(group.boardId)">Manage</a>
           </header>
 
@@ -37,11 +35,6 @@
             @for (sprint of group.sprints; track sprint.sprintId) {
               <li class="sprint-row">
                 <div class="sprint-row-line">
-                  <!--
-                    The whole row is the disclosure: clicking a sprint shows its tasks. Each row
-                    opens on its own, so several may be open at once. The chevron is inside the
-                    button rather than beside it, so there is one control and one thing to announce.
-                  -->
                   <button
                     class="sprint-row-toggle"
                     type="button"
@@ -54,7 +47,6 @@
 
                     <span class="sprint-row-name">{{ sprint.name }}</span>
 
-                    <!-- "up to, not including" — the end day is not part of the sprint. -->
                     <span class="sprint-row-dates">{{ sprint.startDate }} → {{ sprint.endDate }}</span>
 
                     <span class="sprint-row-status" [class]="'sprint-row-status--' + sprint.status">
@@ -66,8 +58,6 @@
                     </span>
                   </button>
 
-                  <!-- Working in the sprint is a different intent from looking at it, so it keeps
-                       its own control: the kanban, scoped to this sprint. -->
                   <a
                     class="sprint-row-open"
                     [routerLink]="boardPath(group.boardId)"
@@ -90,7 +80,6 @@
                               No tasks in this sprint yet. Put work into it from the board's Backlog.
                             </p>
                           } @else {
-                            <!-- The same table the Backlog draws, read-only here. -->
                             <app-task-table
                               [rows]="state.rows"
                               [caption]="'Tasks in ' + sprint.name" />

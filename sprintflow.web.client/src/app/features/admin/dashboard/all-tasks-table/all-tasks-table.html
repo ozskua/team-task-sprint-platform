@@ -15,8 +15,6 @@
 
   <div class="tasks-filter">
     <label class="visually-hidden" for="task-status-filter">Filter by status</label>
-    <!-- Marked on the options rather than bound on the select: the options render in the same pass,
-         so a value set on the select has nothing to match yet. -->
     <select
       id="task-status-filter"
       class="tasks-filter-select"
@@ -80,8 +78,6 @@
           @for (task of visibleTasks(); track task.taskId) {
             <tr>
               <th scope="row" class="tasks-title-cell">
-                <!-- A task has no URL of its own — it opens in a dialog inside its board — so the
-                     board is the honest destination. -->
                 <a class="tasks-title-link" [routerLink]="['/admin/boards', task.boardId]">
                   {{ task.title }}
                 </a>
@@ -90,7 +86,6 @@
               <td class="tasks-col-where">{{ task.areaName }} · {{ task.boardName }}</td>
 
               <td class="tasks-col-status">
-                <!-- The column's own name, tinted by what kind of column it is. -->
                 <span class="column-chip" [class]="chipClass(task)">{{ task.columnName }}</span>
               </td>
 
@@ -113,8 +108,6 @@
 
               <td class="tasks-col-creator">{{ task.createdByFullName }}</td>
 
-              <!-- No timezone argument: the value carries no offset, so a conversion would shift
-                   the day. -->
               <td class="tasks-col-created">{{ task.createdDate | date:'dd MMM yyyy' }}</td>
             </tr>
           }

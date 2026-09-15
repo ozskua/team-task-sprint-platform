@@ -9,8 +9,6 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
 {
     public void Configure(EntityTypeBuilder<TaskItem> builder)
     {
-        // The entity is TaskItem so it does not collide with System.Threading.Tasks.Task; the table
-        // keeps the name the domain uses.
         builder.ToTable("Tasks");
 
         builder.HasKey(t => t.TaskId);
@@ -25,44 +23,28 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
         builder.Property(t => t.Priority)
             .IsRequired()
             .HasDefaultValue(TaskPriority.Normal)
-
-            // Without this, EF reads Unprioritised — the CLR default for the enum — as "nothing was
-            // set" and lets the column default win, so a task deliberately created as Unprioritised
-            // would be stored as Normal. No member has this value, so every real one is now written.
             .HasSentinel((TaskPriority)(-1));
 
         builder.Property(t => t.CreatedDate)
             .IsRequired()
             .HasDefaultValueSql("SYSUTCDATETIME()");
 
-        // Cascade: a task cannot exist without its board.
         builder.HasOne(t => t.Board)
             .WithMany(b => b.Tasks)
             .HasForeignKey(t => t.BoardId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // The composite key makes "a task's column belongs to the same board" a database rule: a
-        // column id from another board has no matching (WorkflowColumnId, BoardId) row and the
-        // insert is rejected outright.
-        //
-        // Restrict, not Cascade, for two reasons that agree: it is the deletion rule itself — a
-        // column still holding tasks cannot be removed — and Boards already cascades to Tasks, so a
-        // second cascade path to the same table would be rejected by SQL Server (error 1785).
         builder.HasOne(t => t.Column)
             .WithMany(c => c.Tasks)
             .HasForeignKey(t => new { t.TaskColumnId, t.BoardId })
             .HasPrincipalKey(c => new { c.WorkflowColumnId, c.BoardId })
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Restrict, like everywhere else: removing a user must never delete their work.
         builder.HasOne(t => t.CreatedByUser)
             .WithMany()
             .HasForeignKey(t => t.CreatedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Composite and Restrict for the same reasons as the column relationship above. SprintId is
-        // nullable, and SQL Server does not check a composite foreign key when any of its columns is
-        // null — which is exactly right for a task that is in no sprint.
         builder.HasOne(t => t.Sprint)
             .WithMany(s => s.Tasks)
             .HasForeignKey(t => new { t.SprintId, t.BoardId })
@@ -71,11 +53,6 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
 
         builder.HasIndex(t => new { t.TaskColumnId, t.Position });
 
-        // Team membership is derived by filtering tasks on their board.
         builder.HasIndex(t => t.BoardId);
-
-        // No index on SprintId alone: the sprint relationship above already produces
-        // IX_Tasks_SprintId_BoardId and SprintId leads it, so that index serves a lookup by sprint
-        // as well.
     }
 }

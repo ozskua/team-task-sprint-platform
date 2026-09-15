@@ -17,12 +17,10 @@
     box-shadow: var(--app-shadow-card);
 }
 
-/* Outweighs Material's .mat-mdc-card-content:first-child/:last-child padding rules. */
 .login-card mat-card-content.login-card-content {
     padding: 2.75rem 2.5rem;
 }
 
-/* Typography hierarchy: title carries the page, subtitle recedes. */
 .login-header {
     margin-bottom: 2.25rem;
 }
@@ -63,7 +61,6 @@
     --mat-form-field-container-height: 60px;
 }
 
-/* Breathing room between the two inputs, on top of the reserved error space. */
 .login-form mat-form-field:first-of-type {
     margin-bottom: 0.5rem;
 }

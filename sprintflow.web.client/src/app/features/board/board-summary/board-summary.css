@@ -5,7 +5,6 @@
     padding: 24px;
 }
 
-/* Says whose figures these are, so a board summary is never mistaken for the Dashboard's. */
 .summary-scope {
     margin: 0;
     font-size: 0.8125rem;
@@ -39,7 +38,6 @@
     grid-template-columns: repeat(3, minmax(0, 220px));
 }
 
-/* Scale, not action: narrower than the workflow buckets so they read as context beside them. */
 .summary-grid--two {
     grid-template-columns: repeat(2, minmax(0, 240px));
 }

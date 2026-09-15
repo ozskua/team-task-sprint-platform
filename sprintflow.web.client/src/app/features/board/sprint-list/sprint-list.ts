@@ -8,22 +8,11 @@ import { SprintService } from '../../../core/services/sprint.service';
 import { TaskTableRow } from '../../../shared/task-table/task-table';
 import { SprintFormDialog, SprintFormResult } from '../dialogs/sprint-form-dialog/sprint-form-dialog';
 
-/** What is known about one sprint's tasks, once someone has opened it. */
 interface TaskState {
   readonly status: 'loading' | 'ready' | 'failed';
   readonly rows: readonly TaskTableRow[];
 }
 
-/**
- * One board's sprints: what they are called, when they run, and how they stand.
- *
- * Sprints on a board form a single timeline, so this is a sequence rather than a set — it is
- * ordered by date and never by name or by when it was created.
- *
- * Each row opens on its own to reveal that sprint's tasks, the same way the global overview does.
- * Nothing is fetched until a row is opened, and what has been fetched is kept for the rest of the
- * visit. Working *in* a sprint is a different intent, so it keeps its own control: the scoped kanban.
- */
 @Component({
   selector: 'app-sprint-list',
   templateUrl: './sprint-list.html',
@@ -44,13 +33,10 @@ export class SprintList {
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
 
-  /** A local, generic message. The server's own wording is never shown. */
   protected readonly actionError = signal<string | null>(null);
 
-  /** Which rows are open. Several may be at once — each is its own disclosure. */
   private readonly expanded = signal<ReadonlySet<number>>(new Set());
 
-  /** Tasks per sprint, kept once loaded so collapsing and reopening costs no request. */
   private readonly tasksBySprint = signal<ReadonlyMap<number, TaskState>>(new Map());
 
   protected readonly skeletonRows = [0, 1, 2];
@@ -73,10 +59,6 @@ export class SprintList {
     return this.tasksBySprint().get(sprintId);
   }
 
-  /**
-   * Opens or closes one row. Closing keeps whatever was loaded, so opening it again is instant and
-   * makes no second request.
-   */
   protected toggle(sprintId: number): void {
     const open = new Set(this.expanded());
 
@@ -89,7 +71,6 @@ export class SprintList {
     open.add(sprintId);
     this.expanded.set(open);
 
-    // Already fetched, or already being fetched: nothing to do.
     if (this.tasksBySprint().has(sprintId)) {
       return;
     }
@@ -97,7 +78,6 @@ export class SprintList {
     this.setTaskState(sprintId, { status: 'loading', rows: [] });
 
     this.sprintService.tasks(sprintId)
-      // Explicit DestroyRef: this runs from a click, outside the constructor's injection context.
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (tasks: readonly SprintTask[]) =>
@@ -112,7 +92,6 @@ export class SprintList {
     this.tasksBySprint.set(next);
   }
 
-  /** '' in the member shell and '/admin' in the other, so one component serves both. */
   protected boardPath(): string {
     return this.router.url.split('/boards/')[0] + `/boards/${this.boardId()}`;
   }
@@ -135,8 +114,6 @@ export class SprintList {
     this.sprintService.create(this.boardId(), result)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        // Re-read rather than appending: the list is ordered by date, and a new sprint rarely
-        // belongs at the end of it.
         next: () => this.load(this.boardId()),
         error: () => this.actionError.set(
           'That sprint could not be created. Its dates may overlap another sprint on this board.')
@@ -155,8 +132,6 @@ export class SprintList {
     this.loading.set(true);
     this.failed.set(false);
 
-    // Dropped on every load: a re-read after creating a sprint should not leave rows open over
-    // tasks fetched before it, and another board's sprint ids mean nothing here.
     this.expanded.set(new Set());
     this.tasksBySprint.set(new Map());
 

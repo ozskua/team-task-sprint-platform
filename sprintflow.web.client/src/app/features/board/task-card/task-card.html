@@ -1,10 +1,4 @@
 <article class="task-card" [class.task-card--moving]="moving()" (click)="onCardClick($event)">
-  <!-- The title stays a button so the card is reachable and openable from the keyboard; the click
-       handler above only adds the rest of the card as a target for the mouse. -->
-  <!--
-    Priority, above the title. A four-step scale using the status tints the theme already defines,
-    with the word itself alongside — so the level is legible without relying on the colour.
-  -->
   <span class="task-card-priority" [class]="'task-card-priority--' + task().priority">
     {{ priorityLabel() }}
   </span>
@@ -14,7 +8,6 @@
   </button>
 
   <div class="task-card-footer">
-    <!-- Dragging is how a card moves between columns; the menu is for everything else. -->
     <button
       class="task-card-menu"
       mat-icon-button
@@ -31,12 +24,6 @@
       <button mat-menu-item type="button" (click)="remove.emit(task())">Delete</button>
     </mat-menu>
 
-    <!--
-      Which outcome the card reached, for the two columns that have one. A tick or a cross as well
-      as a colour, because a green dot and a red dot are the same dot to anyone who cannot tell them
-      apart. Sits beside the assignee, never on top of it: one says how this ended, the other says
-      whose it is.
-    -->
     @if (outcome(); as outcome) {
       <span
         class="task-card-outcome"
@@ -49,10 +36,6 @@
       </span>
     }
 
-    <!--
-      The assignee, at the lower right. Initials rather than a photo: the server stores no profile
-      image, and inventing one would mean a schema change this refinement is not allowed to make.
-    -->
     @if (task().assignee; as assignee) {
       <span
         class="assignee-avatar"
@@ -62,7 +45,6 @@
         <span aria-hidden="true">{{ initials(assignee.fullName) }}</span>
       </span>
     } @else {
-      <!-- Said in words, not left as an empty space that could read as "still loading". -->
       <span class="assignee-none" [attr.title]="assigneeLabel()">Unassigned</span>
     }
   </div>

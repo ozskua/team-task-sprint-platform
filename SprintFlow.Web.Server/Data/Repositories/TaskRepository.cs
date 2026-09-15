@@ -26,17 +26,15 @@ public class TaskRepository
     public Task<TaskItem?> GetWithDetailsAsync(int taskId, CancellationToken cancellationToken)
         => context.TaskItems
             .AsNoTracking()
-            .Include(t => t.CreatedByUser) // Every task response carries the creator's name.
-            .Include(t => t.Participants)  // Zero or one — the task's assignee.
+            .Include(t => t.CreatedByUser)
+            .Include(t => t.Participants)
                 .ThenInclude(p => p.User)
-            .Include(t => t.Sprint)        // Null unless the task is in one; the response names it.
+            .Include(t => t.Sprint)
             .FirstOrDefaultAsync(t => t.TaskId == taskId, cancellationToken);
 
     public Task<List<TaskItem>> GetColumnTasksForUpdateAsync(int columnId, CancellationToken cancellationToken)
         => context.TaskItems
-            // Tracked on purpose: the caller rewrites Position on these instances.
             .Where(t => t.TaskColumnId == columnId)
-            // Ties broken by id, so a shared position still orders the same way every read.
             .OrderBy(t => t.Position)
             .ThenBy(t => t.TaskId)
             .ToListAsync(cancellationToken);
@@ -63,12 +61,8 @@ public class TaskRepository
         CancellationToken cancellationToken)
         => await context.TaskItems
             .AsNoTracking()
-            // Tasks in no sprint are excluded rather than grouped under a null key: the caller is
-            // filling in a count per sprint, and "not in any sprint" is not one of them.
             .Where(t => t.BoardId == boardId && t.SprintId != null)
             .GroupBy(t => t.SprintId!.Value)
-            // One grouped query for the whole list, so a board with twenty sprints still costs one
-            // round trip rather than twenty counts.
             .Select(group => new { SprintId = group.Key, Count = group.Count() })
             .ToDictionaryAsync(row => row.SprintId, row => row.Count, cancellationToken);
 
@@ -76,33 +70,18 @@ public class TaskRepository
         CancellationToken cancellationToken)
         => await context.TaskItems
             .AsNoTracking()
-            // Tasks in no sprint are excluded rather than grouped under a null key: the caller is
-            // filling in a count per sprint, and "not in any sprint" is not one of them.
             .Where(t => t.SprintId != null)
             .GroupBy(t => t.SprintId!.Value)
-            // One grouped query for the whole system, so the page costs the same however many
-            // boards and sprints exist.
             .Select(group => new { SprintId = group.Key, Count = group.Count() })
             .ToDictionaryAsync(row => row.SprintId, row => row.Count, cancellationToken);
 
     public Task<int> CountInSprintAsync(int sprintId, CancellationToken cancellationToken)
         => context.TaskItems.CountAsync(t => t.SprintId == sprintId, cancellationToken);
 
-    /// <summary>
-    /// Every sprint's task count, split by the kind of column the tasks sit in.
-    /// </summary>
-    /// <remarks>
-    /// One grouped query for the whole system, like <see cref="CountByColumnKindAsync"/> — the sprint
-    /// report needs both dimensions at once, and asking per sprint would be a query per row. No task
-    /// row is loaded; the database returns at most four rows per sprint. A combination with no tasks
-    /// is simply absent, and the caller reads a missing one as zero.
-    /// </remarks>
     public async Task<IReadOnlyList<SprintColumnKindCount>> CountBySprintAndColumnKindAsync(
         CancellationToken cancellationToken)
         => await context.TaskItems
             .AsNoTracking()
-            // Tasks in no sprint are excluded rather than grouped under a null key: this is a report
-            // about sprints, and "not in any sprint" is not one of them.
             .Where(t => t.SprintId != null)
             .GroupBy(t => new { SprintId = t.SprintId!.Value, t.Column.SystemKind })
             .Select(group => new SprintColumnKindCount(
@@ -117,7 +96,6 @@ public class TaskRepository
         => await context.TaskItems
             .AsNoTracking()
             .Where(t => t.BoardId == boardId)
-            // The column carries the status; nothing else about the task is counted.
             .Include(t => t.Column)
             .ToListAsync(cancellationToken);
 
@@ -127,13 +105,10 @@ public class TaskRepository
         => await context.TaskItems
             .AsNoTracking()
             .Where(t => t.SprintId == sprintId)
-            // The column is what says whether a task is To Do, in a custom column, Completed or
-            // Cancelled — the task itself carries no status.
             .Include(t => t.Column)
             .Include(t => t.CreatedByUser)
             .Include(t => t.Participants)
                 .ThenInclude(p => p.User)
-            // The order the kanban reads in, so the list and the board agree.
             .OrderBy(t => t.Column.Position)
             .ThenBy(t => t.Position)
             .ThenBy(t => t.TaskId)
@@ -144,12 +119,10 @@ public class TaskRepository
         CancellationToken cancellationToken)
         => await context.TaskItems
             .AsNoTracking()
-            // Assignment, not authorship: a task this user wrote but does not hold is not theirs.
             .Where(t => t.Participants.Any(p => p.UserId == userId))
             .Include(t => t.Board)
                 .ThenInclude(b => b.Area)
             .Include(t => t.Column)
-            // Areas together, boards alphabetical inside them, kanban order within a board.
             .OrderBy(t => t.Board.Area.Name)
             .ThenBy(t => t.Board.Name)
             .ThenBy(t => t.Column.Position)
@@ -165,22 +138,12 @@ public class TaskRepository
                 .ThenInclude(b => b.Area)
             .Include(t => t.Column)
             .Include(t => t.CreatedByUser)
-            // Zero or one, by the unique index on TaskId, so this cannot fan the result set out.
             .Include(t => t.Participants)
                 .ThenInclude(p => p.User)
-            // Newest first: across every board, creation time is the only ordering a reader can
-            // follow. Ties broken by id so the list never varies between loads.
             .OrderByDescending(t => t.CreatedDate)
             .ThenByDescending(t => t.TaskId)
             .ToListAsync(cancellationToken);
 
-    /// <summary>
-    /// How many tasks sit behind each column kind, across every board.
-    /// </summary>
-    /// <remarks>
-    /// Grouped by the database, so the whole system's totals cost one query returning at most a
-    /// handful of rows. A kind with no tasks is absent from the result and read as zero.
-    /// </remarks>
     public async Task<IReadOnlyList<TaskColumnKindCount>> CountByColumnKindAsync(
         CancellationToken cancellationToken)
         => await context.TaskItems
@@ -190,23 +153,16 @@ public class TaskRepository
 
     public void Add(TaskItem task) => context.TaskItems.Add(task);
 
-    // The participation rows go with it by cascade, and team membership is derived from those rows,
-    // so nothing has to be tidied up afterwards.
     public void Remove(TaskItem task) => context.TaskItems.Remove(task);
 
     public Task SaveChangesAsync(CancellationToken cancellationToken)
         => context.SaveChangesAsync(cancellationToken);
 
-    // ---- Task participants (assignments) ----
-
-    public async Task<IReadOnlyList<User>> GetBoardMembersAsync(
+public async Task<IReadOnlyList<User>> GetBoardMembersAsync(
         int boardId,
         CancellationToken cancellationToken)
         => await context.TaskParticipants
             .AsNoTracking()
-            // Joined on the task's board: moving a task between columns never touches BoardId, so
-            // no column operation can add or remove a member. Distinct because one user may hold
-            // several tasks on a board and is still one member.
             .Where(p => p.Task.BoardId == boardId)
             .Select(p => p.User)
             .Distinct()
@@ -214,23 +170,12 @@ public class TaskRepository
             .ThenBy(u => u.LastName)
             .ToListAsync(cancellationToken);
 
-    /// <summary>
-    /// The same members as <see cref="GetBoardMembersAsync"/>, as ids and nothing else.
-    /// </summary>
-    /// <remarks>
-    /// Notifications need who to write a row for, not who to show, so no user row is loaded. The one
-    /// difference in the rule is deliberate: a deactivated account cannot sign in and would never
-    /// read what it was sent, so it is left out here. The displayed member list keeps showing them,
-    /// because they did the work the board remembers.
-    /// </remarks>
     public async Task<IReadOnlyList<int>> GetBoardMemberIdsAsync(
         int boardId,
         CancellationToken cancellationToken)
         => await context.TaskParticipants
             .AsNoTracking()
             .Where(p => p.Task.BoardId == boardId && p.User.IsActive)
-            // Distinct because one user may hold several tasks on a board and is still one member —
-            // which is also what stops a second notification reaching the same person.
             .Select(p => p.UserId)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -274,7 +219,6 @@ public class TaskRepository
             .GroupBy(row => row.BoardId)
             .ToDictionary(
                 group => group.Key,
-                // One row per assigned task, so a user holding three arrives three times.
                 group => (IReadOnlyList<User>)group
                     .DistinctBy(row => row.User.UserId)
                     .Select(row => row.User)
@@ -293,10 +237,7 @@ public class TaskRepository
     public void RemoveRange(IEnumerable<TaskParticipant> participants)
         => context.TaskParticipants.RemoveRange(participants);
 
-    // ---- Task card ----
-
-    // Everything the card shows, in one query.
-    public Task<TaskItem?> GetDetailAsync(int taskId, CancellationToken cancellationToken)
+public Task<TaskItem?> GetDetailAsync(int taskId, CancellationToken cancellationToken)
         => context.TaskItems
             .AsNoTracking()
             .Include(t => t.Board)
@@ -314,14 +255,12 @@ public class TaskRepository
 
     public void AddComment(TaskComment comment) => context.TaskComments.Add(comment);
 
-    // Tracked, and without the author: this one is read to be deleted, not to be shown.
     public Task<TaskComment?> GetCommentForUpdateAsync(int commentId, CancellationToken cancellationToken)
         => context.TaskComments
             .FirstOrDefaultAsync(c => c.TaskCommentId == commentId, cancellationToken);
 
     public void Remove(TaskComment comment) => context.TaskComments.Remove(comment);
 
-    /// <summary>Whether this comment exists and belongs to this task — what an upload has to know.</summary>
     public Task<bool> CommentExistsOnTaskAsync(
         int commentId,
         int taskId,
@@ -330,8 +269,6 @@ public class TaskRepository
             c => c.TaskCommentId == commentId && c.TaskId == taskId,
             cancellationToken);
 
-    // Tracked, because deleting a comment deletes these rows too: the FK is Restrict, so nothing
-    // removes them on our behalf.
     public Task<List<TaskAttachment>> GetCommentAttachmentsForUpdateAsync(
         int commentId,
         CancellationToken cancellationToken)
@@ -342,7 +279,6 @@ public class TaskRepository
     public void RemoveRange(IEnumerable<TaskAttachment> attachments)
         => context.TaskAttachments.RemoveRange(attachments);
 
-    // Re-read so the response carries the author's name and the database-generated timestamp.
     public Task<TaskComment?> GetCommentAsync(int commentId, CancellationToken cancellationToken)
         => context.TaskComments
             .AsNoTracking()
@@ -357,7 +293,6 @@ public class TaskRepository
             .Include(a => a.UploadedByUser)
             .FirstOrDefaultAsync(a => a.TaskAttachmentId == attachmentId, cancellationToken);
 
-    // Tracked, and without the uploader: this one is read to be deleted, not to be shown.
     public Task<TaskAttachment?> GetAttachmentForUpdateAsync(
         int attachmentId,
         CancellationToken cancellationToken)
@@ -366,7 +301,6 @@ public class TaskRepository
 
     public void Remove(TaskAttachment attachment) => context.TaskAttachments.Remove(attachment);
 
-    // Read before a task is deleted: the rows cascade, but the files on disk do not.
     public Task<List<string>> GetAttachmentNamesAsync(int taskId, CancellationToken cancellationToken)
         => context.TaskAttachments
             .AsNoTracking()

@@ -2,13 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, input, signal } from '@an
 
 import { TrendPoint } from '../dashboard-models';
 
-/**
- * Line chart of tasks created vs completed.
- *
- * Drawn as plain SVG rather than with a charting library: the design system fixes
- * the palette, line weight and grid treatment, so a library's defaults would all
- * have to be overridden anyway — and no dependency is added.
- */
 @Component({
   selector: 'app-trend-chart',
   templateUrl: './trend-chart.html',
@@ -20,8 +13,6 @@ export class TrendChart {
   readonly points = input.required<readonly TrendPoint[]>();
   readonly loading = input(false);
 
-  // The SVG coordinate system. The element scales to its container via viewBox,
-  // so these are fixed drawing units, not pixels on screen.
   protected readonly viewWidth = 720;
   protected readonly viewHeight = 240;
   private readonly padding = { top: 16, right: 16, bottom: 28, left: 40 };
@@ -30,7 +21,6 @@ export class TrendChart {
 
   protected readonly hasData = computed(() => this.points().length > 0);
 
-  /** Largest value across both series; at least 1 so the axis never collapses. */
   private readonly maxValue = computed(() => {
     const values = this.points().flatMap(point => [point.created, point.completed]);
     return Math.max(1, ...values);
@@ -39,7 +29,6 @@ export class TrendChart {
   protected readonly createdLine = computed(() => this.buildLine(point => point.created));
   protected readonly completedLine = computed(() => this.buildLine(point => point.completed));
 
-  /** Five horizontal gridlines, evenly spaced from zero to the maximum. */
   protected readonly yTicks = computed(() => {
     const steps = 4;
     const max = this.maxValue();
@@ -50,7 +39,6 @@ export class TrendChart {
     });
   });
 
-  /** At most five date labels, so they never collide on narrow screens. */
   protected readonly xLabels = computed(() => {
     const points = this.points();
     if (points.length === 0) {
@@ -67,7 +55,6 @@ export class TrendChart {
     return labels;
   });
 
-  /** Invisible columns that make the whole chart height hoverable per day. */
   protected readonly hoverZones = computed(() => {
     const points = this.points();
     const width = this.plotWidth() / Math.max(1, points.length);

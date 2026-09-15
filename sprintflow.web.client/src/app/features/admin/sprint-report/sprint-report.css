@@ -24,7 +24,6 @@
 
 .metric-grid--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
-/* There is no global stylesheet, so the card surface is declared where it is used. */
 .panel {
     border: 1px solid var(--app-border-card);
     border-radius: var(--app-radius-card);
@@ -33,12 +32,6 @@
     overflow: hidden;
 }
 
-/* ---- Table ----------------------------------------------------------------- */
-
-/*
-  One scroll surface with the header stuck to its top, exactly as the dashboard's task table does
-  it. The table keeps its normal display so header and body cells go on sharing column widths.
-*/
 .report-scroll {
     max-height: 620px;
     overflow: auto;
@@ -50,7 +43,6 @@
     font-size: 0.875rem;
 }
 
-/* Sticky on the cells, not the row, and opaque — or the rows scroll visibly through the header. */
 .report-table thead th {
     position: sticky;
     top: 0;
@@ -88,8 +80,6 @@
 
 .report-col-dates { white-space: nowrap; color: var(--mat-sys-on-surface-variant); }
 
-/* ---- The disclosure -------------------------------------------------------- */
-
 .report-name-cell { min-width: 180px; }
 
 .report-toggle {
@@ -121,8 +111,6 @@
     font-size: 20px;
 }
 
-/* ---- Board and area -------------------------------------------------------- */
-
 .report-board { display: block; overflow-wrap: anywhere; }
 
 .report-area {
@@ -132,8 +120,6 @@
     overflow-wrap: anywhere;
 }
 
-/* ---- Figures --------------------------------------------------------------- */
-
 .report-figure { font-weight: 600; }
 
 .report-percent {
@@ -142,8 +128,6 @@
     color: var(--mat-sys-on-surface-variant);
 }
 
-/* One bar, on completion only: it is the figure the report is read for, and a bar in every column
-   would be three competing marks per row. */
 .report-track {
     display: block;
     width: 72px;
@@ -161,9 +145,6 @@
     background-color: var(--app-primary-action);
 }
 
-/* ---- Status chip ----------------------------------------------------------- */
-
-/* The same pill the Sprints page draws, so a status is recognisable in both places. */
 .status-chip {
     display: inline-block;
     padding: 2px 10px;
@@ -179,8 +160,6 @@
     background-color: rgba(37, 99, 235, 0.16);
     color: #93b4fd;
 }
-
-/* ---- Expanded tasks -------------------------------------------------------- */
 
 .report-detail-row td { background-color: var(--app-surface-muted); }
 
@@ -221,8 +200,6 @@
 }
 
 .report-detail-link:hover { text-decoration: underline; }
-
-/* ---- States ---------------------------------------------------------------- */
 
 .report-skeleton {
     display: block;

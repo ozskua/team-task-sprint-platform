@@ -10,13 +10,6 @@ import { RouterLink } from '@angular/router';
 import { Register } from './register';
 import { RegisterRoutingModule } from './register-routing-module';
 
-/**
- * Its own lazy module rather than another component inside AuthModule: that module's routing already
- * claims the empty path for Login, and `/login` must keep working exactly as it does.
- *
- * RouterLink is imported as a single directive — the routing module below re-exports RouterModule
- * for the route itself, and the template only needs the link.
- */
 @NgModule({
   declarations: [
     Register

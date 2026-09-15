@@ -118,8 +118,6 @@
             </form>
           }
 
-          <!-- The prefix comes from the shell, so the same component links to /boards/1 for a
-               member and /admin/boards/1 for an admin. -->
           @if (area.boards.length > 0) {
             <ul class="board-list">
               @for (board of area.boards; track board.boardId) {

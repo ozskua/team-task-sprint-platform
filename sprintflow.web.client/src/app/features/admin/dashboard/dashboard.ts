@@ -16,12 +16,6 @@ const EMPTY_COUNTS: AdminDashboardCounts = {
   totalBoards: 0
 };
 
-/**
- * The admin overview: the state of the system, and every task in it.
- *
- * System-wide, and the same for every admin — unlike the member dashboard, which answers "what is
- * mine". The task table owns its own search and filter; this component only fetches and reports.
- */
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
@@ -48,18 +42,12 @@ export class Dashboard {
           this.loading.set(false);
         },
         error: () => {
-          // The message is a local constant; the server's text is never shown.
           this.failed.set(true);
           this.loading.set(false);
         }
       });
   }
 
-  /**
-   * Completed over everything that was ever going to be done. Cancelled is left out of the
-   * denominator deliberately: abandoning work is not progress, and counting it would let the figure
-   * be raised by cancelling tasks.
-   */
   protected readonly progressPercent = computed(() => {
     const { toDo, open, completed } = this.counts();
     const total = toDo + open + completed;
