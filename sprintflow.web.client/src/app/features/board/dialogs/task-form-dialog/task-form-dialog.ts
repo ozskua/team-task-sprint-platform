@@ -5,7 +5,6 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { TaskPriority } from '../../../../core/models/board-detail-models';
 import { UserListItem } from '../../../../core/models/user-models';
 import { UserService } from '../../../../core/services/user.service';
-import { initialsOf } from '../../../../shared/initials';
 import { DEFAULT_TASK_PRIORITY, TASK_PRIORITIES, taskPriorityLabel } from '../../task-priority';
 
 export interface TaskFormDialogData {
@@ -72,10 +71,6 @@ export class TaskFormDialog {
           this.usersLoading.set(false);
         }
       });
-  }
-
-  protected initials(fullName: string): string {
-    return initialsOf(fullName);
   }
 
   protected onTitleInput(value: string): void {

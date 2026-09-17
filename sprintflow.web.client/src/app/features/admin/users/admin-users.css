@@ -74,20 +74,6 @@
     font-weight: 400;
 }
 
-.user-monogram {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    width: 32px;
-    height: 32px;
-    border-radius: 999px;
-    background-color: var(--app-surface-muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--app-primary-action);
-}
-
 .user-name {
     font-weight: 500;
     color: var(--mat-sys-on-surface);

@@ -185,18 +185,6 @@ textarea.control {
     color: var(--mat-sys-on-surface);
 }
 
-.avatar {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 26px;
-    height: 26px;
-    border: 2px solid var(--app-primary);
-    border-radius: 50%;
-    font-size: 0.6875rem;
-    font-weight: 700;
-}
-
 .priority {
     align-self: flex-start;
     padding: 2px 8px;

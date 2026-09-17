@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 
 import { AdminDashboardTask } from '../../../../core/models/admin-dashboard-models';
-import { initialsOf } from '../../../../shared/initials';
 
 export type TaskStatusFilter = 'All' | 'ToDo' | 'Open' | 'Completed' | 'Cancelled';
 
@@ -56,10 +55,6 @@ export class AllTasksTable {
       case 'Cancelled': return 'column-chip--cancelled';
       default: return 'column-chip--open';
     }
-  }
-
-  protected initials(fullName: string): string {
-    return initialsOf(fullName);
   }
 
   private static matchesStatus(task: AdminDashboardTask, status: TaskStatusFilter): boolean {

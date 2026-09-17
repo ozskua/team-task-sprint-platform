@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { BoardDetail } from '../../../core/models/board-detail-models';
-import { initialsOf } from '../../../shared/initials';
 
 @Component({
   selector: 'app-board-header',
@@ -23,8 +22,4 @@ export class BoardHeader {
   readonly newColumn = output<void>();
   readonly renameBoard = output<void>();
   readonly deleteBoard = output<void>();
-
-  protected initials(fullName: string): string {
-    return initialsOf(fullName);
-  }
 }

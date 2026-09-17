@@ -14,7 +14,6 @@ import {
 import { UserListItem } from '../../../../core/models/user-models';
 import { BoardDetailService } from '../../../../core/services/board-detail.service';
 import { UserService } from '../../../../core/services/user.service';
-import { initialsOf } from '../../../../shared/initials';
 import { TASK_PRIORITIES, taskPriorityLabel } from '../../task-priority';
 
 export interface TaskDetailDialogData {
@@ -83,10 +82,6 @@ export class TaskDetailDialog {
 
   protected priorityLabel(priority: TaskPriority): string {
     return taskPriorityLabel(priority);
-  }
-
-  protected initials(fullName: string): string {
-    return initialsOf(fullName);
   }
 
 protected isEditing(field: EditableField): boolean {

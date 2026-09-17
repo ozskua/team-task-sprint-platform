@@ -57,7 +57,12 @@
           @for (user of visibleUsers(); track user.userId) {
             <tr>
               <th scope="row" class="users-name-cell">
-                <span class="user-monogram" aria-hidden="true">{{ initialsOf(user) }}</span>
+                <app-avatar
+                  [userId]="user.userId"
+                  [fullName]="user.fullName"
+                  [accent]="true"
+                  [size]="32"
+                  aria-hidden="true" />
                 <span class="user-name">{{ user.fullName }}</span>
               </th>
               <td class="users-col-email">

@@ -325,7 +325,7 @@ public class TaskService
         {
             foreach (var storedName in attachmentNames)
             {
-                attachmentStorage.Delete(storedName);
+                await attachmentStorage.TryDeleteAsync(storedName, cancellationToken);
             }
 
             await summaryCache.RemoveAsync(boardId.Value, cancellationToken);
@@ -500,7 +500,7 @@ public async Task<TaskDetailResponseDto?> GetDetailAsync(int taskId, Cancellatio
 
         foreach (var attachment in attachments)
         {
-            attachmentStorage.Delete(attachment.StoredName);
+            await attachmentStorage.TryDeleteAsync(attachment.StoredName, cancellationToken);
         }
 
         return DeleteCommentOutcome.Deleted;
@@ -510,6 +510,7 @@ public async Task<TaskDetailResponseDto?> GetDetailAsync(int taskId, Cancellatio
         int taskId,
         string fileName,
         long sizeBytes,
+        string? declaredContentType,
         Stream content,
         int uploadedByUserId,
         int? commentId,
@@ -527,14 +528,24 @@ public async Task<TaskDetailResponseDto?> GetDetailAsync(int taskId, Cancellatio
             return (AddAttachmentOutcome.FileTooLarge, null);
         }
 
-        var contentType = attachmentStorage.ContentTypeFor(Path.GetExtension(leafName));
+        var extension = Path.GetExtension(leafName);
+        var contentType = attachmentStorage.ContentTypeFor(extension);
 
-        if (contentType is null)
+        if (contentType is null || !FileSignatures.DeclaredTypeIsConsistent(declaredContentType, contentType))
         {
             return (AddAttachmentOutcome.FileTypeNotAllowed, null);
         }
 
-        if (!await taskRepository.ExistsAsync(taskId, cancellationToken))
+        var (head, seekableContent) = await FileSignatures.InspectAsync(content, cancellationToken);
+
+        if (!FileSignatures.Matches(head, contentType))
+        {
+            return (AddAttachmentOutcome.FileTypeNotAllowed, null);
+        }
+
+        var location = await taskRepository.GetLocationAsync(taskId, cancellationToken);
+
+        if (location is null)
         {
             return (AddAttachmentOutcome.TaskNotFound, null);
         }
@@ -546,8 +557,13 @@ public async Task<TaskDetailResponseDto?> GetDetailAsync(int taskId, Cancellatio
         }
 
         var storedName = await attachmentStorage.SaveAsync(
-            content,
-            Path.GetExtension(leafName),
+            location.AreaId,
+            location.BoardId,
+            taskId,
+            seekableContent,
+            sizeBytes,
+            extension,
+            contentType,
             cancellationToken);
 
         var attachment = new TaskAttachment
@@ -569,7 +585,7 @@ public async Task<TaskDetailResponseDto?> GetDetailAsync(int taskId, Cancellatio
         }
         catch
         {
-            attachmentStorage.Delete(storedName);
+            await attachmentStorage.TryDeleteAsync(storedName, cancellationToken);
 
             throw;
         }
@@ -581,7 +597,7 @@ public async Task<TaskDetailResponseDto?> GetDetailAsync(int taskId, Cancellatio
         return (AddAttachmentOutcome.Added, saved.ToResponseDto());
     }
 
-    public async Task<(TaskAttachmentResponseDto Metadata, Stream Content)?> OpenAttachmentAsync(
+    public async Task<(TaskAttachmentResponseDto Metadata, string StoredName)?> GetAttachmentForDownloadAsync(
         int taskId,
         int attachmentId,
         CancellationToken cancellationToken)
@@ -593,9 +609,9 @@ public async Task<TaskDetailResponseDto?> GetDetailAsync(int taskId, Cancellatio
             return null;
         }
 
-        var content = attachmentStorage.Open(attachment.StoredName);
+        var exists = await attachmentStorage.ExistsAsync(attachment.StoredName, cancellationToken);
 
-        return content is null ? null : (attachment.ToResponseDto(), content);
+        return exists ? (attachment.ToResponseDto(), attachment.StoredName) : null;
     }
 
     public async Task<bool> DeleteAttachmentAsync(
@@ -614,7 +630,7 @@ public async Task<TaskDetailResponseDto?> GetDetailAsync(int taskId, Cancellatio
 
         await taskRepository.SaveChangesAsync(cancellationToken);
 
-        attachmentStorage.Delete(attachment.StoredName);
+        await attachmentStorage.TryDeleteAsync(attachment.StoredName, cancellationToken);
 
         return true;
     }

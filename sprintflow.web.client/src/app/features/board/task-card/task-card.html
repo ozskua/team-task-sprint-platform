@@ -37,13 +37,14 @@
     }
 
     @if (task().assignee; as assignee) {
-      <span
+      <app-avatar
         class="assignee-avatar"
-        role="img"
-        [attr.title]="assigneeLabel()"
-        [attr.aria-label]="assigneeLabel()">
-        <span aria-hidden="true">{{ initials(assignee.fullName) }}</span>
-      </span>
+        [userId]="assignee.userId"
+        [fullName]="assignee.fullName"
+        variant="ring"
+        [size]="26"
+        [label]="assigneeLabel()"
+        [title]="assigneeLabel()" />
     } @else {
       <span class="assignee-none" [attr.title]="assigneeLabel()">Unassigned</span>
     }

@@ -3,5 +3,7 @@
     <Build />
     <Deploy />
   </Project>
+  <Project Path="SprintFlow.Web.Notification/SprintFlow.Web.Notification.csproj" Id="b8cb1545-0aca-4b98-8a7a-a48517a1dcf8" />
   <Project Path="SprintFlow.Web.Server/SprintFlow.Web.Server.csproj" />
+  <Project Path="SprintFlow.Web.SignalR/SprintFlow.Web.SignalR.csproj" />
 </Solution>

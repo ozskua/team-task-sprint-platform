@@ -1,5 +1,4 @@
-using Microsoft.Extensions.Options;
-using SprintFlow.Web.Server.Options;
+using SprintFlow.Web.Server.Common;
 
 namespace SprintFlow.Web.Server.Services;
 
@@ -25,53 +24,53 @@ public class AttachmentStorage
             [".zip"] = "application/zip"
         };
 
-    private readonly string rootPath;
+    private readonly IObjectStorage objectStorage;
+    private readonly ILogger<AttachmentStorage> logger;
 
-    private readonly string rootPrefix;
-
-    public AttachmentStorage(IOptions<AttachmentOptions> options)
+    public AttachmentStorage(IObjectStorage objectStorage, ILogger<AttachmentStorage> logger)
     {
-        rootPath = Path.GetFullPath(options.Value.RootPath);
-        rootPrefix = rootPath.EndsWith(Path.DirectorySeparatorChar)
-            ? rootPath
-            : rootPath + Path.DirectorySeparatorChar;
-
-        Directory.CreateDirectory(rootPath);
+        this.objectStorage = objectStorage;
+        this.logger = logger;
     }
 
     public string? ContentTypeFor(string extension)
         => ContentTypesByExtension.GetValueOrDefault(extension);
 
     public async Task<string> SaveAsync(
+        int areaId,
+        int boardId,
+        int taskId,
         Stream content,
+        long length,
         string extension,
+        string contentType,
         CancellationToken cancellationToken)
     {
-        var storedName = Guid.NewGuid().ToString("N") + extension.ToLowerInvariant();
+        var key = $"areas/{areaId}/boards/{boardId}/tasks/{taskId}/{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
 
-        await using var file = File.Create(PathOf(storedName));
+        await objectStorage.PutAsync(key, content, length, contentType, cancellationToken);
 
-        await content.CopyToAsync(file, cancellationToken);
-
-        return storedName;
+        return key;
     }
 
-    public Stream? Open(string storedName)
+    public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
+        => objectStorage.ExistsAsync(key, cancellationToken);
+
+    public Task CopyToAsync(string key, Stream destination, CancellationToken cancellationToken)
+        => objectStorage.CopyToAsync(key, destination, cancellationToken);
+
+    public async Task TryDeleteAsync(string key, CancellationToken cancellationToken)
     {
-        var path = PathOf(storedName);
-
-        return File.Exists(path) ? File.OpenRead(path) : null;
-    }
-
-    public void Delete(string storedName) => File.Delete(PathOf(storedName));
-
-    private string PathOf(string storedName)
-    {
-        var path = Path.GetFullPath(Path.Combine(rootPath, storedName));
-
-        return path.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase)
-            ? path
-            : throw new InvalidOperationException(
-                "An attachment path resolved outside the attachment folder.");
+        try
+        {
+            await objectStorage.DeleteAsync(key, cancellationToken);
+        }
+        catch (ObjectStorageUnavailableException exception)
+        {
+            logger.LogWarning(
+                exception,
+                "Object '{Key}' could not be deleted from storage and is now orphaned.",
+                key);
+        }
     }
 }

@@ -223,7 +223,7 @@ public class BoardService
             return null;
         }
 
-        var tasks = await taskRepository.GetBoardTasksForSummaryAsync(boardId, cancellationToken);
+        var tasks = await taskRepository.GetBoardTasksForSummaryAsync(boardId, cancellationToken); //DB Tarama 
 
         // Already carries each sprint's status, decided against the application's timezone.
         var sprints = await sprintService.GetBoardSprintsAsync(boardId, cancellationToken) ?? [];

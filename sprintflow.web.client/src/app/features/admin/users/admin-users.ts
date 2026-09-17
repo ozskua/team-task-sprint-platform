@@ -55,15 +55,6 @@ export class AdminUsers {
     this.searchTerm.set(term);
   }
 
-  protected initialsOf(user: UserListItem): string {
-    return user.fullName
-      .split(' ')
-      .filter(part => part.length > 0)
-      .slice(0, 2)
-      .map(part => part.charAt(0).toLocaleUpperCase('tr'))
-      .join('');
-  }
-
   private static normalize(value: string): string {
     return value.trim().toLocaleLowerCase('tr');
   }

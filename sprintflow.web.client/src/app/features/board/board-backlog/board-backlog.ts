@@ -12,7 +12,6 @@ import { Sprint } from '../../../core/models/sprint-models';
 import { TaskTableRow } from '../../../shared/task-table/task-table';
 import { BoardDetailService } from '../../../core/services/board-detail.service';
 import { SprintService } from '../../../core/services/sprint.service';
-import { initialsOf } from '../../../shared/initials';
 import { BoardActions } from '../board-actions';
 
 interface BacklogRow {
@@ -67,6 +66,7 @@ export class BoardBacklog {
       title: task.title,
       columnName: column.name,
       systemKind: column.systemKind,
+      assigneeUserId: task.assignee?.userId ?? null,
       assigneeFullName: task.assignee?.fullName ?? null,
       createdByFullName: task.createdByFullName,
       createdDate: task.createdDate
@@ -164,9 +164,6 @@ export class BoardBacklog {
       : null;
   }
 
-  protected initials(fullName: string): string {
-    return initialsOf(fullName);
-  }
 
 protected openTask(task: BoardTask): void {
     this.run(

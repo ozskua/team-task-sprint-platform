@@ -5,6 +5,7 @@ public record SprintTaskResponseDto(
     string Title,
     string ColumnName,
     string? SystemKind,
+    int? AssigneeUserId,
     string? AssigneeFullName,
     string CreatedByFullName,
     DateTime CreatedDate);

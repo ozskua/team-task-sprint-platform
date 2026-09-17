@@ -59,22 +59,16 @@
     padding: 0 10px;
 }
 
-.assignee-preview {
+.assignee-preview--none {
     display: grid;
     place-items: center;
     flex: 0 0 auto;
     width: 32px;
     height: 32px;
-    border: 2px solid var(--app-primary);
+    border: 2px dashed var(--app-border-card);
     border-radius: 50%;
     background-color: var(--app-surface-card);
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--mat-sys-on-surface);
-}
-
-.assignee-preview--none {
-    border-style: dashed;
-    border-color: var(--app-border-card);
     color: var(--mat-sys-on-surface-variant);
 }

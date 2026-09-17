@@ -55,9 +55,12 @@
       } @else {
         <div class="assignee-row">
           @if (selectedUser(); as user) {
-            <span class="assignee-preview" role="img" [attr.aria-label]="'Assigned to ' + user.fullName">
-              <span aria-hidden="true">{{ initials(user.fullName) }}</span>
-            </span>
+            <app-avatar
+              [userId]="user.userId"
+              [fullName]="user.fullName"
+              variant="ring"
+              [size]="32"
+              [label]="'Assigned to ' + user.fullName" />
           } @else {
             <span class="assignee-preview assignee-preview--none" aria-hidden="true">—</span>
           }

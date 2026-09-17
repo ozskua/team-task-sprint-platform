@@ -33,12 +33,12 @@
             } @else {
               <ul class="member-avatars">
                 @for (member of team.members; track member.userId) {
-                  <li
-                    class="member-avatar"
-                    role="img"
-                    [attr.title]="member.fullName"
-                    [attr.aria-label]="member.fullName">
-                    <span aria-hidden="true">{{ initials(member.fullName) }}</span>
+                  <li>
+                    <app-avatar
+                      [userId]="member.userId"
+                      [fullName]="member.fullName"
+                      [size]="32"
+                      [title]="member.fullName" />
                   </li>
                 }
               </ul>

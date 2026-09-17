@@ -128,20 +128,6 @@
 
 .tasks-person-name { overflow-wrap: anywhere; }
 
-.person-avatar {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background-color: var(--app-surface-muted);
-    font-size: 0.6875rem;
-    font-weight: 600;
-    color: var(--mat-sys-on-surface);
-    cursor: default;
-}
-
 .tasks-muted { font-style: italic; color: var(--mat-sys-on-surface-variant); }
 
 .tasks-skeleton {

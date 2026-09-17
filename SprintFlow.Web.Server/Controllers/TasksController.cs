@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 using SprintFlow.Web.Server.Common.Enums;
 using SprintFlow.Web.Server.DTOs.Columns;
 using SprintFlow.Web.Server.DTOs.Tasks;
@@ -14,10 +15,12 @@ namespace SprintFlow.Web.Server.Controllers;
 public class TasksController : ControllerBase
 {
     private readonly TaskService taskService;
+    private readonly AttachmentStorage attachmentStorage;
 
-    public TasksController(TaskService taskService)
+    public TasksController(TaskService taskService, AttachmentStorage attachmentStorage)
     {
         this.taskService = taskService;
+        this.attachmentStorage = attachmentStorage;
     }
 
     [HttpGet("{taskId:int}")]
@@ -216,6 +219,7 @@ public class TasksController : ControllerBase
             taskId,
             file.FileName,
             file.Length,
+            file.ContentType,
             content,
             User.GetAuthenticatedUserId(),
             commentId,
@@ -257,17 +261,24 @@ public class TasksController : ControllerBase
         int attachmentId,
         CancellationToken cancellationToken)
     {
-        var download = await taskService.OpenAttachmentAsync(taskId, attachmentId, cancellationToken);
+        var download = await taskService.GetAttachmentForDownloadAsync(taskId, attachmentId, cancellationToken);
 
         if (download is null)
         {
             return AttachmentNotFound();
         }
 
-        return File(
-            download.Value.Content,
-            download.Value.Metadata.ContentType,
-            download.Value.Metadata.FileName);
+        var (metadata, storedName) = download.Value;
+        var disposition = new ContentDispositionHeaderValue("attachment");
+        disposition.SetHttpFileName(metadata.FileName);
+
+        Response.ContentType = metadata.ContentType;
+        Response.ContentLength = metadata.SizeBytes;
+        Response.Headers.ContentDisposition = disposition.ToString();
+
+        await attachmentStorage.CopyToAsync(storedName, Response.Body, cancellationToken);
+
+        return new EmptyResult();
     }
 
     [HttpDelete("{taskId:int}/attachments/{attachmentId:int}")]

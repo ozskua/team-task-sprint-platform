@@ -46,6 +46,7 @@ public static class SprintMappings
             task.Title,
             task.Column.Name,
             task.Column.SystemKind?.ToString(),
+            task.Participants.Select(participant => (int?)participant.UserId).FirstOrDefault(),
             task.Participants.Select(participant => participant.User.FullName).FirstOrDefault(),
             task.CreatedByUser.FullName,
             task.CreatedDate);

@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, output } from '@a
 import { MatDialog } from '@angular/material/dialog';
 
 import { AuthService } from '../../core/services/auth.service';
-import { initialsOf } from '../../shared/initials';
 import { InviteDialog } from '../invite-dialog/invite-dialog';
+import { ProfilePhotoDialog } from '../profile-photo-dialog/profile-photo-dialog';
 
 @Component({
   selector: 'app-user-menu',
@@ -20,11 +20,9 @@ export class UserMenu {
 
   protected readonly fullName = this.authService.fullName;
 
+  protected readonly userId = computed(() => this.authService.userId() ?? null);
+
   protected readonly roleLabel = computed(() => this.authService.isAdmin() ? 'Admin' : 'Member');
-
-  protected readonly initials = computed(() => initialsOf(this.fullName()));
-
-  protected readonly profileLabel = computed(() => `Profile for ${this.fullName()}`);
 
   protected readonly triggerLabel = computed(() => `Account menu for ${this.fullName()}`);
 
@@ -35,5 +33,9 @@ export class UserMenu {
 
   protected onInvite(): void {
     this.dialog.open(InviteDialog, { autoFocus: false });
+  }
+
+  protected onEditPhoto(): void {
+    this.dialog.open(ProfilePhotoDialog, { autoFocus: false });
   }
 }

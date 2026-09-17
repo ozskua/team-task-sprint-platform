@@ -17,7 +17,7 @@ import { CoreModule } from './core/core-module';
     AppRoutingModule
   ],
   providers: [
-    provideBrowserGlobalErrorListeners(),
+    provideBrowserGlobalErrorListeners()
   ],
   bootstrap: [App]
 })

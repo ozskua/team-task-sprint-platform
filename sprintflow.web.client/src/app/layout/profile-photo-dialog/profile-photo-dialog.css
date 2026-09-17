@@ -1,0 +1,52 @@
+.photo-title {
+    font-family: Inter, sans-serif;
+    font-weight: 600;
+}
+
+.photo-preview {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem 0 1rem;
+}
+
+.photo-error {
+    margin: 0 0 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--app-radius-control);
+    background-color: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+    font: var(--mat-sys-body-medium);
+}
+
+.photo-note {
+    margin: 0 0 0.75rem;
+    min-width: 20rem;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-body-small);
+}
+
+.photo-pick {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    border: 1px dashed var(--mat-sys-outline-variant);
+    border-radius: var(--app-radius-control);
+    color: var(--mat-sys-on-surface);
+    font: var(--mat-sys-body-medium);
+    cursor: pointer;
+}
+
+.photo-pick:hover {
+    background-color: var(--app-surface-hover);
+}
+
+.photo-pick--busy {
+    color: var(--mat-sys-on-surface-variant);
+    cursor: default;
+    pointer-events: none;
+}
+
+.photo-remove {
+    color: var(--app-attention-ink);
+}

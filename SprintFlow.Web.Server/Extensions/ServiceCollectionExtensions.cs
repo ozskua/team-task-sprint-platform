@@ -144,14 +144,19 @@ return services;
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.Configure<AttachmentOptions>(configuration.GetSection(AttachmentOptions.SectionName));
+        services.Configure<MinioOptions>(configuration.GetSection(MinioOptions.SectionName));
 
-        if (string.IsNullOrWhiteSpace(configuration[$"{AttachmentOptions.SectionName}:RootPath"]))
+        foreach (var key in new[] { "Endpoint", "BucketName", "AccessKey", "SecretKey" })
         {
-            throw new InvalidOperationException(
-                $"'{AttachmentOptions.SectionName}:RootPath' is not configured. "
-                + "Set it in appsettings.Development.json locally — an absolute path to a folder outside "
-                + "this repository, where task attachments are stored. The folder is created if missing.");
+            if (string.IsNullOrWhiteSpace(configuration[$"{MinioOptions.SectionName}:{key}"]))
+            {
+                throw new InvalidOperationException(
+                    $"'{MinioOptions.SectionName}:{key}' is not configured. "
+                    + "Endpoint and BucketName belong in appsettings — '127.0.0.1:9000' and 'sprintflow' match "
+                    + "docker-compose.yml. AccessKey and SecretKey are the storage service account and are "
+                    + "deliberately absent from every committed file: set them with 'dotnet user-secrets set' "
+                    + "or as the environment variables Minio__AccessKey and Minio__SecretKey.");
+            }
         }
 
         services.AddScoped<BoardRepository>();
@@ -165,10 +170,13 @@ return services;
         services.AddScoped<SprintService>();
         services.AddScoped<DashboardService>();
         services.AddScoped<NotificationService>();
+        services.AddScoped<ProfilePhotoService>();
 
         services.AddSingleton<IApplicationClock, ApplicationClock>();
 
+        services.AddSingleton<IObjectStorage, MinioObjectStorage>();
         services.AddSingleton<AttachmentStorage>();
+        services.AddHostedService<MinioBucketInitializer>();
 
         services.Configure<WebhookOptions>(configuration.GetSection(WebhookOptions.SectionName));
 

@@ -14,7 +14,6 @@ import { of, switchMap } from 'rxjs';
 import { TaskAttachment, TaskComment } from '../../../core/models/board-detail-models';
 import { AuthService } from '../../../core/services/auth.service';
 import { BoardDetailService } from '../../../core/services/board-detail.service';
-import { initialsOf } from '../../../shared/initials';
 
 const ATTACHMENT_REFUSED =
   'Dosya eklenemedi. En fazla 10 MB, ve yalnızca görsel, PDF, Office, metin ve zip dosyaları '
@@ -61,10 +60,6 @@ export class TaskComments {
     const own = this.ownUserId();
 
     return own !== undefined && comment.userId === own;
-  }
-
-  protected initials(fullName: string): string {
-    return initialsOf(fullName);
   }
 
   protected formatSize(bytes: number): string {

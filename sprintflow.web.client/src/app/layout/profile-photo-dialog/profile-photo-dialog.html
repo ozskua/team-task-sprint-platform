@@ -1,0 +1,41 @@
+<h2 class="photo-title" mat-dialog-title>Profile photo</h2>
+
+<mat-dialog-content>
+  <div class="photo-preview">
+    <app-avatar
+      [userId]="userId()"
+      [fullName]="fullName()"
+      variant="ring"
+      [size]="96"
+      [label]="'Current photo for ' + fullName()" />
+  </div>
+
+  @if (errorMessage(); as message) {
+    <p class="photo-error" role="alert">{{ message }}</p>
+  }
+
+  <p class="photo-note">PNG, JPEG or WebP, at most 2 MB. Everyone signed in can see it.</p>
+
+  <label class="photo-pick" [class.photo-pick--busy]="saving()" for="profile-photo-file">
+    <mat-icon aria-hidden="true">upload</mat-icon>
+    <span>{{ saving() ? 'Saving…' : (currentUrl() ? 'Choose a new photo' : 'Choose a photo') }}</span>
+  </label>
+  <input
+    id="profile-photo-file"
+    type="file"
+    hidden
+    #fileInput
+    accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+    [disabled]="saving()"
+    (change)="onFilePicked(fileInput)" />
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (currentUrl()) {
+    <button mat-button type="button" class="photo-remove" [disabled]="saving()" (click)="onRemove()">
+      Remove
+    </button>
+  }
+
+  <button mat-button type="button" mat-dialog-close [disabled]="saving()">Close</button>
+</mat-dialog-actions>

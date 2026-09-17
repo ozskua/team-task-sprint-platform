@@ -50,7 +50,6 @@ export class Login {
       .subscribe({
         next: session => {
           this.loading.set(false);
-
           // The backend decided which dashboard; this only applies the answer.
           void this.router.navigate([session.isAdmin ? '/admin/dashboard' : '/dashboard']);
         },

@@ -30,6 +30,16 @@ public class ExceptionHandlingMiddleware
                 "Authentication failed",
                 exception.Message);
         }
+        catch (ObjectStorageUnavailableException exception)
+        {
+            logger.LogError(exception, "Object storage was unavailable while processing {Path}.", context.Request.Path);
+
+            await WriteProblemAsync(
+                context,
+                StatusCodes.Status503ServiceUnavailable,
+                "Storage is unavailable",
+                "The file storage service could not be reached. Please try again in a moment.");
+        }
         catch (Exception exception)
         {
             logger.LogError(exception, "Unhandled exception while processing {Path}.", context.Request.Path);

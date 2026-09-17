@@ -8,6 +8,7 @@ import { MatMenuModule } from '@angular/material/menu';
 
 import { BoardActions } from './board-actions';
 import { BoardBacklog } from './board-backlog/board-backlog';
+import { AvatarModule } from '../../shared/avatar/avatar-module';
 import { MetricCardModule } from '../../shared/metric-card/metric-card-module';
 import { TaskTableModule } from '../../shared/task-table/task-table-module';
 import { BoardDetailRoutingModule } from './board-detail-routing-module';
@@ -52,6 +53,7 @@ import { WorkflowColumnComponent } from './workflow-column/workflow-column';
     MatDialogModule,
     MatIconModule,
     MatMenuModule,
+    AvatarModule,
     MetricCardModule,
     TaskTableModule,
     BoardDetailRoutingModule

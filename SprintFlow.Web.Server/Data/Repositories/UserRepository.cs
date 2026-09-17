@@ -38,6 +38,16 @@ public class UserRepository
     public Task<bool> EmailExistsAsync(string canonicalEmail, CancellationToken cancellationToken)
         => context.Users.AnyAsync(u => u.Email == canonicalEmail, cancellationToken);
 
+    public Task<User?> GetForUpdateAsync(int userId, CancellationToken cancellationToken)
+        => context.Users.FirstOrDefaultAsync(u => u.UserId == userId, cancellationToken);
+
+    public Task<string?> GetProfilePhotoKeyAsync(int userId, CancellationToken cancellationToken)
+        => context.Users
+            .AsNoTracking()
+            .Where(u => u.UserId == userId)
+            .Select(u => u.ProfilePhotoKey)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public void Add(User user) => context.Users.Add(user);
 
     public Task SaveChangesAsync(CancellationToken cancellationToken)

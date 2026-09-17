@@ -66,19 +66,6 @@
     list-style: none;
 }
 
-.board-team-avatar {
-    display: grid;
-    place-items: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background-color: var(--app-surface-muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--mat-sys-on-surface);
-    cursor: default;
-}
-
 .board-actions {
     display: flex;
     align-items: center;

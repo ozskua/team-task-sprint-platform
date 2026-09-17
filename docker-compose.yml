@@ -1,10 +1,10 @@
 # Development infrastructure for SprintFlow.
 #
 # The application itself is NOT containerised: it runs as a normal Windows .NET process, against
-# SQL Server installed natively on Windows. Redis and RabbitMQ run here, because neither has an
+# SQL Server installed natively on Windows. Redis, RabbitMQ and MinIO run here, because none has an
 # official Windows build and a container is the reproducible way to get one.
 #
-#   docker compose up -d     start Redis and RabbitMQ
+#   docker compose up -d     start Redis, RabbitMQ and MinIO
 #   docker compose ps        check they are running
 #   docker compose down      stop them, keeping the data volumes
 #
@@ -47,6 +47,26 @@ services:
       - sprintflow-rabbitmq-data:/var/lib/rabbitmq
     restart: unless-stopped
 
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: sprintflow-minio
+    ports:
+      # Loopback only, like the other two: the S3 API and the console are reachable from this
+      # machine and nowhere else.
+      - "127.0.0.1:9000:9000"  # S3 API, what the application connects to
+      - "127.0.0.1:9001:9001"  # console, http://localhost:9001
+    environment:
+      # No credential is committed here. Both values are required and come from a git-ignored
+      # .env file beside this one. The application never uses the root account: it connects with a
+      # service account limited to its own bucket, whose keys live in user secrets.
+      MINIO_ROOT_USER: "${SPRINTFLOW_MINIO_ROOT_USER:?set SPRINTFLOW_MINIO_ROOT_USER in .env}"
+      MINIO_ROOT_PASSWORD: "${SPRINTFLOW_MINIO_ROOT_PASSWORD:?set SPRINTFLOW_MINIO_ROOT_PASSWORD in .env}"
+    volumes:
+      - sprintflow-minio-data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
 volumes:
   sprintflow-redis-data:
   sprintflow-rabbitmq-data:
+  sprintflow-minio-data:

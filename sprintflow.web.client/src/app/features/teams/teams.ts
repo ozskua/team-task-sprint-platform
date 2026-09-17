@@ -3,7 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Team } from '../../core/models/team-models';
 import { TeamService } from '../../core/services/team.service';
-import { initialsOf } from '../../shared/initials';
 
 @Component({
   selector: 'app-teams',
@@ -34,9 +33,5 @@ export class Teams {
           this.loading.set(false);
         }
       });
-  }
-
-  protected initials(fullName: string): string {
-    return initialsOf(fullName);
   }
 }

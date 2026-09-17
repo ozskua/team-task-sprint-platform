@@ -5,9 +5,12 @@
 
   @for (comment of comments(); track comment.taskCommentId) {
     <article class="message" [class.message--busy]="busyCommentId() === comment.taskCommentId">
-      <span class="message-avatar" role="img" [attr.aria-label]="comment.userFullName">
-        <span aria-hidden="true">{{ initials(comment.userFullName) }}</span>
-      </span>
+      <app-avatar
+        class="message-avatar"
+        [userId]="comment.userId"
+        [fullName]="comment.userFullName"
+        variant="ring"
+        [size]="26" />
 
       <div class="message-body">
         <p class="message-meta">
@@ -53,9 +56,12 @@
 
   @for (attachment of looseAttachments(); track attachment.taskAttachmentId) {
     <article class="message">
-      <span class="message-avatar" role="img" [attr.aria-label]="attachment.uploadedByFullName">
-        <span aria-hidden="true">{{ initials(attachment.uploadedByFullName) }}</span>
-      </span>
+      <app-avatar
+        class="message-avatar"
+        [userId]="attachment.uploadedByUserId"
+        [fullName]="attachment.uploadedByFullName"
+        variant="ring"
+        [size]="26" />
 
       <div class="message-body">
         <p class="message-meta">

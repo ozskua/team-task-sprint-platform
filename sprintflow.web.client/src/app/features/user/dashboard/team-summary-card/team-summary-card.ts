@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { DashboardTeam } from '../../../../core/models/dashboard-models';
-import { initialsOf } from '../../../../shared/initials';
 
 @Component({
   selector: 'app-team-summary-card',
@@ -18,8 +17,4 @@ export class TeamSummaryCard {
 
     return `${count} assigned ${count === 1 ? 'task' : 'tasks'}`;
   });
-
-  protected initials(fullName: string): string {
-    return initialsOf(fullName);
-  }
 }

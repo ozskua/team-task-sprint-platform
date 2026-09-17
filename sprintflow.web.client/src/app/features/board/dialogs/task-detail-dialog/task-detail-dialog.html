@@ -123,9 +123,13 @@
             </div>
           } @else if (task.assignee; as assignee) {
             <span class="person">
-              <span class="avatar" role="img" [attr.aria-label]="'Atanan ' + assignee.fullName">
-                <span aria-hidden="true">{{ initials(assignee.fullName) }}</span>
-              </span>
+              <app-avatar
+                class="avatar"
+                [userId]="assignee.userId"
+                [fullName]="assignee.fullName"
+                variant="ring"
+                [size]="26"
+                [label]="'Atanan ' + assignee.fullName" />
               <span>{{ assignee.fullName }}</span>
             </span>
           } @else {

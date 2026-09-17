@@ -164,21 +164,6 @@
     overflow-wrap: anywhere;
 }
 
-.assignee-avatar {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 26px;
-    height: 26px;
-    border: 2px solid var(--app-primary);
-    border-radius: 50%;
-    background-color: var(--app-surface-card);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: var(--mat-sys-on-surface);
-    cursor: default;
-}
-
 .backlog-muted {
     font-style: italic;
     color: var(--mat-sys-on-surface-variant);

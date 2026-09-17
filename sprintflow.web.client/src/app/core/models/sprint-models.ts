@@ -46,6 +46,7 @@ export interface SprintTask {
 
   readonly systemKind: 'ToDo' | 'Completed' | 'Cancelled' | null;
 
+  readonly assigneeUserId: number | null;
   readonly assigneeFullName: string | null;
 
   readonly createdByFullName: string;

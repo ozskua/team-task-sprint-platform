@@ -56,16 +56,3 @@
     padding: 0;
     list-style: none;
 }
-
-.member-avatar {
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: var(--app-surface-muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--mat-sys-on-surface);
-    cursor: default;
-}

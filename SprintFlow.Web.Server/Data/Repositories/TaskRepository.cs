@@ -23,6 +23,13 @@ public class TaskRepository
             .Select(t => (int?)t.BoardId)
             .FirstOrDefaultAsync(cancellationToken);
 
+    public async Task<TaskLocation?> GetLocationAsync(int taskId, CancellationToken cancellationToken)
+        => await context.TaskItems
+            .AsNoTracking()
+            .Where(t => t.TaskId == taskId)
+            .Select(t => new TaskLocation(t.BoardId, t.Board.AreaId))
+            .FirstOrDefaultAsync(cancellationToken);
+
     public Task<TaskItem?> GetWithDetailsAsync(int taskId, CancellationToken cancellationToken)
         => context.TaskItems
             .AsNoTracking()

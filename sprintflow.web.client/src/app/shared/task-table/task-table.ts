@@ -1,7 +1,5 @@
 import { ChangeDetectionStrategy, Component, TemplateRef, input, output } from '@angular/core';
 
-import { initialsOf } from '../initials';
-
 export interface TaskTableRow {
   readonly taskId: number;
   readonly title: string;
@@ -10,6 +8,7 @@ export interface TaskTableRow {
 
   readonly systemKind: 'ToDo' | 'Completed' | 'Cancelled' | null;
 
+  readonly assigneeUserId: number | null;
   readonly assigneeFullName: string | null;
   readonly createdByFullName: string;
 
@@ -37,10 +36,6 @@ export class TaskTable {
   readonly titleOpensTask = input(false);
 
   readonly openTask = output<number>();
-
-  protected initials(fullName: string): string {
-    return initialsOf(fullName);
-  }
 
   protected outcomeOf(row: TaskTableRow): 'Completed' | 'Cancelled' | null {
     return row.systemKind === 'Completed' || row.systemKind === 'Cancelled'

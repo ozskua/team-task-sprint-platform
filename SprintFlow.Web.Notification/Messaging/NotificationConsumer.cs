@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using SprintFlow.Web.Notification.Services;
@@ -10,6 +12,10 @@ public class NotificationConsumer : BackgroundService
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(10);
 
     private const ushort PrefetchCount = 1;
+
+    private const int ForeignKeyViolationNumber = 547;
+
+    private const string TaskForeignKeyName = "FK_Notifications_Tasks_TaskId";
 
     private readonly RabbitMqConnection connection;
     private readonly DeliveryEventPublisher deliveryPublisher;
@@ -140,6 +146,17 @@ public class NotificationConsumer : BackgroundService
                 notificationEvent.ActorUserId,
                 stoppingToken);
         }
+        catch (DbUpdateException exception) when (IsDeletedTaskViolation(exception))
+        {
+            logger.LogWarning(
+                "A notification event referred to task {TaskId}, which no longer exists, and was skipped. Event {EventId}.",
+                notificationEvent.TaskId,
+                notificationEvent.EventId);
+
+            await channel.BasicAckAsync(delivery.DeliveryTag, multiple: false, stoppingToken);
+
+            return;
+        }
         catch (Exception exception)
         {
             logger.LogError(
@@ -165,4 +182,8 @@ public class NotificationConsumer : BackgroundService
             notificationEvent.RecipientUserIds,
             stoppingToken);
     }
+
+    private static bool IsDeletedTaskViolation(DbUpdateException exception)
+        => exception.InnerException is SqlException { Number: ForeignKeyViolationNumber } sqlException
+            && sqlException.Message.Contains(TaskForeignKeyName, StringComparison.Ordinal);
 }

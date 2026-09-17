@@ -5,19 +5,6 @@
     color: var(--mat-sys-on-surface-variant);
 }
 
-.user-menu-trigger-avatar {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: var(--app-surface-muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--app-primary-action);
-}
-
 .user-menu-chevron {
     width: 20px;
     height: 20px;
@@ -33,19 +20,52 @@
     cursor: default;
 }
 
-.user-menu-avatar {
-    display: grid;
-    place-items: center;
+.user-menu-avatar-button.mat-mdc-menu-item {
+    position: relative;
     flex: 0 0 auto;
     box-sizing: border-box;
-    width: 44px;
-    height: 44px;
-    border: 2px solid var(--app-primary);
+    width: 50px;
+    min-height: 50px;
+    height: 50px;
+    padding: 3px;
     border-radius: 50%;
-    background-color: var(--app-surface-card);
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--mat-sys-on-surface);
+    background-color: transparent;
+    cursor: pointer;
+}
+
+.user-menu-avatar-button.mat-mdc-menu-item:hover,
+.user-menu-avatar-button.mat-mdc-menu-item.cdk-keyboard-focused {
+    background-color: var(--app-surface-hover);
+}
+
+.user-menu-avatar-button:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 2px;
+}
+
+.user-menu-avatar {
+    cursor: pointer;
+}
+
+.user-menu-avatar-edit {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--app-surface-card);
+    border-radius: 50%;
+    background-color: var(--app-primary-action);
+    color: #fff;
+}
+
+.user-menu-avatar-edit .mat-icon {
+    width: 12px;
+    height: 12px;
+    font-size: 12px;
+    line-height: 12px;
 }
 
 .user-menu-identity {

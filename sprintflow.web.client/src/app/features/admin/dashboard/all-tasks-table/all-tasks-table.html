@@ -92,13 +92,12 @@
               <td class="tasks-col-assignee">
                 @if (task.assignee; as assignee) {
                   <span class="tasks-person">
-                    <span
-                      class="person-avatar"
-                      role="img"
-                      [attr.title]="assignee.fullName"
-                      [attr.aria-label]="'Assigned to ' + assignee.fullName">
-                      <span aria-hidden="true">{{ initials(assignee.fullName) }}</span>
-                    </span>
+                    <app-avatar
+                      [userId]="assignee.userId"
+                      [fullName]="assignee.fullName"
+                      [size]="28"
+                      [label]="'Assigned to ' + assignee.fullName"
+                      [title]="assignee.fullName" />
                     <span class="tasks-person-name">{{ assignee.fullName }}</span>
                   </span>
                 } @else {

@@ -18,6 +18,8 @@ public class User
 
     public DateTime CreatedDate { get; set; }
 
+    public string? ProfilePhotoKey { get; set; }
+
     public Role Role { get; set; } = null!;
 
     public string FullName => $"{FirstName} {LastName}".Trim();

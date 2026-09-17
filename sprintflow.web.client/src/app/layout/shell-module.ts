@@ -8,10 +8,12 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
+import { AvatarModule } from '../shared/avatar/avatar-module';
 import { AreaInfoDialog } from './area-info-dialog/area-info-dialog';
 import { AreaNav } from './area-nav/area-nav';
 import { InviteDialog } from './invite-dialog/invite-dialog';
 import { NotificationBell } from './notification-bell/notification-bell';
+import { ProfilePhotoDialog } from './profile-photo-dialog/profile-photo-dialog';
 import { Sidebar } from './sidebar/sidebar';
 import { UserMenu } from './user-menu/user-menu';
 
@@ -22,7 +24,8 @@ import { UserMenu } from './user-menu/user-menu';
     AreaNav,
     NotificationBell,
     AreaInfoDialog,
-    InviteDialog
+    InviteDialog,
+    ProfilePhotoDialog
   ],
   imports: [
     DatePipe,
@@ -33,7 +36,8 @@ import { UserMenu } from './user-menu/user-menu';
     MatMenuModule,
     MatProgressSpinnerModule,
     RouterLink,
-    RouterLinkActive
+    RouterLinkActive,
+    AvatarModule
   ],
   exports: [
     Sidebar,

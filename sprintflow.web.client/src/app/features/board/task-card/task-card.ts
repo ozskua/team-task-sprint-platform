@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { BoardTask } from '../../../core/models/board-detail-models';
-import { initialsOf } from '../../../shared/initials';
 import { taskPriorityLabel } from '../task-priority';
 
 export type TaskOutcome = 'Completed' | 'Cancelled';
@@ -41,9 +40,5 @@ export class TaskCard {
     }
 
     this.open.emit(this.task());
-  }
-
-  protected initials(fullName: string): string {
-    return initialsOf(fullName);
   }
 }

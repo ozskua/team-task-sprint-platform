@@ -491,6 +491,10 @@ namespace SprintFlow.Web.Server.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("ProfilePhotoKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int>("RoleId")
                         .HasColumnType("int");
 

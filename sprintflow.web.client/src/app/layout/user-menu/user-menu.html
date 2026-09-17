@@ -4,15 +4,36 @@
   type="button"
   [matMenuTriggerFor]="menu"
   [attr.aria-label]="triggerLabel()">
-  <span class="user-menu-trigger-avatar" aria-hidden="true">{{ initials() }}</span>
+  <app-avatar
+    class="user-menu-trigger-avatar"
+    [userId]="userId()"
+    [fullName]="fullName()"
+    [accent]="true"
+    [size]="32"
+    aria-hidden="true" />
   <mat-icon iconPositionEnd class="user-menu-chevron">expand_more</mat-icon>
 </button>
 
 <mat-menu #menu="matMenu" class="user-menu-panel">
   <div class="user-menu-card">
-    <span class="user-menu-avatar" role="img" [attr.aria-label]="profileLabel()">
-      <span aria-hidden="true">{{ initials() }}</span>
-    </span>
+    <button
+      class="user-menu-avatar-button"
+      mat-menu-item
+      disableRipple
+      type="button"
+      aria-label="Change profile photo"
+      (click)="onEditPhoto()">
+      <app-avatar
+        class="user-menu-avatar"
+        [userId]="userId()"
+        [fullName]="fullName()"
+        variant="ring"
+        [size]="44"
+        aria-hidden="true" />
+      <span class="user-menu-avatar-edit" aria-hidden="true">
+        <mat-icon>edit</mat-icon>
+      </span>
+    </button>
 
     <span class="user-menu-identity">
       <span class="user-menu-name">{{ fullName() }}</span>
