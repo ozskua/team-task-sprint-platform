@@ -6,6 +6,8 @@ public class Area
 
     public string Name { get; set; } = string.Empty;
 
+    public string? WebhookUrl { get; set; }
+
     public int CreatedByUserId { get; set; }
 
     public DateTime CreatedDate { get; set; }

@@ -43,6 +43,10 @@ namespace SprintFlow.Web.Server.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("WebhookUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
                     b.HasKey("AreaId");
 
                     b.HasIndex("CreatedByUserId");

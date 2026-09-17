@@ -146,6 +146,21 @@ public class SprintService
             .ToList();
     }
 
+    public async Task<SprintReportExport> GetReportExportAsync(CancellationToken cancellationToken)
+    {
+        var rows = await GetReportAsync(cancellationToken);
+
+        var tasks = await taskRepository.GetAllInSprintsAsync(cancellationToken);
+
+        var tasksBySprint = tasks
+            .GroupBy(task => task.SprintId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<SprintTaskResponseDto>)group.Select(task => task.ToSprintTaskResponseDto()).ToList());
+
+        return new SprintReportExport(rows, tasksBySprint, DateTime.UtcNow);
+    }
+
     private static SprintTaskOutcome OutcomeOf(IReadOnlyList<SprintColumnKindCount> rows)
     {
         var total = rows.Sum(row => row.Count);

@@ -170,6 +170,32 @@ return services;
 
         services.AddSingleton<AttachmentStorage>();
 
+        services.Configure<WebhookOptions>(configuration.GetSection(WebhookOptions.SectionName));
+
+        if (string.IsNullOrWhiteSpace(configuration[$"{WebhookOptions.SectionName}:Secret"]))
+        {
+            throw new InvalidOperationException(
+                $"'{WebhookOptions.SectionName}:Secret' is not configured. "
+                + "It signs every outbound webhook (HMAC-SHA256) and is deliberately absent from every committed file: "
+                + "set it with 'dotnet user-secrets set \"Webhooks:Secret\" \"<random value>\"' "
+                + "or as the environment variable Webhooks__Secret.");
+        }
+
+        var webhookTimeout = configuration.GetValue<int?>($"{WebhookOptions.SectionName}:TimeoutSeconds") ?? 10;
+
+        services.AddHttpClient(SprintReportWebhook.HttpClientName, client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(webhookTimeout);
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                AllowAutoRedirect = false,
+                ConnectTimeout = TimeSpan.FromSeconds(3)
+            });
+
+        services.AddScoped<AreaWebhookService>();
+        services.AddScoped<SprintReportWebhook>();
+
         return services;
     }
 }

@@ -25,6 +25,10 @@ export interface CreateAreaRequest {
   readonly name: string;
 }
 
+export interface AreaWebhook {
+  readonly webhookUrl: string | null;
+}
+
 export interface CreateBoardRequest {
   readonly name: string;
 }

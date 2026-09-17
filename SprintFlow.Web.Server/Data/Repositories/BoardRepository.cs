@@ -40,6 +40,23 @@ public async Task<int> AddAreaAsync(Area area, CancellationToken cancellationTok
             .Include(a => a.Boards)
                 .ThenInclude(b => b.CreatedByUser);
 
+    public Task<Area?> GetAreaForUpdateAsync(int areaId, CancellationToken cancellationToken)
+        => context.Areas.FirstOrDefaultAsync(a => a.AreaId == areaId, cancellationToken);
+
+    public Task<AreaWebhookTarget?> GetAreaWebhookTargetAsync(int areaId, CancellationToken cancellationToken)
+        => context.Areas
+            .AsNoTracking()
+            .Where(a => a.AreaId == areaId)
+            .Select(a => new AreaWebhookTarget(a.AreaId, a.Name, a.WebhookUrl))
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<AreaWebhookTarget>> GetAreaWebhookTargetsAsync(CancellationToken cancellationToken)
+        => await context.Areas
+            .AsNoTracking()
+            .OrderBy(a => a.AreaId)
+            .Select(a => new AreaWebhookTarget(a.AreaId, a.Name, a.WebhookUrl))
+            .ToListAsync(cancellationToken);
+
 public async Task<int> AddAsync(Board board, CancellationToken cancellationToken)
     {
         context.Boards.Add(board);

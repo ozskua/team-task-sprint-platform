@@ -1,0 +1,34 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    margin-top: -8px;
+}
+
+.export-actions,
+.export-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.export-content .mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+}
+
+.export-error,
+.export-notice {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.export-error {
+    color: var(--mat-sys-error);
+}
+
+.export-notice {
+    color: var(--mat-sys-on-surface-variant);
+}

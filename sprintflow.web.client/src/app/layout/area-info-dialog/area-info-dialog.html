@@ -10,9 +10,46 @@
 
     <dt>Created</dt>
     <dd>{{ area.createdDate | date:'dd MMM yyyy' }}</dd>
+
+    @if (isAdmin()) {
+      <dt>
+        <label for="area-webhook-url">Webhook URL</label>
+      </dt>
+      <dd>
+        <input
+          id="area-webhook-url"
+          class="area-info-input"
+          type="url"
+          placeholder="https://customer.example.com/api/reports/sprint"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="webhookUrl()"
+          [disabled]="!webhookLoaded() || saving()"
+          (input)="onWebhookInput($any($event.target).value)" />
+        <span class="area-info-hint">
+          Sprint reports exported by the administrator are posted to this URL. Leave empty to disable.
+        </span>
+      </dd>
+    }
   </dl>
+
+  @if (errorMessage(); as message) {
+    <p class="area-info-error" role="alert">{{ message }}</p>
+  } @else if (saved()) {
+    <p class="area-info-saved" role="status">Webhook URL saved.</p>
+  }
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
+  @if (isAdmin()) {
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="!webhookLoaded() || saving()"
+      (click)="onSaveWebhook()">
+      {{ saving() ? 'Saving…' : 'Save' }}
+    </button>
+  }
+
   <button mat-button type="button" mat-dialog-close>Close</button>
 </mat-dialog-actions>

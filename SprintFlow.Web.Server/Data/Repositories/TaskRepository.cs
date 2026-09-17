@@ -114,6 +114,20 @@ public class TaskRepository
             .ThenBy(t => t.TaskId)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<TaskItem>> GetAllInSprintsAsync(CancellationToken cancellationToken)
+        => await context.TaskItems
+            .AsNoTracking()
+            .Where(t => t.SprintId != null)
+            .Include(t => t.Column)
+            .Include(t => t.CreatedByUser)
+            .Include(t => t.Participants)
+                .ThenInclude(p => p.User)
+            .OrderBy(t => t.SprintId)
+            .ThenBy(t => t.Column.Position)
+            .ThenBy(t => t.Position)
+            .ThenBy(t => t.TaskId)
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyList<TaskItem>> GetAssignedToUserAsync(
         int userId,
         CancellationToken cancellationToken)

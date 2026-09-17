@@ -3,7 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { Area, Board, CreateAreaRequest, CreateBoardRequest } from '../models/area-models';
+import { Area, AreaWebhook, Board, CreateAreaRequest, CreateBoardRequest } from '../models/area-models';
 
 @Injectable()
 export class AreaService {
@@ -25,6 +25,16 @@ export class AreaService {
     return this.http
       .post<Area>(`${environment.apiBaseUrl}/areas`, request)
       .pipe(tap(area => this.areaState.update(areas => [area, ...areas])));
+  }
+
+  webhook(areaId: number): Observable<AreaWebhook> {
+    return this.http.get<AreaWebhook>(`${environment.apiBaseUrl}/areas/${areaId}/webhook`);
+  }
+
+  setWebhook(areaId: number, webhookUrl: string | null): Observable<void> {
+    const request: AreaWebhook = { webhookUrl };
+
+    return this.http.put<void>(`${environment.apiBaseUrl}/areas/${areaId}/webhook`, request);
   }
 
   createBoard(areaId: number, name: string): Observable<Board> {

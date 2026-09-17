@@ -1,0 +1,39 @@
+<div class="export-actions">
+  <button
+    mat-stroked-button
+    type="button"
+    [disabled]="buttonsDisabled()"
+    (click)="export('xlsx')">
+    <span class="export-content">
+      @if (exporting() === 'xlsx') {
+        <mat-spinner diameter="16" aria-hidden="true" />
+        <span>Preparing…</span>
+      } @else {
+        <mat-icon aria-hidden="true">table_chart</mat-icon>
+        <span>Excel</span>
+      }
+    </span>
+  </button>
+
+  <button
+    mat-stroked-button
+    type="button"
+    [disabled]="buttonsDisabled()"
+    (click)="export('pdf')">
+    <span class="export-content">
+      @if (exporting() === 'pdf') {
+        <mat-spinner diameter="16" aria-hidden="true" />
+        <span>Preparing…</span>
+      } @else {
+        <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+        <span>PDF</span>
+      }
+    </span>
+  </button>
+</div>
+
+@if (errorMessage(); as message) {
+  <p class="export-error" role="alert">{{ message }}</p>
+} @else if (notice(); as text) {
+  <p class="export-notice" role="status">{{ text }}</p>
+}

@@ -3,6 +3,8 @@
   <section class="report-section">
     <h2 class="section-title">Across all sprints</h2>
 
+    <app-sprint-report-export [disabled]="loading() || failed()" />
+
     <div class="metric-grid metric-grid--four">
       <app-metric-card label="Sprints" [value]="totals().sprints" [loading]="loading()" />
       <app-metric-card label="Tasks" [value]="totals().tasks" [loading]="loading()" />

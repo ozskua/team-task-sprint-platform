@@ -26,3 +26,12 @@ export interface SprintReportRow {
   readonly ongoingCount: number;
   readonly ongoingPercent: number;
 }
+
+export type SprintReportExportFormat = 'xlsx' | 'pdf';
+
+export interface SprintReportExportResult {
+  readonly blob: Blob;
+  readonly fileName: string;
+  readonly delivered: number;
+  readonly failed: number;
+}

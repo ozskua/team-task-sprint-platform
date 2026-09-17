@@ -26,3 +26,47 @@
     color: var(--mat-sys-on-surface);
     overflow-wrap: anywhere;
 }
+
+.area-info-input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 22rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--app-radius-control);
+    background: var(--mat-sys-surface-container-low);
+    color: var(--mat-sys-on-surface);
+    font: inherit;
+    font-size: 0.8125rem;
+}
+
+.area-info-input:focus-visible {
+    outline: 2px solid var(--app-primary-action);
+    outline-offset: 1px;
+}
+
+.area-info-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.area-info-error,
+.area-info-saved {
+    margin: 16px 0 0;
+    padding: 0.875rem 1rem;
+    border-radius: var(--app-radius-control);
+    font: var(--mat-sys-body-medium);
+}
+
+.area-info-error {
+    background-color: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+}
+
+.area-info-saved {
+    background-color: var(--app-surface-muted);
+    color: var(--mat-sys-on-surface-variant);
+}

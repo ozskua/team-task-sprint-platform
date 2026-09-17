@@ -16,6 +16,9 @@ public class AreaConfiguration : IEntityTypeConfiguration<Area>
             .IsRequired()
             .HasMaxLength(200);
 
+        builder.Property(a => a.WebhookUrl)
+            .HasMaxLength(2048);
+
         builder.Property(a => a.CreatedDate)
             .IsRequired()
             .HasDefaultValueSql("SYSUTCDATETIME()");
