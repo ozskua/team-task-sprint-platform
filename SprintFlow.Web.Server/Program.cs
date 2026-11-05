@@ -3,7 +3,6 @@ using NLog;
 using NLog.Web;
 using SprintFlow.Web.Server.Data;
 using SprintFlow.Web.Server.Extensions;
-using SprintFlow.Web.Server.Hubs;
 using SprintFlow.Web.Server.Middleware;
 
 // Loaded before the host so that failures during start-up are still written to the log file.
@@ -43,11 +42,6 @@ try
 
     builder.Services.AddApplicationServices(builder.Configuration);
 
-    // Kept only for the TestHub mapped below, which is not part of the product. The board and
-    // notification hubs moved to SprintFlow.Web.SignalR; if TestHub is ever removed, this can go
-    // with it and this application will need no SignalR registration at all.
-    builder.Services.AddSignalR();
-
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowSpecificOrigins", policy =>
@@ -84,12 +78,6 @@ try
     app.UseAuthorization(); // Checks whether that user may access the endpoint. Order matters.
 
     app.MapControllers();
-
-    // Before the SPA fallback, which would otherwise answer the hub's own requests with index.html.
-    // The board and notification hubs are no longer here: they are hosted by
-    // SprintFlow.Web.SignalR, which owns every browser connection. This application publishes to
-    // the broker and never talks to a browser over a socket.
-    app.MapHub<TestHub>("/hubs/test"); //TestHub
 
     app.MapFallbackToFile("/index.html");
 
